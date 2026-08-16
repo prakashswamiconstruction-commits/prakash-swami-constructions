@@ -1,255 +1,1164 @@
+
 <!doctype html>
 <html lang="hi">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Prakash Swami Constructions - Dashboard</title>
+  <title>Prakash Swami Constructions — Dashboard</title>
+  <!-- Supabase JS Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fa; color: #172033; }
-    .login { min-height: 100vh; display: grid; place-items: center; background: #0b1220; }
-    .card { width: min(440px, 92%); background: #fff; padding: 28px; border-radius: 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 20px 0; }
-    .tabs button { padding: 11px; border: 0; border-radius: 10px; font-weight: 700; cursor: pointer; background: #e5e7eb; }
-    .tabs .active { background: #0b1220; color: #fff; }
-    .field { margin: 12px 0; }
-    .field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
-    .field input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
-    .primary { width: 100%; padding: 13px; border: 0; border-radius: 10px; background: #0b1220; color: #fff; font-weight: 800; cursor: pointer; margin-top: 10px; font-size: 15px; }
-    .primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn { padding: 9px 12px; border: 0; border-radius: 9px; cursor: pointer; }
-    .error { margin: 12px 0; padding: 12px; background: #fff1f1; color: #b42318; border-radius: 10px; font-size: 13px; border: 1px solid #fda29b; }
-    .hint { font-size: 12px; color: #667085; line-height: 1.6; margin-top: 14px; }
+    :root {
+      --primary: #0b1220;
+      --accent: #e65100;
+      --bg: #f4f6fa;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; }
+    
+    /* Login Page */
+    .login-wrapper { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%); padding: 16px; }
+    .login-card { width: min(450px, 100%); background: var(--card); border-radius: 20px; padding: 32px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+    .brand-header { text-align: center; margin-bottom: 20px; }
+    .brand-header h2 { color: var(--primary); font-size: 22px; font-weight: 800; }
+    .brand-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    
+    .role-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #e2e8f0; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
+    .role-tabs button { padding: 10px 4px; border: 0; background: transparent; font-weight: 700; font-size: 13px; border-radius: 8px; cursor: pointer; color: var(--muted); transition: 0.2s; }
+    .role-tabs button.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; outline: none; transition: 0.2s; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); ring: 2px rgba(11,18,32,0.1); }
+    
+    .btn-primary { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: 0; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+    .btn-primary:hover { opacity: 0.95; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { padding: 8px 14px; background: var(--border); color: var(--text); border: 0; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: 0; cursor: pointer; font-weight: 600; }
+    .btn-success { background: #dcfce7; color: #15803d; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; }
+    .btn-warning { background: #fef3c7; color: #b45309; }
+    
+    .alert-box { padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .alert-error { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+    .alert-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
     .hidden { display: none !important; }
-    .app { min-height: 100vh; }
-    .top { height: 68px; background: #fff; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; }
-    .layout { display: grid; grid-template-columns: 240px 1fr; }
-    .side { min-height: calc(100vh - 68px); background: #0b1220; padding: 15px; }
-    .side button { width: 100%; margin: 4px 0; padding: 11px; text-align: left; border: 0; background: transparent; color: #fff; border-radius: 9px; cursor: pointer; }
-    .side button:hover { background: rgba(255,255,255,0.1); }
-    .main { padding: 25px; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .box { background: #fff; padding: 18px; border-radius: 16px; border: 1px solid #e6eaf0; }
-    @media(max-width:800px){ .layout { grid-template-columns: 1fr; } .side { min-height: auto; } .grid { grid-template-columns: 1fr 1fr; } }
-    @media(max-width:520px){ .grid { grid-template-columns: 1fr; } }
+
+    /* Dashboard Layout */
+    .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+    .app-header { height: 64px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 40; }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-title { font-size: 16px; font-weight: 800; color: var(--primary); }
+    .role-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .role-badge.admin { background: #fee2e2; color: var(--danger); }
+    .role-badge.customer { background: #e0e7ff; color: #4338ca; }
+    .role-badge.worker { background: #fef3c7; color: var(--warning); }
+    
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .notif-btn { position: relative; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: #fff; display: grid; place-items: center; cursor: pointer; color: var(--text); }
+    .notif-badge { position: absolute; top: -4px; right: -4px; background: var(--danger); color: #fff; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; }
+
+    .app-body { display: grid; grid-template-columns: 240px 1fr; flex: 1; }
+    .app-sidebar { background: var(--primary); color: #fff; padding: 16px 10px; display: flex; flex-direction: column; gap: 4px; min-height: calc(100vh - 64px); }
+    .sidebar-btn { width: 100%; padding: 11px 14px; border: 0; background: transparent; color: #94a3b8; border-radius: 10px; text-align: left; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+    .sidebar-btn:hover, .sidebar-btn.active { background: rgba(255,255,255,0.1); color: #fff; }
+    .sidebar-btn i { width: 18px; font-size: 15px; }
+
+    .app-main { padding: 24px; max-width: 1300px; width: 100%; margin: 0 auto; }
+    .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .page-head h1 { font-size: 22px; font-weight: 800; color: var(--primary); }
+
+    /* Universal Search Bar */
+    .search-box { width: 100%; max-width: 400px; position: relative; }
+    .search-box input { width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-size: 13px; outline: none; }
+    .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: #fff; padding: 18px; border-radius: 14px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .stat-card h4 { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .stat-card .val { font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 4px; }
+    .stat-card .icon-box { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; }
+
+    /* Cards & Tables */
+    .card { background: #fff; border-radius: 16px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+    .table-container { width: 100%; overflow-x: auto; background: #fff; border-radius: 14px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+    th { background: #f8fafc; padding: 12px 16px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: 0; }
+    
+    /* Progress Bar */
+    .progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+    .progress-bar-fill { height: 100%; background: var(--success); border-radius: 4px; }
+
+    /* Camera Attendance Box */
+    .camera-box { max-width: 400px; margin: 0 auto; text-align: center; }
+    .video-preview { width: 100%; height: 260px; background: #000; border-radius: 14px; object-fit: cover; margin-bottom: 12px; }
+    
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: grid; place-items: center; z-index: 100; padding: 16px; }
+    .modal-card { width: min(550px, 100%); background: #fff; border-radius: 18px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+
+    @media(max-width: 840px) {
+      .app-body { grid-template-columns: 1fr; }
+      .app-sidebar { display: flex; flex-direction: row; overflow-x: auto; min-height: auto; padding: 10px; position: sticky; bottom: 0; z-index: 30; }
+      .sidebar-btn { flex-direction: column; align-items: center; text-align: center; font-size: 11px; padding: 8px 12px; gap: 4px; }
+      .sidebar-btn i { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
 
-<section id="login" class="login">
-  <div class="card">
-    <h2 style="margin-top:0">Prakash Swami Constructions</h2>
-    <div class="tabs">
-      <button type="button" class="active" onclick="switchRole('admin')">Admin</button>
-      <button type="button" onclick="switchRole('customer')">Customer</button>
-      <button type="button" onclick="switchRole('worker')">Worker</button>
+<!-- 1. LOGIN SCREEN -->
+<div id="loginSection" class="login-wrapper">
+  <div class="login-card">
+    <div class="brand-header">
+      <i class="fa-solid fa-helmet-safety" style="font-size:32px; color:var(--accent); margin-bottom:8px;"></i>
+      <h2>Prakash Swami Constructions</h2>
+      <p id="loginSubtitle">Construction Management Portal</p>
     </div>
-    
-    <div id="error" class="error hidden"></div>
-    
-    <div>
-      <div class="field">
-        <label id="idLabel">Admin Email</label>
-        <input id="id" type="email" value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com">
-      </div>
-      <div class="field" id="pw">
-        <label>Password</label>
-        <input id="password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter') handleLogin()">
-      </div>
-      <button id="loginButton" class="primary" type="button" onclick="handleLogin()">Login</button>
-    </div>
-    
-    <div id="signup" class="hidden" style="margin-top:12px">
-      <button class="btn" type="button" onclick="signup()">Customer Sign Up</button>
-    </div>
-    
-    <div class="hint" id="hint">
-      <b>Admin:</b> Email + Password<br>
-      <b>Customer:</b> Email + Password<br>
-      <b>Worker:</b> Admin द्वारा registered mobile number
-    </div>
-  </div>
-</section>
 
-<section id="app" class="app hidden">
-  <header class="top">
-    <b>Prakash Swami Constructions — <span id="roleText"></span></b>
-    <button class="btn" style="background:#0b1220; color:#fff;" type="button" onclick="logout()">Logout</button>
-  </header>
-  <div class="layout">
-    <aside class="side" id="side"></aside>
-    <main class="main">
-      <h1 id="title">Overview</h1>
-      <div id="content"></div>
-    </main>
+    <!-- Role Selection Tabs -->
+    <div class="role-tabs">
+      <button type="button" id="tabAdmin" class="active" onclick="selectRole('admin')"><i class="fa-solid fa-crown"></i> Admin</button>
+      <button type="button" id="tabCustomer" onclick="selectRole('customer')"><i class="fa-solid fa-user"></i> Customer</button>
+      <button type="button" id="tabWorker" onclick="selectRole('worker')"><i class="fa-solid fa-hammer"></i> Worker</button>
+    </div>
+
+    <div id="loginAlert" class="alert-box alert-error hidden"></div>
+
+    <form id="authForm" onsubmit="handleAuthSubmit(event)">
+      <!-- Email / Phone Field -->
+      <div class="form-group">
+        <label id="inputLabel">Admin Email</label>
+        <input id="loginId" type="text" required value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com">
+      </div>
+
+      <!-- Password Field (Hidden for Worker) -->
+      <div class="form-group" id="pwGroup">
+        <label>Password</label>
+        <input id="loginPassword" type="password" placeholder="••••••••">
+      </div>
+
+      <button id="loginSubmitBtn" type="submit" class="btn-primary">
+        <i class="fa-solid fa-right-to-bracket"></i> Login
+      </button>
+    </form>
+
+    <!-- Customer Registration Trigger -->
+    <div id="signupGroup" class="hidden" style="margin-top: 14px; text-align: center;">
+      <p style="font-size: 13px; color: var(--muted);">नया खाता बनाना चाहते हैं? 
+        <a href="javascript:void(0)" onclick="openCustomerSignupModal()" style="color:var(--accent); font-weight:700;">Customer Sign Up</a>
+      </p>
+    </div>
+
+    <div style="margin-top: 20px; font-size: 12px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 14px;">
+      <p><b>Worker Login:</b> सिर्फ अपना रजिस्टर्ड मोबाइल नंबर डालें (No Password/OTP)।</p>
+    </div>
   </div>
-</section>
+</div>
+
+<!-- 2. MAIN DASHBOARD APP -->
+<div id="appSection" class="app-container hidden">
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <i class="fa-solid fa-building" style="color:var(--accent); font-size:20px;"></i>
+      <span class="header-title">Prakash Swami Constructions</span>
+      <span id="roleBadge" class="role-badge admin">Admin</span>
+    </div>
+    <div class="header-right">
+      <button class="notif-btn" onclick="openNotificationsModal()" title="Notifications">
+        <i class="fa-regular fa-bell"></i>
+        <span id="notifBadge" class="notif-badge hidden">0</span>
+      </button>
+      <button class="btn-secondary" onclick="handleLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+    </div>
+  </header>
+
+  <!-- Sidebar & Main Content -->
+  <div class="app-body">
+    <aside class="app-sidebar" id="sidebarNav"></aside>
+    <main class="app-main" id="mainContent"></main>
+  </div>
+</div>
+
+<!-- Modal Container -->
+<div id="modalContainer" class="modal-overlay hidden"></div>
 
 <script>
-const URL = 'https://aamstyeeewncmgqdxpoh.supabase.co';
-const KEY = 'sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
+// --- SUPABASE CONFIGURATION ---
+const SUPABASE_URL = 'https://aamstyeeewncmgqdxpoh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-let db = null;
-try {
-  if (window.supabase) {
-    db = window.supabase.createClient(URL, KEY);
-  } else {
-    console.error('Supabase library not loaded');
-  }
-} catch (e) {
-  console.error('Supabase init error:', e);
-}
-
-let currentRole = 'admin';
 const ADMIN_EMAIL = 'satpalswami22742@gmail.com';
+let currentRole = 'admin';
+let currentUser = null; // Profile record
+let allDataCache = {};
 
 const $ = id => document.getElementById(id);
-const err = msg => {
-  const e = $('error');
-  e.textContent = msg;
-  e.classList.remove('hidden');
-};
 
-function switchRole(role) {
+// --- INITIALIZATION ---
+window.addEventListener('DOMContentLoaded', async () => {
+  // Check hash for direct login link (e.g. #customer, #worker)
+  const hash = window.location.hash.replace('#', '');
+  if (['admin', 'customer', 'worker'].includes(hash)) {
+    selectRole(hash);
+  }
+
+  // Check saved worker session
+  const savedWorker = sessionStorage.getItem('ps_worker_session');
+  if (savedWorker) {
+    currentUser = JSON.parse(savedWorker);
+    currentRole = 'worker';
+    launchDashboard();
+    return;
+  }
+
+  // Check Supabase Auth Session (Admin/Customer)
+  if (db) {
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      if (session?.user) {
+        await loadUserProfile(session.user);
+      }
+    } catch (e) {
+      console.log('Session fetch error:', e);
+    }
+  }
+});
+
+// --- ROLE SWITCHING ---
+function selectRole(role) {
   currentRole = role;
-  $('error').classList.add('hidden');
+  $('loginAlert').classList.add('hidden');
   
-  const buttons = document.querySelectorAll('.tabs button');
-  buttons.forEach(b => {
-    b.classList.toggle('active', b.textContent.toLowerCase() === role);
-  });
-  
+  document.querySelectorAll('.role-tabs button').forEach(b => b.classList.remove('active'));
+  if (role === 'admin') $('tabAdmin').classList.add('active');
+  if (role === 'customer') $('tabCustomer').classList.add('active');
+  if (role === 'worker') $('tabWorker').classList.add('active');
+
   const isWorker = (role === 'worker');
   const isAdmin = (role === 'admin');
-  
-  $('idLabel').textContent = isWorker ? 'Registered Mobile Number' : (isAdmin ? 'Admin Email' : 'Customer Email');
-  $('id').type = isWorker ? 'tel' : 'email';
-  $('id').value = isAdmin ? ADMIN_EMAIL : '';
-  $('id').placeholder = isWorker ? 'Worker mobile number' : (isAdmin ? ADMIN_EMAIL : 'customer@example.com');
-  
-  $('pw').classList.toggle('hidden', isWorker);
-  $('signup').classList.toggle('hidden', role !== 'customer');
-  
-  $('hint').innerHTML = isAdmin 
-    ? '<b>Admin:</b> Email + Password' 
-    : (role === 'customer' ? '<b>Customer:</b> Email + Password' : '<b>Worker:</b> Admin द्वारा registered mobile number');
+
+  $('inputLabel').textContent = isWorker ? 'Registered Mobile Number' : (isAdmin ? 'Admin Email' : 'Customer Email');
+  $('loginId').type = isWorker ? 'tel' : 'email';
+  $('loginId').value = isAdmin ? ADMIN_EMAIL : '';
+  $('loginId').placeholder = isWorker ? '9876543210' : (isAdmin ? ADMIN_EMAIL : 'customer@example.com');
+
+  $('pwGroup').classList.toggle('hidden', isWorker);
+  $('signupGroup').classList.toggle('hidden', role !== 'customer');
 }
 
-async function handleLogin() {
-  $('error').classList.add('hidden');
-  
-  if (!db) {
-    return err('Supabase लोड नहीं हो पाया। कृपया इंटरनेट कनेक्शन या API Key चेक करें।');
-  }
-  
-  const id = $('id').value.trim();
-  const pass = $('password').value;
-  
-  if (!id) return err(currentRole === 'worker' ? 'कृपया Mobile Number दर्ज करें।' : 'कृपया Email दर्ज करें।');
-  if (currentRole !== 'worker' && !pass) return err('कृपया Password दर्ज करें।');
-  
-  const button = $('loginButton');
-  button.disabled = true;
-  button.textContent = 'Login हो रहा है...';
-  
+// --- AUTH SUBMISSION ---
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  $('loginAlert').classList.add('hidden');
+  const idVal = $('loginId').value.trim();
+  const passVal = $('loginPassword').value;
+
+  if (!db) return showLoginError('Supabase Database से कनेक्शन नहीं बन सका।');
+  if (!idVal) return showLoginError('कृपया आवश्यक जानकारी दर्ज करें।');
+
+  const btn = $('loginSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+
   try {
     if (currentRole === 'worker') {
-      await workerLogin(id);
+      // Worker Login via Mobile only in profiles
+      const { data: worker, error } = await db.from('profiles')
+        .select('*')
+        .eq('phone', idVal)
+        .eq('role', 'worker')
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!worker) return showLoginError('यह मोबाइल नंबर किसी सक्रिय वर्कर के रूप में रजिस्टर्ड नहीं है।');
+
+      currentUser = worker;
+      sessionStorage.setItem('ps_worker_session', JSON.stringify(worker));
+      launchDashboard();
       return;
     }
-    
+
+    // Admin & Customer via Supabase Auth
+    if (!passVal) return showLoginError('कृपया पासवर्ड दर्ज करें।');
+
     const { data, error } = await db.auth.signInWithPassword({
-      email: id,
-      password: pass
+      email: idVal,
+      password: passVal
     });
-    
+
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
-        return err('गलत Email या Password दर्ज किया गया है।');
-      } else if (error.message.includes('Email not confirmed')) {
-        return err('Email कन्फर्म नहीं है। Supabase Dashboard में जाकर Email confirm करें।');
+        return showLoginError('गलत Email या Password दर्ज किया गया है।');
       }
-      return err('Login Error: ' + error.message);
+      throw error;
     }
-    
-    const user = data?.user;
-    if (!user) return err('Login session नहीं मिला।');
-    
-    if (currentRole === 'admin') {
-      if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        await db.auth.signOut();
-        return err('यह ईमेल एडमिन अकाउंट नहीं है।');
-      }
-      showApp('admin', { name: 'Admin', email: user.email, role: 'admin' });
-      return;
-    }
-    
-    showApp(currentRole, { email: user.email, role: currentRole });
-  } catch (ex) {
-    err(ex?.message || 'Login में अप्रत्याशित समस्या हुई।');
+
+    await loadUserProfile(data.user);
+  } catch (err) {
+    showLoginError(err.message || 'Login में समस्या हुई।');
   } finally {
-    button.disabled = false;
-    button.textContent = 'Login';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
   }
 }
 
-async function workerLogin(phone) {
-  const { data, error } = await db.from('workers')
-    .select('id,profile_id,name,phone,status')
-    .eq('phone', phone)
-    .maybeSingle();
-    
-  if (error) return err('Worker Database Error: ' + error.message);
-  if (!data) return err('यह Worker mobile number रजिस्टर्ड नहीं है।');
-  if (data.status && data.status !== 'active') return err('Worker account inactive है।');
+function showLoginError(msg) {
+  const el = $('loginAlert');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+async function loadUserProfile(authUser) {
+  // Find or auto-create profile
+  let { data: profile, error } = await db.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
   
-  sessionStorage.setItem('worker_id', data.id);
-  showApp('worker', data);
+  if (!profile) {
+    const roleToSet = authUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'customer';
+    const newProfile = {
+      id: authUser.id,
+      email: authUser.email,
+      name: authUser.user_metadata?.name || (roleToSet === 'admin' ? 'Admin' : 'Customer'),
+      role: roleToSet,
+      phone: authUser.user_metadata?.phone || '',
+      is_active: true
+    };
+    await db.from('profiles').insert(newProfile);
+    profile = newProfile;
+  }
+
+  currentUser = profile;
+  currentRole = profile.role;
+  launchDashboard();
 }
 
-function showApp(role, profile) {
-  $('login').classList.add('hidden');
-  $('app').classList.remove('hidden');
-  $('roleText').textContent = role.toUpperCase();
+// --- LAUNCH DASHBOARD ---
+function launchDashboard() {
+  $('loginSection').classList.add('hidden');
+  $('appSection').classList.remove('hidden');
   
-  const menus = role === 'admin'
-    ? ['Overview','Profile','Enquiry','Customers','Projects','Workers','Payments','Attendance','Daily Updates','Contracts','Notifications','Expenses','Payment Settings']
-    : (role === 'customer'
-      ? ['Overview','Profile','Enquiry','Projects','Payments','Contracts','Notifications','Contact']
-      : ['Profile','Attendance','Payments','Daily Updates']);
-      
-  $('side').innerHTML = menus.map(x => '<button type="button" onclick="openPage(\'' + x + '\')">' + x + '</button>').join('');
-  openPage(menus[0]);
+  const badge = $('roleBadge');
+  badge.textContent = currentRole.toUpperCase();
+  badge.className = `role-badge ${currentRole}`;
+
+  renderSidebar();
+  loadNotificationsCount();
 }
 
-function openPage(name) {
-  $('title').textContent = name;
-  $('content').innerHTML = '<div class="grid"><div class="box"><b>' + name + '</b><p>इस सेक्शन का डेटा यहाँ लोड होगा।</p></div></div>';
+function renderSidebar() {
+  const nav = $('sidebarNav');
+  let menus = [];
+
+  if (currentRole === 'admin') {
+    menus = [
+      { id: 'overview', icon: 'fa-chart-pie', label: 'Overview' },
+      { id: 'enquiries', icon: 'fa-inbox', label: 'Enquiries' },
+      { id: 'contracts', icon: 'fa-file-signature', label: 'Contracts' },
+      { id: 'projects', icon: 'fa-trowel-bricks', label: 'Projects' },
+      { id: 'customers', icon: 'fa-users', label: 'Customers' },
+      { id: 'workers', icon: 'fa-helmet-safety', label: 'Workers' },
+      { id: 'attendance', icon: 'fa-clipboard-user', label: 'Attendance' },
+      { id: 'payments', icon: 'fa-money-bill-wave', label: 'Payments' },
+      { id: 'expenses', icon: 'fa-receipt', label: 'Expenses' },
+      { id: 'settings', icon: 'fa-gear', label: 'Settings' }
+    ];
+  } else if (currentRole === 'customer') {
+    menus = [
+      { id: 'my_projects', icon: 'fa-house-chimney', label: 'My Projects' },
+      { id: 'my_contracts', icon: 'fa-file-contract', label: 'My Contracts' },
+      { id: 'my_enquiries', icon: 'fa-paper-plane', label: 'New Enquiry' },
+      { id: 'my_payments', icon: 'fa-wallet', label: 'Payments & UPI' },
+      { id: 'my_profile', icon: 'fa-user', label: 'My Profile' }
+    ];
+  } else {
+    menus = [
+      { id: 'worker_attendance', icon: 'fa-camera', label: 'Face Attendance' },
+      { id: 'worker_earnings', icon: 'fa-hand-holding-dollar', label: 'My Earnings' },
+      { id: 'worker_updates', icon: 'fa-pen-to-square', label: 'Daily Work Update' }
+    ];
+  }
+
+  nav.innerHTML = menus.map((m, idx) => `
+    <button class="sidebar-btn ${idx === 0 ? 'active' : ''}" onclick="openView('${m.id}', this)">
+      <i class="fa-solid ${m.icon}"></i> <span>${m.label}</span>
+    </button>
+  `).join('');
+
+  openView(menus[0].id);
 }
 
-async function logout() {
+// --- VIEW ROUTER ---
+async function openView(viewId, btnElement) {
+  if (btnElement) {
+    document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+    btnElement.classList.add('active');
+  }
+
+  const main = $('mainContent');
+  main.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+
+  if (currentRole === 'admin') {
+    if (viewId === 'overview') await renderAdminOverview(main);
+    else if (viewId === 'enquiries') await renderAdminEnquiries(main);
+    else if (viewId === 'contracts') await renderAdminContracts(main);
+    else if (viewId === 'projects') await renderAdminProjects(main);
+    else if (viewId === 'customers') await renderAdminCustomers(main);
+    else if (viewId === 'workers') await renderAdminWorkers(main);
+    else if (viewId === 'attendance') await renderAdminAttendance(main);
+    else if (viewId === 'payments') await renderAdminPayments(main);
+    else if (viewId === 'expenses') await renderAdminExpenses(main);
+    else if (viewId === 'settings') await renderAdminSettings(main);
+  } else if (currentRole === 'customer') {
+    if (viewId === 'my_projects') await renderCustomerProjects(main);
+    else if (viewId === 'my_contracts') await renderCustomerContracts(main);
+    else if (viewId === 'my_enquiries') await renderCustomerEnquiryForm(main);
+    else if (viewId === 'my_payments') await renderCustomerPayments(main);
+    else if (viewId === 'my_profile') await renderCustomerProfile(main);
+  } else {
+    if (viewId === 'worker_attendance') await renderWorkerAttendance(main);
+    else if (viewId === 'worker_earnings') await renderWorkerEarnings(main);
+    else if (viewId === 'worker_updates') await renderWorkerUpdates(main);
+  }
+}
+
+// ==========================================
+// ADMIN MODULES
+// ==========================================
+
+async function renderAdminOverview(container) {
+  // Fetch stats from DB
+  const [custRes, projRes, enqRes, workRes, payRes] = await Promise.all([
+    db.from('profiles').select('id', { count: 'exact' }).eq('role', 'customer'),
+    db.from('projects').select('id', { count: 'exact' }).eq('status', 'active'),
+    db.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
+    db.from('profiles').select('id', { count: 'exact' }).eq('role', 'worker'),
+    db.from('payments').select('amount').eq('direction', 'customer_to_business')
+  ]);
+
+  const totalRevenue = (payRes.data || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+  container.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>Admin Overview</h1>
+        <p style="color:var(--muted); font-size:13px;">Welcome back, ${currentUser.name || 'Prakash Swami'}</p>
+      </div>
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Universal Search (Customer, Project, Worker...)" onkeyup="handleUniversalSearch(this.value)">
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div><h4>Active Projects</h4><div class="val">${projRes.count || 0}</div></div>
+        <div class="icon-box" style="background:#e0e7ff; color:#4338ca;"><i class="fa-solid fa-trowel-bricks"></i></div>
+      </div>
+      <div class="stat-card">
+        <div><h4>Pending Enquiries</h4><div class="val">${enqRes.count || 0}</div></div>
+        <div class="icon-box" style="background:#fee2e2; color:var(--danger);"><i class="fa-solid fa-inbox"></i></div>
+      </div>
+      <div class="stat-card">
+        <div><h4>Total Workers</h4><div class="val">${workRes.count || 0}</div></div>
+        <div class="icon-box" style="background:#fef3c7; color:var(--warning);"><i class="fa-solid fa-helmet-safety"></i></div>
+      </div>
+      <div class="stat-card">
+        <div><h4>Total Revenue</h4><div class="val">₹${totalRevenue.toLocaleString('en-IN')}</div></div>
+        <div class="icon-box" style="background:#dcfce7; color:var(--success);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+      </div>
+    </div>
+
+    <div class="card" id="searchResultsCard" style="display:none;">
+      <h3>Search Results</h3>
+      <div id="searchResultsList" style="margin-top:10px;"></div>
+    </div>
+  `;
+}
+
+// Universal Search across multiple tables
+async function handleUniversalSearch(query) {
+  query = query.trim().toLowerCase();
+  const resCard = $('searchResultsCard');
+  const resList = $('searchResultsList');
+  if (!query) { resCard.style.display = 'none'; return; }
+
+  resCard.style.display = 'block';
+  resList.innerHTML = 'Searching...';
+
+  const [cRes, pRes, wRes] = await Promise.all([
+    db.from('profiles').select('id, name, phone, email, role').ilike('name', `%${query}%`),
+    db.from('projects').select('id, name, address, status').ilike('name', `%${query}%`),
+    db.from('profiles').select('id, name, phone').eq('role', 'worker').ilike('name', `%${query}%`)
+  ]);
+
+  let html = '<ul style="list-style:none;">';
+  (cRes.data || []).forEach(c => html += `<li style="padding:8px 0; border-bottom:1px solid #eee;"><b>[User - ${c.role}]</b> ${c.name} (${c.phone || c.email})</li>`);
+  (pRes.data || []).forEach(p => html += `<li style="padding:8px 0; border-bottom:1px solid #eee;"><b>[Project]</b> ${p.name} - ${p.address} (${p.status})</li>`);
+  html += '</ul>';
+
+  resList.innerHTML = html === '<ul style="list-style:none;"></ul>' ? 'No matching records found.' : html;
+}
+
+// --- ADMIN: ENQUIRIES & CONTRACT CREATION ---
+async function renderAdminEnquiries(container) {
+  const { data: enquiries, error } = await db.from('enquiries').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>Customer Enquiries</h1>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Work Details</th>
+            <th>Budget</th>
+            <th>Address</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(enquiries || []).map(e => `
+            <tr>
+              <td><b>${e.customer?.name || 'Customer'}</b><br><small>${e.customer?.phone || ''}</small></td>
+              <td>${e.work}</td>
+              <td>₹${Number(e.budget || 0).toLocaleString('en-IN')}</td>
+              <td>${e.address || '-'}</td>
+              <td><span class="btn-sm ${e.status === 'approved' ? 'btn-success' : (e.status === 'rejected' ? 'btn-danger' : 'btn-warning')}">${e.status}</span></td>
+              <td>
+                ${e.status === 'pending' ? `
+                  <button class="btn-sm btn-success" onclick="approveEnquiry('${e.id}', '${e.customer_id}', '${e.work.replace(/'/g, "\\'")}', '${e.address.replace(/'/g, "\\'")}', ${e.budget})"><i class="fa-solid fa-check"></i> Approve & Contract</button>
+                  <button class="btn-sm btn-danger" onclick="rejectEnquiry('${e.id}')"><i class="fa-solid fa-xmark"></i></button>
+                ` : '<span>Closed</span>'}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function approveEnquiry(enqId, customerId, work, address, budget) {
+  if (!confirm('इस इन्क्वायरी को अप्रूव करके नया प्रोजेक्ट और कॉन्ट्रैक्ट बनाएँ?')) return;
+
+  // 1. Create Project
+  const { data: proj, error: pErr } = await db.from('projects').insert({
+    customer_id: customerId,
+    name: work.substring(0, 40),
+    address: address,
+    total_amount: budget || 0,
+    status: 'planning',
+    progress: 0
+  }).select().single();
+
+  if (pErr) return alert('Project Error: ' + pErr.message);
+
+  // 2. Create Contract
+  const { error: cErr } = await db.from('contracts').insert({
+    project_id: proj.id,
+    version: 1,
+    status: 'amount_discussion',
+    final_amount: budget || 0,
+    scope: work,
+    proposed_by: currentUser.id
+  });
+
+  if (cErr) return alert('Contract Error: ' + cErr.message);
+
+  // 3. Mark Enquiry Approved
+  await db.from('enquiries').update({ status: 'approved' }).eq('id', enqId);
+  alert('इन्क्वायरी स्वीकृत! प्रोजेक्ट और कॉन्ट्रैक्ट तैयार हो गया है।');
+  openView('contracts');
+}
+
+async function rejectEnquiry(enqId) {
+  if (!confirm('क्या आप इस इन्क्वायरी को रिजेक्ट करना चाहते हैं?')) return;
+  await db.from('enquiries').update({ status: 'rejected' }).eq('id', enqId);
+  openView('enquiries');
+}
+
+// --- ADMIN: CONTRACTS & NEGOTIATION ---
+async function renderAdminContracts(container) {
+  const { data: contracts } = await db.from('contracts').select('*, project:project_id(name, customer:customer_id(name, phone))').order('created_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Contracts Management</h1></div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Project & Customer</th>
+            <th>Ver</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Approvals</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(contracts || []).map(c => `
+            <tr>
+              <td><b>${c.project?.name}</b><br><small>${c.project?.customer?.name || ''}</small></td>
+              <td>v${c.version}</td>
+              <td><b>₹${Number(c.final_amount || 0).toLocaleString('en-IN')}</b></td>
+              <td><span class="btn-sm btn-warning">${c.status}</span></td>
+              <td>
+                Admin: ${c.admin_approved_at ? '✅' : '⏳'}<br>
+                Customer: ${c.customer_approved_at ? '✅' : '⏳'}
+              </td>
+              <td>
+                <button class="btn-sm btn-secondary" onclick="openContractDetailModal('${c.id}')"><i class="fa-solid fa-eye"></i> View / Edit</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// --- ADMIN: WORKER MANAGEMENT ---
+async function renderAdminWorkers(container) {
+  const { data: workers } = await db.from('profiles').select('*').eq('role', 'worker').order('created_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>Workers Management</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openAddWorkerModal()"><i class="fa-solid fa-plus"></i> Add New Worker</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Worker Name</th>
+            <th>Mobile (Login ID)</th>
+            <th>Address</th>
+            <th>Daily Wage</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(workers || []).map(w => `
+            <tr>
+              <td><b>${w.name}</b></td>
+              <td>${w.phone}</td>
+              <td>${w.address || '-'}</td>
+              <td><b>₹${w.daily_wage || 0} / दिन</b></td>
+              <td><span class="btn-sm ${w.is_active ? 'btn-success' : 'btn-danger'}">${w.is_active ? 'Active' : 'Inactive'}</span></td>
+              <td>
+                <button class="btn-sm btn-danger" onclick="deleteWorker('${w.id}')"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAddWorkerModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3>नया वर्कर जोड़ें</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+      <form onsubmit="saveNewWorker(event)">
+        <div class="form-group"><label>Worker Name</label><input id="wName" required placeholder="जैसे: रमेश स्वामी"></div>
+        <div class="form-group"><label>Mobile Number (यही Login ID होगी)</label><input id="wPhone" type="tel" required placeholder="9876543210"></div>
+        <div class="form-group"><label>Daily Wage (प्रतिदिन मजदूरी ₹)</label><input id="wWage" type="number" required placeholder="600"></div>
+        <div class="form-group"><label>Address</label><input id="wAddress" placeholder="गाँव/तहसील"></div>
+        <button type="submit" class="btn-primary">Save Worker</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveNewWorker(e) {
+  e.preventDefault();
+  const name = $('wName').value.trim();
+  const phone = $('wPhone').value.trim();
+  const wage = Number($('wWage').value);
+  const address = $('wAddress').value.trim();
+
+  const { error } = await db.from('profiles').insert({
+    name,
+    phone,
+    daily_wage: wage,
+    address,
+    role: 'worker',
+    is_active: true
+  });
+
+  if (error) return alert('Worker Save Error: ' + error.message);
+  $('modalContainer').classList.add('hidden');
+  openView('workers');
+}
+
+async function deleteWorker(id) {
+  if (!confirm('क्या आप इस वर्कर को हटाना चाहते हैं?')) return;
+  await db.from('profiles').delete().eq('id', id);
+  openView('workers');
+}
+
+// --- ADMIN: ATTENDANCE APPROVAL ---
+async function renderAdminAttendance(container) {
+  const { data: records } = await db.from('attendance').select('*, worker:worker_id(name, phone, daily_wage)').order('scanned_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Worker Face Attendance Approvals</h1></div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Worker</th>
+            <th>Face Scan Photo</th>
+            <th>Daily Wage</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(records || []).map(r => `
+            <tr>
+              <td>${r.work_date}<br><small>${new Date(r.scanned_at).toLocaleTimeString()}</small></td>
+              <td><b>${r.worker?.name}</b><br><small>${r.worker?.phone}</small></td>
+              <td>
+                ${r.face_image_url ? `<img src="${r.face_image_url}" style="width:48px; height:48px; border-radius:8px; object-fit:cover;">` : 'Face Scan'}
+              </td>
+              <td>₹${r.worker?.daily_wage || 0}</td>
+              <td><span class="btn-sm ${r.status === 'approved' ? 'btn-success' : 'btn-warning'}">${r.status}</span></td>
+              <td>
+                ${r.status === 'pending' ? `
+                  <button class="btn-sm btn-success" onclick="approveAttendance('${r.id}', '${r.worker_id}', ${r.worker?.daily_wage})"><i class="fa-solid fa-check"></i> Present</button>
+                  <button class="btn-sm btn-danger" onclick="rejectAttendance('${r.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+                ` : '<span>Recorded</span>'}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function approveAttendance(attId, workerId, wage) {
+  await db.from('attendance').update({ status: 'approved', approved_by: currentUser.id, approved_at: new Date().toISOString() }).eq('id', attId);
+  alert('हाजिरी Present दर्ज कर ली गई है।');
+  openView('attendance');
+}
+
+async function rejectAttendance(attId) {
+  await db.from('attendance').update({ status: 'rejected' }).eq('id', attId);
+  openView('attendance');
+}
+
+// --- ADMIN: PROJECTS ---
+async function renderAdminProjects(container) {
+  const { data: projects } = await db.from('projects').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head"><h1>All Construction Projects</h1></div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Customer</th>
+            <th>Progress %</th>
+            <th>Status</th>
+            <th>Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(projects || []).map(p => `
+            <tr>
+              <td><b>${p.name}</b><br><small>${p.address || ''}</small></td>
+              <td>${p.customer?.name || '-'}<br><small>${p.customer?.phone || ''}</small></td>
+              <td>
+                ${p.progress}%
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
+              </td>
+              <td><span class="btn-sm btn-success">${p.status}</span></td>
+              <td>₹${Number(p.total_amount || 0).toLocaleString('en-IN')}</td>
+              <td>
+                <button class="btn-sm btn-secondary" onclick="updateProjectProgress('${p.id}', ${p.progress})"><i class="fa-solid fa-sliders"></i> Progress</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function updateProjectProgress(projId, currentVal) {
+  const newVal = prompt('नया Progress % दर्ज करें (0 - 100):', currentVal);
+  if (newVal === null) return;
+  const num = parseInt(newVal);
+  if (isNaN(num) || num < 0 || num > 100) return alert('कृपया 0 से 100 के बीच की संख्या डालें।');
+
+  await db.from('projects').update({ progress: num }).eq('id', projId);
+  openView('projects');
+}
+
+// --- ADMIN: PAYMENTS & EXPENSES ---
+async function renderAdminPayments(container) {
+  const { data: payments } = await db.from('payments').select('*, project:project_id(name), customer:customer_id(name), worker:worker_id(name)').order('paid_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Payments Ledger</h1></div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Direction / Type</th>
+            <th>Party</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Ref / Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(payments || []).map(p => `
+            <tr>
+              <td>${new Date(p.paid_at).toLocaleDateString()}</td>
+              <td><span class="btn-sm ${p.direction === 'customer_to_business' ? 'btn-success' : 'btn-danger'}">${p.direction}</span></td>
+              <td>${p.customer?.name || p.worker?.name || 'Material Expense'}</td>
+              <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
+              <td>${p.method}</td>
+              <td>${p.reference || p.note || '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function renderAdminExpenses(container) {
+  const { data: expenses } = await db.from('expenses').select('*, project:project_id(name)').order('spent_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>Site Expenses (Material, Cement, Steel...)</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openAddExpenseModal()"><i class="fa-solid fa-plus"></i> Add Expense</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Date</th><th>Item / Title</th><th>Category</th><th>Amount</th><th>Note</th></tr></thead>
+        <tbody>
+          ${(expenses || []).map(x => `
+            <tr>
+              <td>${new Date(x.spent_at).toLocaleDateString()}</td>
+              <td><b>${x.title}</b></td>
+              <td>${x.category}</td>
+              <td><b>₹${Number(x.amount || 0).toLocaleString('en-IN')}</b></td>
+              <td>${x.note || '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAddExpenseModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>नया खर्च (Material Expense) जोड़ें</h3>
+      <form onsubmit="saveExpense(event)" style="margin-top:14px;">
+        <div class="form-group"><label>खर्च का विवरण (Title)</label><input id="expTitle" required placeholder="जैसे: 50 बोरी सीमेंट"></div>
+        <div class="form-group"><label>Category</label><select id="expCat"><option value="cement">Cement</option><option value="sand">Sand / बजरी</option><option value="steel">Steel / सरिया</option><option value="labour">Labour / अन्य</option></select></div>
+        <div class="form-group"><label>Amount (₹)</label><input id="expAmount" type="number" required placeholder="18500"></div>
+        <div class="form-group"><label>Note / बिल नंबर</label><input id="expNote"></div>
+        <button type="submit" class="btn-primary">Save Expense</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveExpense(e) {
+  e.preventDefault();
+  await db.from('expenses').insert({
+    title: $('expTitle').value,
+    category: $('expCat').value,
+    amount: Number($('expAmount').value),
+    note: $('expNote').value,
+    created_by: currentUser.id
+  });
+  $('modalContainer').classList.add('hidden');
+  openView('expenses');
+}
+
+// --- ADMIN: SETTINGS ---
+async function renderAdminSettings(container) {
+  const { data: settings } = await db.from('business_settings').select('*').eq('id', true).maybeSingle();
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Business & UPI Payment Settings</h1></div>
+    <div class="card" style="max-width:600px;">
+      <form onsubmit="saveBusinessSettings(event)">
+        <div class="form-group"><label>Admin Phone (WhatsApp & Calling)</label><input id="bPhone" value="${settings?.phone || '9785438345'}"></div>
+        <div class="form-group"><label>Admin Address</label><input id="bAddress" value="${settings?.address || 'Mandawara, Jhunjhunu, Rajasthan'}"></div>
+        <div class="form-group"><label>Admin UPI ID (Customer Payment के लिए)</label><input id="bUpi" value="${settings?.upi_id || '9785438345@upi'}"></div>
+        <div class="form-group"><label>Bank Name</label><input id="bBank" value="${settings?.bank_name || ''}"></div>
+        <div class="form-group"><label>Account Number</label><input id="bAcc" value="${settings?.account_number || ''}"></div>
+        <div class="form-group"><label>IFSC Code</label><input id="bIfsc" value="${settings?.ifsc || ''}"></div>
+        <button type="submit" class="btn-primary">Save Settings</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveBusinessSettings(e) {
+  e.preventDefault();
+  await db.from('business_settings').upsert({
+    id: true,
+    phone: $('bPhone').value,
+    address: $('bAddress').value,
+    upi_id: $('bUpi').value,
+    bank_name: $('bBank').value,
+    account_number: $('bAcc').value,
+    ifsc: $('bIfsc').value
+  });
+  alert('सेटिंग्स सफलतापूर्वक सेव हो गई हैं!');
+}
+
+// ==========================================
+// CUSTOMER MODULES
+// ==========================================
+
+async function renderCustomerProjects(container) {
+  const { data: projects } = await db.from('projects').select('*').eq('customer_id', currentUser.id);
+
+  container.innerHTML = `
+    <div class="page-head"><h1>मेरे प्रोजेक्ट्स (My Projects)</h1></div>
+    ${(projects || []).length === 0 ? '<div class="card"><p>आपका कोई सक्रिय प्रोजेक्ट नहीं है। नीचे से नई इन्क्वायरी भेजें।</p></div>' : ''}
+    ${(projects || []).map(p => `
+      <div class="card">
+        <h3>${p.name}</h3>
+        <p style="color:var(--muted); font-size:13px; margin:4px 0 14px;">📍 ${p.address || 'Site Address'}</p>
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700;">
+          <span>काम की प्रगति (Progress)</span><span>${p.progress}%</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
+        <div style="margin-top:14px; font-size:13px;">
+          <b>Total Project Value:</b> ₹${Number(p.total_amount || 0).toLocaleString('en-IN')}
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+async function renderCustomerEnquiryForm(container) {
+  container.innerHTML = `
+    <div class="page-head"><h1>नई इन्क्वायरी भेजें (New Enquiry)</h1></div>
+    <div class="card" style="max-width:600px;">
+      <form onsubmit="submitCustomerEnquiry(event)">
+        <div class="form-group"><label>काम का विवरण (Work Details)</label><textarea id="enqWork" rows="3" required placeholder="जैसे: 2 मंज़िला मकान का निर्माण (With Material)"></textarea></div>
+        <div class="form-group"><label>अनुमानित बजट (Budget ₹)</label><input id="enqBudget" type="number" placeholder="2500000"></div>
+        <div class="form-group"><label>साइट का पता (Site Address)</label><input id="enqAddress" required placeholder="Mandawara, Jhunjhunu"></div>
+        <div class="form-group"><label>अन्य नोट्स (Notes)</label><textarea id="enqNotes" rows="2"></textarea></div>
+        <button type="submit" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> इन्क्वायरी सबमिट करें</button>
+      </form>
+    </div>
+  `;
+}
+
+async function submitCustomerEnquiry(e) {
+  e.preventDefault();
+  const { error } = await db.from('enquiries').insert({
+    customer_id: currentUser.id,
+    work: $('enqWork').value,
+    budget: Number($('enqBudget').value || 0),
+    address: $('enqAddress').value,
+    notes: $('enqNotes').value,
+    status: 'pending'
+  });
+
+  if (error) return alert(error.message);
+  alert('आपकी इन्क्वायरी सबमिट हो गई है! प्रकाश स्वामी कंस्ट्रक्शन जल्द ही आपसे संपर्क करेगा।');
+  openView('my_projects');
+}
+
+async function renderCustomerPayments(container) {
+  const { data: settings } = await db.from('business_settings').select('*').eq('id', true).maybeSingle();
+  const { data: myPayments } = await db.from('payments').select('*').eq('customer_id', currentUser.id).order('paid_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Payments & UPI Details</h1></div>
+    <div class="card" style="max-width:600px; background:#fff7ed; border-color:#ffedd5;">
+      <h3 style="color:#9a3412;"><i class="fa-solid fa-qrcode"></i> Admin UPI & Bank Details</h3>
+      <p style="margin-top:8px; font-size:14px;"><b>UPI ID:</b> ${settings?.upi_id || '9785438345@upi'}</p>
+      <p style="font-size:14px;"><b>Phone / Google Pay:</b> ${settings?.phone || '9785438345'}</p>
+      ${settings?.bank_name ? `<p style="font-size:14px;"><b>Bank:</b> ${settings.bank_name} | A/C: ${settings.account_number} | IFSC: ${settings.ifsc}</p>` : ''}
+    </div>
+
+    <div class="card" style="max-width:600px;">
+      <h3>भुगतान की जानकारी दर्ज करें (Submit Payment)</h3>
+      <form onsubmit="submitCustomerPayment(event)" style="margin-top:14px;">
+        <div class="form-group"><label>भुगतान की गई राशि (Amount ₹)</label><input id="pAmount" type="number" required placeholder="50000"></div>
+        <div class="form-group"><label>Payment Method</label><select id="pMethod"><option value="UPI">UPI (PhonePe / GPay / Paytm)</option><option value="Bank">Bank Transfer</option><option value="Cash">Cash</option></select></div>
+        <div class="form-group"><label>Transaction UTR / Reference No.</label><input id="pRef" required placeholder="UTR / Txn ID"></div>
+        <button type="submit" class="btn-primary">Submit Payment Record</button>
+      </form>
+    </div>
+  `;
+}
+
+async function submitCustomerPayment(e) {
+  e.preventDefault();
+  await db.from('payments').insert({
+    customer_id: currentUser.id,
+    direction: 'customer_to_business',
+    amount: Number($('pAmount').value),
+    method: $('pMethod').value,
+    reference: $('pRef').value,
+    paid_at: new Date().toISOString()
+  });
+  alert('पेमेंट रिकॉर्ड दर्ज हो गया है!');
+  openView('my_payments');
+}
+
+// ==========================================
+// WORKER MODULES (CAMERA ATTENDANCE)
+// ==========================================
+
+let videoStream = null;
+
+async function renderWorkerAttendance(container) {
+  const today = new Date().toISOString().split('T')[0];
+  const { data: todayAtt } = await db.from('attendance').select('*').eq('worker_id', currentUser.id).eq('work_date', today).maybeSingle();
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Worker Face Scan Attendance</h1></div>
+    <div class="card camera-box">
+      ${todayAtt ? `
+        <div class="alert-box ${todayAtt.status === 'approved' ? 'alert-info' : 'alert-error'}">
+          <i class="fa-solid fa-circle-check"></i>
+          आज की हाजिरी दर्ज है — <b>स्थिति: ${todayAtt.status.toUpperCase()}</b>
+        </div>
+      ` : `
+        <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">कैमरे के सामने चेहरा रखें और हाजिरी लगाएं:</p>
+        <video id="webcam" class="video-preview" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <button id="snapBtn" class="btn-primary" onclick="captureAndSubmitAttendance()"><i class="fa-solid fa-camera"></i> Face Scan & Submit</button>
+      `}
+    </div>
+  `;
+
+  if (!todayAtt) {
+    initCamera();
+  }
+}
+
+async function initCamera() {
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    const vid = $('webcam');
+    if (vid) vid.srcObject = videoStream;
+  } catch (err) {
+    alert('कैमरा शुरू करने में समस्या हुई: ' + err.message);
+  }
+}
+
+async function captureAndSubmitAttendance() {
+  const vid = $('webcam');
+  const canvas = $('canvas');
+  if (!vid) return;
+
+  canvas.width = vid.videoWidth || 320;
+  canvas.height = vid.videoHeight || 240;
+  canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+
+  // Stop camera
+  if (videoStream) {
+    videoStream.getTracks().forEach(track => track.stop());
+  }
+
+  const { error } = await db.from('attendance').insert({
+    worker_id: currentUser.id,
+    face_image_url: dataUrl,
+    status: 'pending',
+    work_date: new Date().toISOString().split('T')[0]
+  });
+
+  if (error) return alert(error.message);
+  alert('हाजिरी सबमिट हो गई है! Admin के अप्रूवल के बाद Present दिखेगी।');
+  openView('worker_attendance');
+}
+
+async function renderWorkerEarnings(container) {
+  const [attRes, payRes] = await Promise.all([
+    db.from('attendance').select('*').eq('worker_id', currentUser.id).eq('status', 'approved'),
+    db.from('payments').select('*').eq('worker_id', currentUser.id).eq('direction', 'business_to_worker')
+  ]);
+
+  const daysWorked = (attRes.data || []).length;
+  const wage = currentUser.daily_wage || 0;
+  const totalEarned = daysWorked * wage;
+  const totalReceived = (payRes.data || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const remaining = totalEarned - totalReceived;
+
+  container.innerHTML = `
+    <div class="page-head"><h1>मेरी कमाई (My Earnings)</h1></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div><h4>कुल हाजिरी (Days)</h4><div class="val">${daysWorked} दिन</div></div></div>
+      <div class="stat-card"><div><h4>कुल कमाई (Earned)</h4><div class="val">₹${totalEarned}</div></div></div>
+      <div class="stat-card"><div><h4>प्राप्त राशि (Received)</h4><div class="val">₹${totalReceived}</div></div></div>
+      <div class="stat-card"><div><h4>बकाया राशि (Due)</h4><div class="val" style="color:var(--danger);">₹${remaining}</div></div></div>
+    </div>
+  `;
+}
+
+// --- LOGOUT & NOTIFICATIONS ---
+async function handleLogout() {
   if (db) await db.auth.signOut();
   sessionStorage.clear();
   location.reload();
 }
 
-async function signup() {
-  const name = prompt('Customer Name:');
-  if (!name) return;
-  const email = prompt('Customer Email:');
-  if (!email) return;
-  const password = prompt('Password (कम से कम 6 अक्षर):');
-  if (!password || password.length < 6) return err('Password कम से कम 6 अक्षरों का होना चाहिए।');
-  
-  const { data, error } = await db.auth.signUp({
-    email,
-    password,
-    options: { data: { name, role: 'customer' } }
-  });
-  
-  if (error) return err(error.message);
-  alert(data.session ? 'अकाउंट बन गया और आप लॉगिन हो गए हैं।' : 'अकाउंट बन गया है।');
+async function loadNotificationsCount() {
+  if (!db || !currentUser) return;
+  const { count } = await db.from('notifications').select('id', { count: 'exact' }).eq('user_id', currentUser.id).is('read_at', null);
+  const badge = $('notifBadge');
+  if (count && count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
