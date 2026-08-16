@@ -3,28 +3,23 @@
   const SUPABASE_KEY='sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
   const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
   const PHONE=v=>{const d=String(v||'').replace(/\D/g,'');if(d.startsWith('91')&&d.length===12)return '+'+d;if(d.length===10)return '+91'+d;return '';};
-  const PHONE_DIGITS=v=>String(v||'').replace(/\D/g,'').replace(/^91/,'');
-  const INTERNAL_EMAIL=v=>`${PHONE_DIGITS(v)}@prakashswamiconstructions.local`;
   const show=msg=>{if(typeof window.err==='function')window.err(msg);else alert(msg);};
   const open=html=>{if(typeof window.openModal==='function')window.openModal(html);};
   const close=()=>{if(typeof window.closeModal==='function')window.closeModal();};
-  // Mobile + password is the UI identifier. Supabase Auth uses the internal account email,
-  // so the project does not need the Phone Auth/SMS provider enabled.
-  const mobilePasswordLogin=async(phone,password)=>sb.auth.signInWithPassword({email:INTERNAL_EMAIL(phone),password});
 
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
     document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
     const r=b.dataset.role,title=document.getElementById('loginTitle'),label=document.getElementById('idLabel'),id=document.getElementById('loginId');
     if(title)title.textContent=(r==='admin'?'Admin':r==='customer'?'Customer':'Worker')+' Login';
-    if(label)label.textContent=r==='customer'?'Email':'Mobile Number';
-    if(id)id.placeholder=r==='customer'?'customer@email.com':'9785438345';
+    if(label)label.textContent=r==='customer'||r==='admin'?'Email':'Mobile Number';
+    if(id)id.placeholder=r==='customer'||r==='admin'?'prakashswamiconstruction@gmail.com':'9785438345';
     const pass=document.getElementById('passWrap'),pw=document.getElementById('password');if(pass)pass.style.display='block';if(pw)pw.required=true;
-    const su=document.getElementById('signupBtn'),fp=document.getElementById('forgotBtn');if(su)su.style.display=r==='customer'?'inline-block':'none';if(fp)fp.style.display=r==='customer'?'inline-block':'none';
-    const hint=document.getElementById('loginHint');if(hint)hint.textContent=r==='admin'?'Admin: registered mobile + password.':r==='customer'?'Customer: email + password.':'Worker: Admin-registered mobile + password.';
+    const su=document.getElementById('signupBtn'),fp=document.getElementById('forgotBtn');if(su)su.style.display=r==='customer'?'inline-block':'none';if(fp)fp.style.display=r==='customer'||r==='admin'?'inline-block':'none';
+    const hint=document.getElementById('loginHint');if(hint)hint.textContent=r==='admin'?'Admin: email + password.':r==='customer'?'Customer: email + password.':'Worker: Admin-registered mobile + password.';
   });
 
   const form=document.getElementById('loginForm');
-  if(form)form.onsubmit=async e=>{e.preventDefault();const selected=document.querySelector('.tabs button.active')?.dataset.role||'admin';const id=document.getElementById('loginId').value.trim(),pass=document.getElementById('password').value;document.getElementById('err')?.classList.add('hidden');if(pass.length<8)return show('Password कम से कम 8 characters का होना चाहिए।');try{let r;if(selected==='customer')r=await sb.auth.signInWithPassword({email:id,password:pass});else{const phone=PHONE(id);if(!phone)return show('Valid 10-digit mobile number डालें।');r=await mobilePasswordLogin(phone,pass);}if(r.error)return show('Invalid mobile or password');const p=await sb.from('profiles').select('role,is_active').eq('id',r.data.user.id).maybeSingle();if(p.error)return show(p.error.message);if(!p.data||p.data.role!==selected)return(await sb.auth.signOut(),show('Selected login role is not assigned to this account.'));if(p.data.is_active===false)return(await sb.auth.signOut(),show('This account has been deactivated by Admin.'));if(typeof window.enter==='function')await window.enter(r.data.user);}catch(x){show(x?.message||'Login failed');}};
+  if(form)form.onsubmit=async e=>{e.preventDefault();const selected=document.querySelector('.tabs button.active')?.dataset.role||'admin';const id=document.getElementById('loginId').value.trim(),pass=document.getElementById('password').value;document.getElementById('err')?.classList.add('hidden');if(pass.length<8)return show('Password कम से कम 8 characters का होना चाहिए।');try{let r;if(selected==='customer'||selected==='admin')r=await sb.auth.signInWithPassword({email:id,password:pass});else{const phone=PHONE(id);if(!phone)return show('Valid 10-digit mobile number डालें।');r=await sb.auth.signInWithPassword({phone,password:pass});}if(r.error)return show('Invalid email/mobile or password');const p=await sb.from('profiles').select('role,is_active').eq('id',r.data.user.id).maybeSingle();if(p.error)return show(p.error.message);if(!p.data||p.data.role!==selected)return(await sb.auth.signOut(),show('Selected login role is not assigned to this account.'));if(p.data.is_active===false)return(await sb.auth.signOut(),show('This account has been deactivated by Admin.'));if(typeof window.enter==='function')await window.enter(r.data.user);}catch(x){show(x?.message||'Login failed');}};
 
   const signupButton=document.getElementById('signupBtn');if(signupButton)signupButton.onclick=()=>open(`<div class="modal-head"><h3>Customer Registration</h3><button class="close" onclick="closeModal()">✕</button></div><div class="form-grid"><div class="field"><label>Name</label><input id="fix_sn" autocomplete="name"></div><div class="field"><label>Phone</label><input id="fix_sp" inputmode="tel"></div><div class="field"><label>Email</label><input id="fix_se" type="email" autocomplete="email"></div><div class="field"><label>Password</label><input id="fix_sw" type="password" autocomplete="new-password"></div><div class="field"><label>Address</label><input id="fix_sa"></div></div><button class="primary full" onclick="window.fixSignup()">Create Account</button>`);
   window.fixSignup=async()=>{const name=document.getElementById('fix_sn').value.trim(),phone=PHONE(document.getElementById('fix_sp').value),email=document.getElementById('fix_se').value.trim(),password=document.getElementById('fix_sw').value,address=document.getElementById('fix_sa').value.trim();if(!name||!email||password.length<8)return show('Name, valid email और कम से कम 8 character password जरूरी है।');const r=await sb.auth.signUp({email,password,options:{data:{name,phone,address}}});if(r.error)return show(r.error.message);close();if(r.data.session&&r.data.user){if(typeof window.enter==='function')await window.enter(r.data.user);}else alert('Customer account बन गया है। Email verification के बाद Customer Login करें।');};
