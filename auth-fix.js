@@ -30,9 +30,16 @@
         open(`<div class="modal-head"><h3>OTP Verification</h3><button class="close" onclick="closeModal()">✕</button></div><div class="field"><label>OTP</label><input id="otp" inputmode="numeric" autocomplete="one-time-code"></div><button class="primary full" onclick="window.verifyWorkerOtp('${phone}')">Verify & Login</button>`);
         return;
       }
-      result = selectedRole === 'customer'
-        ? await sb.auth.signInWithPassword({ email: id, password: pass })
-        : await sb.auth.signInWithPassword({ phone: PHONE(id), password: pass });
+      if (selectedRole === 'customer') {
+        result = await sb.auth.signInWithPassword({ email: id, password: pass });
+      } else {
+        const phone = PHONE(id);
+        result = await sb.auth.signInWithPassword({ phone, password: pass });
+        if (result.error) {
+          // Fallback keeps Admin phone+password UX working even if phone auth provider is disabled.
+          result = await sb.auth.signInWithPassword({ email: `${phone.replace('+91','')}@prakashswamiconstructions.local`, password: pass });
+        }
+      }
       if (result.error) return show(result.error.message);
       if (typeof window.enter === 'function') await window.enter(result.data.user);
     } catch (x) { show(x?.message || 'Login failed'); }
