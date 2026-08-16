@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://prakashswamiconstruction-commits.github.io/prakash-swami-constructions/sitemap.xml
