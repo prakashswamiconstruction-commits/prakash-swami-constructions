@@ -2,16 +2,15 @@
 <html lang="hi">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Prakash Swami Constructions - Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fa; color: #172033; }
     .login { min-height: 100vh; display: grid; place-items: center; background: #0b1220; }
-    .card { width: min(440px, 92%); background: #fff; padding: 28px; border-radius: 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .card { width: min(440px, 92%); background: #fff; padding: 28px; border-radius: 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
     .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 20px 0; }
-    .tabs button { padding: 11px; border: 0; border-radius: 10px; font-weight: 700; cursor: pointer; background: #eee; }
+    .tabs button { padding: 11px; border: 0; border-radius: 10px; font-weight: 700; cursor: pointer; background: #e5e7eb; }
     .tabs .active { background: #0b1220; color: #fff; }
     .field { margin: 12px 0; }
     .field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
@@ -19,7 +18,7 @@
     .primary { width: 100%; padding: 13px; border: 0; border-radius: 10px; background: #0b1220; color: #fff; font-weight: 800; cursor: pointer; margin-top: 10px; font-size: 15px; }
     .primary:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn { padding: 9px 12px; border: 0; border-radius: 9px; cursor: pointer; }
-    .error { margin: 10px 0; padding: 10px; background: #fff1f1; color: #b42318; border-radius: 10px; font-size: 13px; border: 1px solid #fda29b; }
+    .error { margin: 12px 0; padding: 12px; background: #fff1f1; color: #b42318; border-radius: 10px; font-size: 13px; border: 1px solid #fda29b; }
     .hint { font-size: 12px; color: #667085; line-height: 1.6; margin-top: 14px; }
     .hidden { display: none !important; }
     .app { min-height: 100vh; }
@@ -41,24 +40,24 @@
   <div class="card">
     <h2 style="margin-top:0">Prakash Swami Constructions</h2>
     <div class="tabs">
-      <button type="button" class="active" data-role="admin">Admin</button>
-      <button type="button" data-role="customer">Customer</button>
-      <button type="button" data-role="worker">Worker</button>
+      <button type="button" class="active" onclick="switchRole('admin')">Admin</button>
+      <button type="button" onclick="switchRole('customer')">Customer</button>
+      <button type="button" onclick="switchRole('worker')">Worker</button>
     </div>
     
     <div id="error" class="error hidden"></div>
     
-    <form id="form" novalidate>
+    <div>
       <div class="field">
         <label id="idLabel">Admin Email</label>
-        <input id="id" type="email" autocomplete="username" required value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com">
+        <input id="id" type="email" value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com">
       </div>
       <div class="field" id="pw">
         <label>Password</label>
-        <input id="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+        <input id="password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter') handleLogin()">
       </div>
-      <button id="loginButton" class="primary" type="submit">Login</button>
-    </form>
+      <button id="loginButton" class="primary" type="button" onclick="handleLogin()">Login</button>
+    </div>
     
     <div id="signup" class="hidden" style="margin-top:12px">
       <button class="btn" type="button" onclick="signup()">Customer Sign Up</button>
@@ -67,7 +66,7 @@
     <div class="hint" id="hint">
       <b>Admin:</b> Email + Password<br>
       <b>Customer:</b> Email + Password<br>
-      <b>Worker:</b> Admin द्वारा registered mobile number (बिना password)
+      <b>Worker:</b> Admin द्वारा registered mobile number
     </div>
   </div>
 </section>
@@ -75,7 +74,7 @@
 <section id="app" class="app hidden">
   <header class="top">
     <b>Prakash Swami Constructions — <span id="roleText"></span></b>
-    <button class="btn" style="background:#0b1220; color:#fff;" onclick="logout()">Logout</button>
+    <button class="btn" style="background:#0b1220; color:#fff;" type="button" onclick="logout()">Logout</button>
   </header>
   <div class="layout">
     <aside class="side" id="side"></aside>
@@ -89,9 +88,19 @@
 <script>
 const URL = 'https://aamstyeeewncmgqdxpoh.supabase.co';
 const KEY = 'sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
-const db = supabase.createClient(URL, KEY);
 
-let role = 'admin';
+let db = null;
+try {
+  if (window.supabase) {
+    db = window.supabase.createClient(URL, KEY);
+  } else {
+    console.error('Supabase library not loaded');
+  }
+} catch (e) {
+  console.error('Supabase init error:', e);
+}
+
+let currentRole = 'admin';
 const ADMIN_EMAIL = 'satpalswami22742@gmail.com';
 
 const $ = id => document.getElementById(id);
@@ -101,65 +110,50 @@ const err = msg => {
   e.classList.remove('hidden');
 };
 
-// Check if user already logged in
-window.addEventListener('DOMContentLoaded', async () => {
-  try {
-    const { data: { session } } = await db.auth.getSession();
-    if (session?.user) {
-      if (session.user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        showApp('admin', { name: 'Admin', email: ADMIN_EMAIL, role: 'admin' });
-      } else {
-        await enter(session.user);
-      }
-    }
-  } catch (e) {
-    console.error('Session check error:', e);
-  }
-});
-
-// Role Switcher Tabs
-document.querySelectorAll('.tabs button').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    role = b.dataset.role;
-    
-    $('error').classList.add('hidden');
-    const isWorker = (role === 'worker');
-    const isAdmin = (role === 'admin');
-    
-    $('idLabel').textContent = isWorker ? 'Registered Mobile Number' : (isAdmin ? 'Admin Email' : 'Customer Email');
-    $('id').type = isWorker ? 'tel' : 'email';
-    $('id').value = isAdmin ? ADMIN_EMAIL : '';
-    $('id').placeholder = isWorker ? 'Worker mobile number' : (isAdmin ? ADMIN_EMAIL : 'customer@example.com');
-    
-    $('pw').classList.toggle('hidden', isWorker);
-    $('password').required = !isWorker;
-    $('signup').classList.toggle('hidden', role !== 'customer');
-    
-    $('hint').innerHTML = isAdmin 
-      ? '<b>Admin:</b> Email + Password' 
-      : (role === 'customer' ? '<b>Customer:</b> Email + Password' : '<b>Worker:</b> Admin द्वारा registered mobile number');
-  });
-});
-
-// Form Submit Handler
-$('form').addEventListener('submit', async e => {
-  e.preventDefault();
+function switchRole(role) {
+  currentRole = role;
   $('error').classList.add('hidden');
+  
+  const buttons = document.querySelectorAll('.tabs button');
+  buttons.forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === role);
+  });
+  
+  const isWorker = (role === 'worker');
+  const isAdmin = (role === 'admin');
+  
+  $('idLabel').textContent = isWorker ? 'Registered Mobile Number' : (isAdmin ? 'Admin Email' : 'Customer Email');
+  $('id').type = isWorker ? 'tel' : 'email';
+  $('id').value = isAdmin ? ADMIN_EMAIL : '';
+  $('id').placeholder = isWorker ? 'Worker mobile number' : (isAdmin ? ADMIN_EMAIL : 'customer@example.com');
+  
+  $('pw').classList.toggle('hidden', isWorker);
+  $('signup').classList.toggle('hidden', role !== 'customer');
+  
+  $('hint').innerHTML = isAdmin 
+    ? '<b>Admin:</b> Email + Password' 
+    : (role === 'customer' ? '<b>Customer:</b> Email + Password' : '<b>Worker:</b> Admin द्वारा registered mobile number');
+}
+
+async function handleLogin() {
+  $('error').classList.add('hidden');
+  
+  if (!db) {
+    return err('Supabase लोड नहीं हो पाया। कृपया इंटरनेट कनेक्शन या API Key चेक करें।');
+  }
   
   const id = $('id').value.trim();
   const pass = $('password').value;
   
-  if (!id) return err(role === 'worker' ? 'कृपया Mobile Number दर्ज करें।' : 'कृपया Email दर्ज करें।');
-  if (role !== 'worker' && !pass) return err('कृपया Password दर्ज करें।');
+  if (!id) return err(currentRole === 'worker' ? 'कृपया Mobile Number दर्ज करें।' : 'कृपया Email दर्ज करें।');
+  if (currentRole !== 'worker' && !pass) return err('कृपया Password दर्ज करें।');
   
   const button = $('loginButton');
   button.disabled = true;
   button.textContent = 'Login हो रहा है...';
   
   try {
-    if (role === 'worker') {
+    if (currentRole === 'worker') {
       await workerLogin(id);
       return;
     }
@@ -173,15 +167,15 @@ $('form').addEventListener('submit', async e => {
       if (error.message.includes('Invalid login credentials')) {
         return err('गलत Email या Password दर्ज किया गया है।');
       } else if (error.message.includes('Email not confirmed')) {
-        return err('Email कन्फर्म नहीं है। Supabase में जाकर Email confirm करें।');
+        return err('Email कन्फर्म नहीं है। Supabase Dashboard में जाकर Email confirm करें।');
       }
-      return err(error.message);
+      return err('Login Error: ' + error.message);
     }
     
-    const user = data.user;
+    const user = data?.user;
     if (!user) return err('Login session नहीं मिला।');
     
-    if (role === 'admin') {
+    if (currentRole === 'admin') {
       if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
         await db.auth.signOut();
         return err('यह ईमेल एडमिन अकाउंट नहीं है।');
@@ -190,23 +184,22 @@ $('form').addEventListener('submit', async e => {
       return;
     }
     
-    await enter(user);
+    showApp(currentRole, { email: user.email, role: currentRole });
   } catch (ex) {
-    err(ex?.message || 'Login में कोई समस्या आई।');
+    err(ex?.message || 'Login में अप्रत्याशित समस्या हुई।');
   } finally {
     button.disabled = false;
     button.textContent = 'Login';
   }
-});
+}
 
-// Worker Login
 async function workerLogin(phone) {
   const { data, error } = await db.from('workers')
     .select('id,profile_id,name,phone,status')
     .eq('phone', phone)
     .maybeSingle();
     
-  if (error) return err(error.message);
+  if (error) return err('Worker Database Error: ' + error.message);
   if (!data) return err('यह Worker mobile number रजिस्टर्ड नहीं है।');
   if (data.status && data.status !== 'active') return err('Worker account inactive है।');
   
@@ -214,36 +207,14 @@ async function workerLogin(phone) {
   showApp('worker', data);
 }
 
-// Customer Profile Check
-async function enter(user) {
-  const { data, error } = await db.from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
-    
-  if (error) return err(error.message);
-  if (!data) {
-    // अगर प्रोफाइल नहीं मिली तो बेसिक यूजर डेटा के साथ ओपन करें
-    showApp(role, { email: user.email, role: role });
-    return;
-  }
-  
-  if (data.role && data.role !== role) {
-    return err('यह अकाउंट इस रोल (' + role + ') के लिए रजिस्टर्ड नहीं है।');
-  }
-  
-  showApp(role, data);
-}
-
-// Show Dashboard UI
-function showApp(r, profile) {
+function showApp(role, profile) {
   $('login').classList.add('hidden');
   $('app').classList.remove('hidden');
-  $('roleText').textContent = r.toUpperCase();
+  $('roleText').textContent = role.toUpperCase();
   
-  const menus = r === 'admin'
+  const menus = role === 'admin'
     ? ['Overview','Profile','Enquiry','Customers','Projects','Workers','Payments','Attendance','Daily Updates','Contracts','Notifications','Expenses','Payment Settings']
-    : (r === 'customer'
+    : (role === 'customer'
       ? ['Overview','Profile','Enquiry','Projects','Payments','Contracts','Notifications','Contact']
       : ['Profile','Attendance','Payments','Daily Updates']);
       
@@ -253,11 +224,11 @@ function showApp(r, profile) {
 
 function openPage(name) {
   $('title').textContent = name;
-  $('content').innerHTML = '<div class="grid"><div class="box"><b>' + name + '</b><p>इस सेक्शन का डेटा Supabase से यहाँ लोड होगा।</p></div></div>';
+  $('content').innerHTML = '<div class="grid"><div class="box"><b>' + name + '</b><p>इस सेक्शन का डेटा यहाँ लोड होगा।</p></div></div>';
 }
 
 async function logout() {
-  await db.auth.signOut();
+  if (db) await db.auth.signOut();
   sessionStorage.clear();
   location.reload();
 }
@@ -277,8 +248,8 @@ async function signup() {
   });
   
   if (error) return err(error.message);
-  alert(data.session ? 'अकाउंट बन गया और आप लॉगिन हो गए हैं।' : 'अकाउंट बन गया है। यदि कन्फर्मेशन ईमेल आए तो वेरिफाई करें।');
+  alert(data.session ? 'अकाउंट बन गया और आप लॉगिन हो गए हैं।' : 'अकाउंट बन गया है।');
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
