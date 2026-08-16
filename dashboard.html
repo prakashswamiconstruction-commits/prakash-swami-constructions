@@ -1,1 +1,284 @@
-<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><title>Prakash Swami Constructions - Dashboard</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>body{margin:0;font-family:Arial,sans-serif;background:#f4f6fa;color:#172033}.login{min-height:100vh;display:grid;place-items:center;background:#0b1220}.card{width:min(440px,92%);background:#fff;padding:28px;border-radius:22px}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:20px 0}.tabs button{padding:11px;border:0;border-radius:10px;font-weight:700}.tabs .active{background:#0b1220;color:#fff}.field{margin:12px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.field input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:10px}.primary{width:100%;padding:13px;border:0;border-radius:10px;background:#0b1220;color:#fff;font-weight:800}.btn{padding:9px 12px;border:0;border-radius:9px}.error{margin:10px 0;padding:10px;background:#fff1f1;color:#b42318;border-radius:10px;font-size:13px}.hint{font-size:12px;color:#667085;line-height:1.6;margin-top:12px}.hidden{display:none!important}.app{min-height:100vh}.top{height:68px;background:#fff;padding:0 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ddd}.layout{display:grid;grid-template-columns:240px 1fr}.side{min-height:calc(100vh - 68px);background:#0b1220;padding:15px}.side button{width:100%;margin:3px 0;padding:11px;text-align:left;border:0;background:transparent;color:#fff;border-radius:9px}.main{padding:25px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.box{background:#fff;padding:18px;border-radius:16px;border:1px solid #e6eaf0}@media(max-width:800px){.layout{grid-template-columns:1fr}.side{min-height:auto}.grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.grid{grid-template-columns:1fr}}</style></head><body><section id="login" class="login"><div class="card"><h2>Prakash Swami Constructions</h2><div class="tabs"><button class="active" data-role="admin">Admin</button><button data-role="customer">Customer</button><button data-role="worker">Worker</button></div><div id="error" class="error hidden"></div><form id="form" novalidate><div class="field"><label id="idLabel">Admin Email</label><input id="id" type="email" autocomplete="username" required placeholder="satpalswami22742@gmail.com"></div><div class="field" id="pw"><label>Password</label><input id="password" type="password" autocomplete="current-password" required></div><button id="loginButton" class="primary" type="submit">Login</button></form><div id="signup" style="margin-top:10px"><button class="btn" type="button" onclick="signup()">Customer Sign Up</button></div><div class="hint" id="hint">Admin: Email + Password<br>Customer: Email + Password<br>Worker: Admin द्वारा registered mobile number, बिना OTP और बिना password</div></div></section><section id="app" class="app hidden"><header class="top"><b>Prakash Swami Constructions — <span id="roleText"></span></b><button class="btn" onclick="logout()">Logout</button></header><div class="layout"><aside class="side" id="side"></aside><main class="main"><h1 id="title">Overview</h1><div id="content"></div></main></div></section><script>const URL='https://aamstyeeewncmgqdxpoh.supabase.co',KEY='sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe',db=supabase.createClient(URL,KEY);let role='admin';const $=id=>document.getElementById(id),err=x=>{const e=$('error');e.textContent=x;e.classList.remove('hidden')};document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');role=b.dataset.role;const isWorker=role==='worker';$('idLabel').textContent=isWorker?'Registered Mobile Number':role==='admin'?'Admin Email':'Customer Email';$('id').type=isWorker?'tel':'email';$('id').placeholder=isWorker?'Worker mobile number':role==='admin'?'satpalswami22742@gmail.com':'customer@example.com';$('pw').classList.toggle('hidden',isWorker);$('password').required=!isWorker;$('signup').classList.toggle('hidden',role!=='customer');$('hint').innerHTML=role==='admin'?'Admin: Email + Password':role==='customer'?'Customer: Email + Password':'Worker: Admin द्वारा registered mobile number, बिना OTP और बिना password'}));$('form').addEventListener('submit',async e=>{e.preventDefault();e.stopPropagation();$('error').classList.add('hidden');const id=$('id').value.trim(),pass=$('password').value;if(!id)return err(role==='worker'?'Worker mobile number दर्ज करें।':'Email दर्ज करें।');if(role!=='worker'&&!pass)return err('Password दर्ज करें।');const button=$('loginButton');button.disabled=true;button.textContent='Login हो रहा है...';try{if(role==='worker'){await workerLogin(id);return}const r=await db.auth.signInWithPassword({email:id,password:pass});if(r.error)return err(r.error.message);const u=r.data.user;if(!u)return err('Login session नहीं मिला।');if(role==='admin'&&u.email.toLowerCase()!=='satpalswami22742@gmail.com')return err('यह Admin email नहीं है।');await enter(u)}catch(ex){err(ex?.message||'Login में समस्या हुई।')}finally{button.disabled=false;button.textContent='Login'}});async function workerLogin(phone){const r=await db.from('workers').select('id,profile_id,name,phone,status').eq('phone',phone).maybeSingle();if(r.error)return err(r.error.message);if(!r.data)return err('Registered worker mobile number नहीं मिला।');if(r.data.status&&r.data.status!=='active')return err('Worker account inactive है।');sessionStorage.setItem('worker_id',r.data.id);showApp('worker',r.data)}async function enter(u){const r=await db.from('profiles').select('*').eq('id',u.id).maybeSingle();if(r.error)return err(r.error.message);if(!r.data)return err('Profile नहीं मिला।');if(r.data.role!==role)return err('यह account selected role के लिए registered नहीं है।');showApp(role,r.data)}function showApp(r,p){$('login').classList.add('hidden');$('app').classList.remove('hidden');$('roleText').textContent=r;const menus=r==='admin'?['Overview','Profile','Enquiry','Customers','Projects','Workers','Payments','Attendance','Daily Updates','Contracts','Notifications','Expenses','Payment Settings']:r==='customer'?['Overview','Profile','Enquiry','Projects','Payments','Contracts','Notifications','Contact']:['Profile','Attendance','Payments','Daily Updates'];$('side').innerHTML=menus.map(x=>'<button onclick="openPage(\''+x+'\')">'+x+'</button>').join('');openPage(menus[0])}function openPage(x){$('title').textContent=x;$('content').innerHTML='<div class="grid"><div class="box"><b>'+x+'</b><p>इस section का data Supabase से यहाँ दिखेगा।</p></div></div>'}async function logout(){await db.auth.signOut();sessionStorage.clear();location.reload()}async function signup(){const name=prompt('Customer Name');if(!name)return;const email=prompt('Customer Email');if(!email)return;const password=prompt('Password (कम से कम 8 characters)');if(!password||password.length<8)return err('Password कम से कम 8 characters का होना चाहिए।');const phone=prompt('Phone Number');const address=prompt('Address');const r=await db.auth.signUp({email,password,options:{data:{name,phone,address,role:'customer'}}});if(r.error)return err(r.error.message);alert(r.data.session?'Customer account बन गया।':'Account बन गया। Email confirmation required हो सकती है।')}</script><script src="auth-fix.js"><\/script></body></html>
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Prakash Swami Constructions - Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fa; color: #172033; }
+    .login { min-height: 100vh; display: grid; place-items: center; background: #0b1220; }
+    .card { width: min(440px, 92%); background: #fff; padding: 28px; border-radius: 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 20px 0; }
+    .tabs button { padding: 11px; border: 0; border-radius: 10px; font-weight: 700; cursor: pointer; background: #eee; }
+    .tabs .active { background: #0b1220; color: #fff; }
+    .field { margin: 12px 0; }
+    .field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+    .field input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
+    .primary { width: 100%; padding: 13px; border: 0; border-radius: 10px; background: #0b1220; color: #fff; font-weight: 800; cursor: pointer; margin-top: 10px; font-size: 15px; }
+    .primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn { padding: 9px 12px; border: 0; border-radius: 9px; cursor: pointer; }
+    .error { margin: 10px 0; padding: 10px; background: #fff1f1; color: #b42318; border-radius: 10px; font-size: 13px; border: 1px solid #fda29b; }
+    .hint { font-size: 12px; color: #667085; line-height: 1.6; margin-top: 14px; }
+    .hidden { display: none !important; }
+    .app { min-height: 100vh; }
+    .top { height: 68px; background: #fff; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; }
+    .layout { display: grid; grid-template-columns: 240px 1fr; }
+    .side { min-height: calc(100vh - 68px); background: #0b1220; padding: 15px; }
+    .side button { width: 100%; margin: 4px 0; padding: 11px; text-align: left; border: 0; background: transparent; color: #fff; border-radius: 9px; cursor: pointer; }
+    .side button:hover { background: rgba(255,255,255,0.1); }
+    .main { padding: 25px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .box { background: #fff; padding: 18px; border-radius: 16px; border: 1px solid #e6eaf0; }
+    @media(max-width:800px){ .layout { grid-template-columns: 1fr; } .side { min-height: auto; } .grid { grid-template-columns: 1fr 1fr; } }
+    @media(max-width:520px){ .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<section id="login" class="login">
+  <div class="card">
+    <h2 style="margin-top:0">Prakash Swami Constructions</h2>
+    <div class="tabs">
+      <button type="button" class="active" data-role="admin">Admin</button>
+      <button type="button" data-role="customer">Customer</button>
+      <button type="button" data-role="worker">Worker</button>
+    </div>
+    
+    <div id="error" class="error hidden"></div>
+    
+    <form id="form" novalidate>
+      <div class="field">
+        <label id="idLabel">Admin Email</label>
+        <input id="id" type="email" autocomplete="username" required value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com">
+      </div>
+      <div class="field" id="pw">
+        <label>Password</label>
+        <input id="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+      </div>
+      <button id="loginButton" class="primary" type="submit">Login</button>
+    </form>
+    
+    <div id="signup" class="hidden" style="margin-top:12px">
+      <button class="btn" type="button" onclick="signup()">Customer Sign Up</button>
+    </div>
+    
+    <div class="hint" id="hint">
+      <b>Admin:</b> Email + Password<br>
+      <b>Customer:</b> Email + Password<br>
+      <b>Worker:</b> Admin द्वारा registered mobile number (बिना password)
+    </div>
+  </div>
+</section>
+
+<section id="app" class="app hidden">
+  <header class="top">
+    <b>Prakash Swami Constructions — <span id="roleText"></span></b>
+    <button class="btn" style="background:#0b1220; color:#fff;" onclick="logout()">Logout</button>
+  </header>
+  <div class="layout">
+    <aside class="side" id="side"></aside>
+    <main class="main">
+      <h1 id="title">Overview</h1>
+      <div id="content"></div>
+    </main>
+  </div>
+</section>
+
+<script>
+const URL = 'https://aamstyeeewncmgqdxpoh.supabase.co';
+const KEY = 'sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
+const db = supabase.createClient(URL, KEY);
+
+let role = 'admin';
+const ADMIN_EMAIL = 'satpalswami22742@gmail.com';
+
+const $ = id => document.getElementById(id);
+const err = msg => {
+  const e = $('error');
+  e.textContent = msg;
+  e.classList.remove('hidden');
+};
+
+// Check if user already logged in
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user) {
+      if (session.user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        showApp('admin', { name: 'Admin', email: ADMIN_EMAIL, role: 'admin' });
+      } else {
+        await enter(session.user);
+      }
+    }
+  } catch (e) {
+    console.error('Session check error:', e);
+  }
+});
+
+// Role Switcher Tabs
+document.querySelectorAll('.tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    role = b.dataset.role;
+    
+    $('error').classList.add('hidden');
+    const isWorker = (role === 'worker');
+    const isAdmin = (role === 'admin');
+    
+    $('idLabel').textContent = isWorker ? 'Registered Mobile Number' : (isAdmin ? 'Admin Email' : 'Customer Email');
+    $('id').type = isWorker ? 'tel' : 'email';
+    $('id').value = isAdmin ? ADMIN_EMAIL : '';
+    $('id').placeholder = isWorker ? 'Worker mobile number' : (isAdmin ? ADMIN_EMAIL : 'customer@example.com');
+    
+    $('pw').classList.toggle('hidden', isWorker);
+    $('password').required = !isWorker;
+    $('signup').classList.toggle('hidden', role !== 'customer');
+    
+    $('hint').innerHTML = isAdmin 
+      ? '<b>Admin:</b> Email + Password' 
+      : (role === 'customer' ? '<b>Customer:</b> Email + Password' : '<b>Worker:</b> Admin द्वारा registered mobile number');
+  });
+});
+
+// Form Submit Handler
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('error').classList.add('hidden');
+  
+  const id = $('id').value.trim();
+  const pass = $('password').value;
+  
+  if (!id) return err(role === 'worker' ? 'कृपया Mobile Number दर्ज करें।' : 'कृपया Email दर्ज करें।');
+  if (role !== 'worker' && !pass) return err('कृपया Password दर्ज करें।');
+  
+  const button = $('loginButton');
+  button.disabled = true;
+  button.textContent = 'Login हो रहा है...';
+  
+  try {
+    if (role === 'worker') {
+      await workerLogin(id);
+      return;
+    }
+    
+    const { data, error } = await db.auth.signInWithPassword({
+      email: id,
+      password: pass
+    });
+    
+    if (error) {
+      if (error.message.includes('Invalid login credentials')) {
+        return err('गलत Email या Password दर्ज किया गया है।');
+      } else if (error.message.includes('Email not confirmed')) {
+        return err('Email कन्फर्म नहीं है। Supabase में जाकर Email confirm करें।');
+      }
+      return err(error.message);
+    }
+    
+    const user = data.user;
+    if (!user) return err('Login session नहीं मिला।');
+    
+    if (role === 'admin') {
+      if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+        await db.auth.signOut();
+        return err('यह ईमेल एडमिन अकाउंट नहीं है।');
+      }
+      showApp('admin', { name: 'Admin', email: user.email, role: 'admin' });
+      return;
+    }
+    
+    await enter(user);
+  } catch (ex) {
+    err(ex?.message || 'Login में कोई समस्या आई।');
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Login';
+  }
+});
+
+// Worker Login
+async function workerLogin(phone) {
+  const { data, error } = await db.from('workers')
+    .select('id,profile_id,name,phone,status')
+    .eq('phone', phone)
+    .maybeSingle();
+    
+  if (error) return err(error.message);
+  if (!data) return err('यह Worker mobile number रजिस्टर्ड नहीं है।');
+  if (data.status && data.status !== 'active') return err('Worker account inactive है।');
+  
+  sessionStorage.setItem('worker_id', data.id);
+  showApp('worker', data);
+}
+
+// Customer Profile Check
+async function enter(user) {
+  const { data, error } = await db.from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+    
+  if (error) return err(error.message);
+  if (!data) {
+    // अगर प्रोफाइल नहीं मिली तो बेसिक यूजर डेटा के साथ ओपन करें
+    showApp(role, { email: user.email, role: role });
+    return;
+  }
+  
+  if (data.role && data.role !== role) {
+    return err('यह अकाउंट इस रोल (' + role + ') के लिए रजिस्टर्ड नहीं है।');
+  }
+  
+  showApp(role, data);
+}
+
+// Show Dashboard UI
+function showApp(r, profile) {
+  $('login').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  $('roleText').textContent = r.toUpperCase();
+  
+  const menus = r === 'admin'
+    ? ['Overview','Profile','Enquiry','Customers','Projects','Workers','Payments','Attendance','Daily Updates','Contracts','Notifications','Expenses','Payment Settings']
+    : (r === 'customer'
+      ? ['Overview','Profile','Enquiry','Projects','Payments','Contracts','Notifications','Contact']
+      : ['Profile','Attendance','Payments','Daily Updates']);
+      
+  $('side').innerHTML = menus.map(x => '<button type="button" onclick="openPage(\'' + x + '\')">' + x + '</button>').join('');
+  openPage(menus[0]);
+}
+
+function openPage(name) {
+  $('title').textContent = name;
+  $('content').innerHTML = '<div class="grid"><div class="box"><b>' + name + '</b><p>इस सेक्शन का डेटा Supabase से यहाँ लोड होगा।</p></div></div>';
+}
+
+async function logout() {
+  await db.auth.signOut();
+  sessionStorage.clear();
+  location.reload();
+}
+
+async function signup() {
+  const name = prompt('Customer Name:');
+  if (!name) return;
+  const email = prompt('Customer Email:');
+  if (!email) return;
+  const password = prompt('Password (कम से कम 6 अक्षर):');
+  if (!password || password.length < 6) return err('Password कम से कम 6 अक्षरों का होना चाहिए।');
+  
+  const { data, error } = await db.auth.signUp({
+    email,
+    password,
+    options: { data: { name, role: 'customer' } }
+  });
+  
+  if (error) return err(error.message);
+  alert(data.session ? 'अकाउंट बन गया और आप लॉगिन हो गए हैं।' : 'अकाउंट बन गया है। यदि कन्फर्मेशन ईमेल आए तो वेरिफाई करें।');
+}
+</script>
+</body>
+</html>
