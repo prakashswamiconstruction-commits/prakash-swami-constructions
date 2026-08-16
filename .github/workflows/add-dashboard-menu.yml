@@ -1,0 +1,32 @@
+name: Add dashboard menu
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  add-menu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add three-dot dashboard menu
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='id="dashboard-menu"'
+          if marker not in s:
+              old='<button class="lang" id="lang" type="button">EN</button>'
+              new='<div class="dash-menu" id="dashboard-menu"><button class="lang" id="dash-open" type="button">⋮</button><div class="dash-pop"><a href="dashboard.html">👨‍💼 Admin Login</a><a href="dashboard.html">👤 Customer Login</a><a href="dashboard.html">👷 Worker Login</a></div></div><button class="lang" id="lang" type="button">EN</button>'
+              s=s.replace(old,new,1)
+              css=' .dash-menu{position:relative}.dash-menu>#dash-open{font-size:24px;line-height:1;padding:4px 10px}.dash-pop{display:none;position:absolute;right:0;top:44px;min-width:210px;background:#fff;color:#111827;border:1px solid #ddd;border-radius:12px;box-shadow:0 15px 35px #0003;overflow:hidden}.dash-menu:hover .dash-pop,.dash-menu:focus-within .dash-pop{display:block}.dash-pop a{display:block;padding:11px 14px;border-bottom:1px solid #eee;font-weight:700}.dash-pop a:last-child{border:0}.dash-pop a:hover{background:#f6f1e7;color:#8a6100}'
+              s=s.replace('</style></head>',''+css+'</style></head>',1)
+              js="document.getElementById('dash-open').addEventListener('click',function(e){e.stopPropagation();var x=document.querySelector('.dash-pop');x.style.display=x.style.display==='block'?'none':'block'});"
+              s=s.replace('</script></body></html>',js+'</script></body></html>',1)
+              p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || (git commit -m 'Add three-dot dashboard login menu' && git push)
