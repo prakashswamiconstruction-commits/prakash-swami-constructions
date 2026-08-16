@@ -1,87 +1,48 @@
 (() => {
-  const SUPABASE_URL = 'https://aamstyeeewncmgqdxpoh.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const PHONE = v => { const d=String(v||'').replace(/\D/g,''); if(d.startsWith('91')&&d.length===12)return '+'+d; if(d.length===10)return '+91'+d; return ''; };
-  const show = msg => { if(typeof window.err==='function') window.err(msg); else alert(msg); };
-  const open = html => { if(typeof window.openModal==='function') window.openModal(html); };
-  const close = () => { if(typeof window.closeModal==='function') window.closeModal(); };
+  const SUPABASE_URL='https://aamstyeeewncmgqdxpoh.supabase.co';
+  const SUPABASE_KEY='sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
+  const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  const PHONE=v=>{const d=String(v||'').replace(/\D/g,'');if(d.startsWith('91')&&d.length===12)return '+'+d;if(d.length===10)return '+91'+d;return '';};
+  const show=msg=>{if(typeof window.err==='function')window.err(msg);else alert(msg);};
+  const open=html=>{if(typeof window.openModal==='function')window.openModal(html);};
+  const close=()=>{if(typeof window.closeModal==='function')window.closeModal();};
 
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
-    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
     const r=b.dataset.role;
-    const title=document.getElementById('loginTitle'), label=document.getElementById('idLabel'), id=document.getElementById('loginId');
-    if(title) title.textContent=(r==='admin'?'Admin':r==='customer'?'Customer':'Worker')+' Login';
-    if(label) label.textContent=r==='customer'?'Email':'Mobile Number';
-    if(id) id.placeholder=r==='customer'?'customer@email.com':'9785438345';
-    const pass=document.getElementById('passWrap'), pw=document.getElementById('password');
-    if(pass) pass.style.display='block'; if(pw) pw.required=true;
-    const su=document.getElementById('signupBtn'), fp=document.getElementById('forgotBtn');
-    if(su) su.style.display=r==='customer'?'inline-block':'none'; if(fp) fp.style.display=r==='customer'?'inline-block':'none';
-    const hint=document.getElementById('loginHint'); if(hint) hint.textContent=r==='admin'?'Admin: registered mobile + password.':r==='customer'?'Customer: email + password.':'Worker: Admin-registered mobile + password.';
+    const title=document.getElementById('loginTitle'),label=document.getElementById('idLabel'),id=document.getElementById('loginId');
+    if(title)title.textContent=(r==='admin'?'Admin':r==='customer'?'Customer':'Worker')+' Login';
+    if(label)label.textContent=r==='customer'?'Email':'Mobile Number';
+    if(id)id.placeholder=r==='customer'?'customer@email.com':'9785438345';
+    const pass=document.getElementById('passWrap'),pw=document.getElementById('password');if(pass)pass.style.display='block';if(pw)pw.required=true;
+    const su=document.getElementById('signupBtn'),fp=document.getElementById('forgotBtn');if(su)su.style.display=r==='customer'?'inline-block':'none';if(fp)fp.style.display=r==='customer'?'inline-block':'none';
+    const hint=document.getElementById('loginHint');if(hint)hint.textContent=r==='admin'?'Admin: registered mobile + password.':r==='customer'?'Customer: email + password.':'Worker: Admin-registered mobile + password.';
   });
 
   const form=document.getElementById('loginForm');
-  if(form) form.onsubmit=async e=>{
-    e.preventDefault();
-    const selected=document.querySelector('.tabs button.active')?.dataset.role||'admin';
-    const id=document.getElementById('loginId').value.trim(), pass=document.getElementById('password').value;
-    document.getElementById('err')?.classList.add('hidden');
+  if(form)form.onsubmit=async e=>{
+    e.preventDefault();const selected=document.querySelector('.tabs button.active')?.dataset.role||'admin';const id=document.getElementById('loginId').value.trim(),pass=document.getElementById('password').value;document.getElementById('err')?.classList.add('hidden');
     if(pass.length<8)return show('Password कम से कम 8 characters का होना चाहिए।');
-    try{
-      let r;
-      if(selected==='customer') r=await sb.auth.signInWithPassword({email:id,password:pass});
-      else { const phone=PHONE(id); if(!phone)return show('Valid 10-digit mobile number डालें।'); r=await sb.auth.signInWithPassword({phone,password:pass}); }
-      if(r.error)return show(r.error.message);
-      const p=await sb.from('profiles').select('role,is_active').eq('id',r.data.user.id).maybeSingle();
-      if(p.error)return show(p.error.message);
-      if(!p.data || p.data.role!==selected)return (await sb.auth.signOut(),show('Selected login role is not assigned to this account.'));
-      if(p.data.is_active===false)return (await sb.auth.signOut(),show('This account has been deactivated by Admin.'));
-      if(typeof window.enter==='function')await window.enter(r.data.user);
+    try{let r;if(selected==='customer')r=await sb.auth.signInWithPassword({email:id,password:pass});else{const phone=PHONE(id);if(!phone)return show('Valid 10-digit mobile number डालें।');r=await sb.auth.signInWithPassword({phone,password:pass});}if(r.error)return show(r.error.message);
+      const p=await sb.from('profiles').select('role,is_active').eq('id',r.data.user.id).maybeSingle();if(p.error)return show(p.error.message);if(!p.data||p.data.role!==selected)return(await sb.auth.signOut(),show('Selected login role is not assigned to this account.'));if(p.data.is_active===false)return(await sb.auth.signOut(),show('This account has been deactivated by Admin.'));if(typeof window.enter==='function')await window.enter(r.data.user);
     }catch(x){show(x?.message||'Login failed');}
   };
 
   const signupButton=document.getElementById('signupBtn');
-  if(signupButton) signupButton.onclick=()=>open(`<div class="modal-head"><h3>Customer Registration</h3><button class="close" onclick="closeModal()">✕</button></div><div class="form-grid"><div class="field"><label>Name</label><input id="fix_sn" autocomplete="name"></div><div class="field"><label>Phone</label><input id="fix_sp" inputmode="tel"></div><div class="field"><label>Email</label><input id="fix_se" type="email" autocomplete="email"></div><div class="field"><label>Password</label><input id="fix_sw" type="password" autocomplete="new-password"></div><div class="field"><label>Address</label><input id="fix_sa"></div></div><button class="primary full" onclick="window.fixSignup()">Create Account</button>`);
-  window.fixSignup=async()=>{
-    const name=document.getElementById('fix_sn').value.trim(), phone=PHONE(document.getElementById('fix_sp').value), email=document.getElementById('fix_se').value.trim(), password=document.getElementById('fix_sw').value, address=document.getElementById('fix_sa').value.trim();
-    if(!name||!email||password.length<8)return show('Name, valid email और कम से कम 8 character password जरूरी है।');
-    const r=await sb.auth.signUp({email,password,options:{data:{name,phone,address}}}); if(r.error)return show(r.error.message); close();
-    if(r.data.session&&r.data.user){if(typeof window.enter==='function')await window.enter(r.data.user);}else alert('Customer account बन गया है। Email verification के बाद Customer Login करें।');
-  };
+  if(signupButton)signupButton.onclick=()=>open(`<div class="modal-head"><h3>Customer Registration</h3><button class="close" onclick="closeModal()">✕</button></div><div class="form-grid"><div class="field"><label>Name</label><input id="fix_sn" autocomplete="name"></div><div class="field"><label>Phone</label><input id="fix_sp" inputmode="tel"></div><div class="field"><label>Email</label><input id="fix_se" type="email" autocomplete="email"></div><div class="field"><label>Password</label><input id="fix_sw" type="password" autocomplete="new-password"></div><div class="field"><label>Address</label><input id="fix_sa"></div></div><button class="primary full" onclick="window.fixSignup()">Create Account</button>`);
+  window.fixSignup=async()=>{const name=document.getElementById('fix_sn').value.trim(),phone=PHONE(document.getElementById('fix_sp').value),email=document.getElementById('fix_se').value.trim(),password=document.getElementById('fix_sw').value,address=document.getElementById('fix_sa').value.trim();if(!name||!email||password.length<8)return show('Name, valid email और कम से कम 8 character password जरूरी है।');const r=await sb.auth.signUp({email,password,options:{data:{name,phone,address}}});if(r.error)return show(r.error.message);close();if(r.data.session&&r.data.user){if(typeof window.enter==='function')await window.enter(r.data.user);}else alert('Customer account बन गया है। Email verification के बाद Customer Login करें।');};
 
   const originalEnter=window.enter;
-  if(typeof originalEnter==='function') window.enter=async user=>{
-    const p=await sb.from('profiles').select('role,is_active').eq('id',user.id).maybeSingle();
-    const selected=document.querySelector('.tabs button.active')?.dataset.role||window.role||'admin';
-    if(p.error)return show(p.error.message);
-    if(!p.data||p.data.role!==selected)return (await sb.auth.signOut(),show('Account role mismatch. Login using the correct tab.'));
-    if(p.data.is_active===false)return (await sb.auth.signOut(),show('This account has been deactivated by Admin.'));
-    return originalEnter(user);
-  };
+  if(typeof originalEnter==='function')window.enter=async user=>{const p=await sb.from('profiles').select('role,is_active').eq('id',user.id).maybeSingle();const selected=document.querySelector('.tabs button.active')?.dataset.role||'admin';if(p.error)return show(p.error.message);if(!p.data||p.data.role!==selected)return(await sb.auth.signOut(),show('Account role mismatch. Login using the correct tab.'));if(p.data.is_active===false)return(await sb.auth.signOut(),show('This account has been deactivated by Admin.'));return originalEnter(user);};
 
   const workerModal=()=>open(`<div class="modal-head"><h3>Register Worker</h3><button class="close" onclick="closeModal()">✕</button></div><div class="form-grid"><div class="field"><label>Name</label><input id="wf_name"></div><div class="field"><label>Mobile</label><input id="wf_phone" inputmode="tel" placeholder="10 digit mobile"></div><div class="field"><label>Password</label><input id="wf_pass" type="password" placeholder="Minimum 8 characters"></div><div class="field"><label>Daily Wage</label><input id="wf_wage" type="number" min="0"></div><div class="field"><label>Address</label><input id="wf_addr"></div></div><button class="primary full" onclick="window.createWorkerAccount()">Create Worker Account</button>`);
-  window.createWorkerAccount=async()=>{
-    const body={action:'create',name:document.getElementById('wf_name').value.trim(),phone:document.getElementById('wf_phone').value.trim(),password:document.getElementById('wf_pass').value,daily_wage:Number(document.getElementById('wf_wage').value||0),address:document.getElementById('wf_addr').value.trim()};
-    const r=await sb.functions.invoke('manage-worker',{body}); if(r.error)return show(r.error.message); if(r.data?.error)return show(r.data.error); close(); if(typeof window.toast==='function')toast('Worker account created'); if(typeof window.go==='function')go('workers');
-  };
-  window.editWorker=async id=>{
-    const r=await sb.from('profiles').select('*').eq('id',id).eq('role','worker').single(); if(r.error)return show(r.error.message); const x=r.data;
-    open(`<div class="modal-head"><h3>Edit Worker</h3><button class="close" onclick="closeModal()">✕</button></div><div class="form-grid"><div class="field"><label>Name</label><input id="ew_name" value="${String(x.name||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>Mobile</label><input id="ew_phone" value="${String(x.phone||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>New Password (optional)</label><input id="ew_pass" type="password"></div><div class="field"><label>Daily Wage</label><input id="ew_wage" type="number" value="${x.daily_wage||0}"></div><div class="field"><label>Address</label><input id="ew_addr" value="${String(x.address||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>Status</label><select id="ew_active"><option value="true" ${x.is_active!==false?'selected':''}>Active</option><option value="false" ${x.is_active===false?'selected':''}>Deactivated</option></select></div></div><button class="primary full" onclick="window.saveWorker('${id}')">Save Changes</button>`);
-  };
+  window.createWorkerAccount=async()=>{const body={action:'create',name:document.getElementById('wf_name').value.trim(),phone:document.getElementById('wf_phone').value.trim(),password:document.getElementById('wf_pass').value,daily_wage:Number(document.getElementById('wf_wage').value||0),address:document.getElementById('wf_addr').value.trim()};const r=await sb.functions.invoke('manage-worker',{body});if(r.error)return show(r.error.message);if(r.data?.error)return show(r.data.error);close();toast('Worker account created');go('workers');};
+  window.editWorker=async id=>{const r=await sb.from('profiles').select('*').eq('id',id).eq('role','worker').single();if(r.error)return show(r.error.message);const x=r.data;open(`<div class="modal-head"><h3>Edit Worker</h3><button class="close" onclick="closeModal()">✕</button></div><div class="form-grid"><div class="field"><label>Name</label><input id="ew_name" value="${String(x.name||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>Mobile</label><input id="ew_phone" value="${String(x.phone||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>New Password (optional)</label><input id="ew_pass" type="password"></div><div class="field"><label>Daily Wage</label><input id="ew_wage" type="number" value="${x.daily_wage||0}"></div><div class="field"><label>Address</label><input id="ew_addr" value="${String(x.address||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>Status</label><select id="ew_active"><option value="true" ${x.is_active!==false?'selected':''}>Active</option><option value="false" ${x.is_active===false?'selected':''}>Deactivated</option></select></div></div><button class="primary full" onclick="window.saveWorker('${id}')">Save Changes</button>`);};
   window.saveWorker=async id=>{const body={action:'update',user_id:id,name:document.getElementById('ew_name').value.trim(),phone:document.getElementById('ew_phone').value.trim(),password:document.getElementById('ew_pass').value,daily_wage:Number(document.getElementById('ew_wage').value||0),address:document.getElementById('ew_addr').value.trim(),is_active:document.getElementById('ew_active').value==='true'};const r=await sb.functions.invoke('manage-worker',{body});if(r.error)return show(r.error.message);if(r.data?.error)return show(r.data.error);close();toast('Worker updated');go('workers');};
   window.removeWorker=async id=>{if(!confirm('Worker account deactivate करना है?'))return;const r=await sb.functions.invoke('manage-worker',{body:{action:'delete',user_id:id}});if(r.error)return show(r.error.message);if(r.data?.error)return show(r.data.error);toast('Worker account deactivated');go('workers');};
 
   const originalGo=window.go;
-  if(typeof originalGo==='function') window.go=async p=>{const out=await originalGo(p); if(p==='workers'&&window.role==='admin'){const top=document.getElementById('topAction');if(top)top.innerHTML='<button class="btn dark" onclick="window.openWorkerRegister()">+ Register Worker</button>'; document.querySelectorAll('[data-worker-edit]').forEach(b=>b.onclick=()=>editWorker(b.dataset.workerEdit));document.querySelectorAll('[data-worker-delete]').forEach(b=>b.onclick=()=>removeWorker(b.dataset.workerDelete));} return out;};
+  if(typeof originalGo==='function')window.go=async p=>{const out=await originalGo(p);if(p==='workers'){const top=document.getElementById('topAction');if(top)top.innerHTML='<button class="btn dark" onclick="window.openWorkerRegister()">+ Register Worker</button>';document.querySelectorAll('[data-worker-edit]').forEach(b=>b.onclick=()=>editWorker(b.dataset.workerEdit));document.querySelectorAll('[data-worker-delete]').forEach(b=>b.onclick=()=>removeWorker(b.dataset.workerDelete));}return out;};
   window.openWorkerRegister=workerModal;
-
-  // Patch the Admin worker table after it renders so account operations are routed through the secure Edge Function.
-  const observer=new MutationObserver(()=>{
-    if(window.role==='admin' && document.getElementById('pageTitle')?.textContent==='Workers'){
-      document.querySelectorAll('.table tbody tr').forEach(tr=>{const edit=tr.querySelector('button[onclick*="editPerson"]');if(edit){const m=edit.getAttribute('onclick')?.match(/editPerson\('([^']+)','worker'\)/);if(m){edit.removeAttribute('onclick');edit.dataset.workerEdit=m[1];edit.textContent='✏️ Edit';}}const del=tr.querySelector('button[onclick*="deletePerson"]');if(del){const m=del.getAttribute('onclick')?.match(/deletePerson\('([^']+)'\)/);if(m){del.removeAttribute('onclick');del.dataset.workerDelete=m[1];del.textContent='🗑️ Deactivate';}}});
-      document.querySelectorAll('[data-worker-edit]').forEach(b=>b.onclick=()=>editWorker(b.dataset.workerEdit));document.querySelectorAll('[data-worker-delete]').forEach(b=>b.onclick=()=>removeWorker(b.dataset.workerDelete));
-    }
-  });
-  observer.observe(document.body,{childList:true,subtree:true});
+  const observer=new MutationObserver(()=>{if(document.getElementById('pageTitle')?.textContent==='Workers'){document.querySelectorAll('.table tbody tr').forEach(tr=>{const edit=tr.querySelector('button[onclick*="editPerson"]');if(edit){const m=edit.getAttribute('onclick')?.match(/editPerson\('([^']+)','worker'\)/);if(m){edit.removeAttribute('onclick');edit.dataset.workerEdit=m[1];edit.textContent='✏️ Edit';}}const del=tr.querySelector('button[onclick*="deletePerson"]');if(del){const m=del.getAttribute('onclick')?.match(/deletePerson\('([^']+)'\)/);if(m){del.removeAttribute('onclick');del.dataset.workerDelete=m[1];del.textContent='🗑️ Deactivate';}}});document.querySelectorAll('[data-worker-edit]').forEach(b=>b.onclick=()=>editWorker(b.dataset.workerEdit));document.querySelectorAll('[data-worker-delete]').forEach(b=>b.onclick=()=>removeWorker(b.dataset.workerDelete));}});observer.observe(document.body,{childList:true,subtree:true});
 })();
