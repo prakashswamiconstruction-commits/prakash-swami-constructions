@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="hi">
 <head>
@@ -224,6 +225,7 @@ const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE
 const ADMIN_EMAIL = 'satpalswami22742@gmail.com';
 let currentRole = 'admin';
 let currentUser = null;
+let activeEnqTab = 'customer_enq';
 
 const $ = id => document.getElementById(id);
 
@@ -464,7 +466,7 @@ function showFullImage(url, title = 'Photo Preview') {
 }
 
 // ==========================================
-// 1. LEGAL CONTRACT TEMPLATE BUILDER (MATCHING PDF)
+// 1. LEGAL CONTRACT BUILDER (MATCHING PDF)
 // ==========================================
 function generateLegalAgreementHtml(c, isLocked) {
   const custName = c.project?.customer?.name || 'श्रीमान / श्रीमती';
@@ -549,7 +551,228 @@ function generateLegalAgreementHtml(c, isLocked) {
 }
 
 // ==========================================
-// CONTRACTS: ADMIN & CUSTOMER VIEWS
+// ADMIN: OVERVIEW & SEARCH
+// ==========================================
+async function renderAdminOverview(container) {
+  const [custRes, projRes, enqRes, workRes, payRes] = await Promise.all([
+    db.from('profiles').select('id', { count: 'exact' }).eq('role', 'customer'),
+    db.from('projects').select('id', { count: 'exact' }).eq('status', 'active'),
+    db.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
+    db.from('profiles').select('id', { count: 'exact' }).eq('role', 'worker'),
+    db.from('payments').select('amount').eq('direction', 'customer_to_business')
+  ]);
+
+  const totalRevenue = (payRes.data || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+  container.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>Admin Overview</h1>
+        <p style="color:var(--muted); font-size:13px;">Welcome back, ${currentUser.name || 'Prakash Swami'}</p>
+      </div>
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Universal Search..." onkeyup="handleUniversalSearch(this.value)">
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div><h4>Active Projects</h4><div class="val">${projRes.count || 0}</div></div><div class="icon-box" style="background:#e0e7ff; color:#4338ca;"><i class="fa-solid fa-trowel-bricks"></i></div></div>
+      <div class="stat-card"><div><h4>Pending Enquiries</h4><div class="val">${enqRes.count || 0}</div></div><div class="icon-box" style="background:#fee2e2; color:var(--danger);"><i class="fa-solid fa-inbox"></i></div></div>
+      <div class="stat-card"><div><h4>Total Workers</h4><div class="val">${workRes.count || 0}</div></div><div class="icon-box" style="background:#fef3c7; color:var(--warning);"><i class="fa-solid fa-helmet-safety"></i></div></div>
+      <div class="stat-card"><div><h4>Total Revenue</h4><div class="val">₹${totalRevenue.toLocaleString('en-IN')}</div></div><div class="icon-box" style="background:#dcfce7; color:var(--success);"><i class="fa-solid fa-indian-rupee-sign"></i></div></div>
+    </div>
+
+    <div class="card" id="searchResultsCard" style="display:none;">
+      <h3>Search Results</h3>
+      <div id="searchResultsList" style="margin-top:10px;"></div>
+    </div>
+  `;
+}
+
+async function handleUniversalSearch(query) {
+  query = query.trim().toLowerCase();
+  const resCard = $('searchResultsCard');
+  const resList = $('searchResultsList');
+  if (!query) { resCard.style.display = 'none'; return; }
+
+  resCard.style.display = 'block';
+  resList.innerHTML = 'Searching...';
+
+  const [cRes, pRes, wRes] = await Promise.all([
+    db.from('profiles').select('id, name, phone, email, role').ilike('name', `%${query}%`),
+    db.from('projects').select('id, name, address, status').ilike('name', `%${query}%`),
+    db.from('profiles').select('id, name, phone').eq('role', 'worker').ilike('name', `%${query}%`)
+  ]);
+
+  let html = '<ul style="list-style:none;">';
+  (cRes.data || []).forEach(c => html += `<li style="padding:8px 0; border-bottom:1px solid #eee;"><b>[User - ${c.role}]</b> ${c.name} (${c.phone || c.email})</li>`);
+  (pRes.data || []).forEach(p => html += `<li style="padding:8px 0; border-bottom:1px solid #eee;"><b>[Project]</b> ${p.name} - ${p.address} (${p.status})</li>`);
+  html += '</ul>';
+
+  resList.innerHTML = html === '<ul style="list-style:none;"></ul>' ? 'No matching records found.' : html;
+}
+
+// ==========================================
+// ADMIN: ENQUIRIES & ATTENDANCE (MERGED)
+// ==========================================
+async function renderAdminEnquiriesAndAttendance(container) {
+  const [enqRes, attRes] = await Promise.all([
+    db.from('enquiries').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
+    db.from('attendance').select('*, worker:worker_id(name, phone, daily_wage, image_url)').order('scanned_at', { ascending: false })
+  ]);
+
+  const enquiries = enqRes.data || [];
+  const attendances = attRes.data || [];
+  const pendingAttCount = attendances.filter(a => a.status === 'pending').length;
+  const pendingEnqCount = enquiries.filter(e => e.status === 'pending').length;
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>Enquiries & Approvals Hub</h1>
+    </div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab-btn ${activeEnqTab === 'customer_enq' ? 'active' : ''}" onclick="switchEnquirySubTab('customer_enq')">
+        <i class="fa-solid fa-inbox"></i> Customer Enquiries (${pendingEnqCount})
+      </button>
+      <button class="sub-tab-btn ${activeEnqTab === 'worker_att' ? 'active' : ''}" onclick="switchEnquirySubTab('worker_att')">
+        <i class="fa-solid fa-clipboard-user"></i> Worker Attendance Requests (${pendingAttCount})
+      </button>
+    </div>
+
+    <!-- Tab 1: Customer Enquiries -->
+    <div id="tabContentCustomerEnq" class="${activeEnqTab === 'customer_enq' ? '' : 'hidden'}">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Customer</th><th>Work Details</th><th>Budget</th><th>Address</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            ${enquiries.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:20px;">कोई इन्क्वायरी नहीं मिली।</td></tr>' : ''}
+            ${enquiries.map(e => `
+              <tr>
+                <td><b>${e.customer?.name || 'Customer'}</b><br><small>${e.customer?.phone || ''}</small></td>
+                <td>${e.work}</td>
+                <td>₹${Number(e.budget || 0).toLocaleString('en-IN')}</td>
+                <td>${e.address || '-'}</td>
+                <td><span class="btn-sm ${e.status === 'approved' ? 'btn-success' : (e.status === 'rejected' ? 'btn-danger' : 'btn-warning')}">${e.status}</span></td>
+                <td>
+                  <div class="btn-action-group">
+                    ${e.status === 'pending' ? `<button class="btn-sm btn-success" onclick="approveEnquiry('${e.id}', '${e.customer_id}', '${e.work.replace(/'/g, "\\'")}', '${e.address.replace(/'/g, "\\'")}', ${e.budget})"><i class="fa-solid fa-check"></i> Approve & Contract</button>` : ''}
+                    <button class="btn-sm btn-danger" onclick="deleteEnquiry('${e.id}')"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 2: Worker Attendance Requests -->
+    <div id="tabContentWorkerAtt" class="${activeEnqTab === 'worker_att' ? '' : 'hidden'}">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Date & Time</th><th>Worker</th><th>Face Comparison (Registered vs Scanned)</th><th>Wage</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            ${attendances.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:20px;">कोई हाजिरी अनुरोध नहीं है।</td></tr>' : ''}
+            ${attendances.map(r => `
+              <tr>
+                <td>${r.work_date}<br><small>${new Date(r.scanned_at).toLocaleTimeString()}</small></td>
+                <td><b>${r.worker?.name}</b><br><small>${r.worker?.phone}</small></td>
+                <td>
+                  <div class="face-compare-container">
+                    <div class="face-compare-box">
+                      ${r.worker?.image_url ? `<img src="${r.worker.image_url}" onclick="showFullImage('${r.worker.image_url}', 'Registered Face')">` : '<div style="width:50px; height:50px; background:#ddd; border-radius:8px;">No Reg</div>'}
+                      <span>Registered</span>
+                    </div>
+                    <i class="fa-solid fa-arrow-right-arrow-left" style="color:var(--muted); font-size:12px;"></i>
+                    <div class="face-compare-box">
+                      ${r.face_image_url ? `<img src="${r.face_image_url}" onclick="showFullImage('${r.face_image_url}', 'Attendance Face Scan')">` : '<div style="width:50px; height:50px; background:#ddd; border-radius:8px;">No Scan</div>'}
+                      <span>Scanned</span>
+                    </div>
+                  </div>
+                </td>
+                <td>₹${r.worker?.daily_wage || 0}</td>
+                <td><span class="btn-sm ${r.status === 'approved' ? 'btn-success' : 'btn-warning'}">${r.status}</span></td>
+                <td>
+                  <div class="btn-action-group">
+                    ${r.status === 'pending' ? `
+                      <button class="btn-sm btn-success" onclick="approveAttendance('${r.id}')"><i class="fa-solid fa-check"></i> Present</button>
+                      <button class="btn-sm btn-warning" onclick="rejectAttendance('${r.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+                    ` : ''}
+                    <button class="btn-sm btn-danger" onclick="deleteAttendance('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function switchEnquirySubTab(tab) {
+  activeEnqTab = tab;
+  document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+  if (tab === 'customer_enq') {
+    $('tabContentCustomerEnq').classList.remove('hidden');
+    $('tabContentWorkerAtt').classList.add('hidden');
+  } else {
+    $('tabContentCustomerEnq').classList.add('hidden');
+    $('tabContentWorkerAtt').classList.remove('hidden');
+  }
+}
+
+async function approveEnquiry(enqId, customerId, work, address, budget) {
+  if (!confirm('इस इन्क्वायरी को अप्रूव करके नया प्रोजेक्ट और कॉन्ट्रैक्ट बनाएँ?')) return;
+  const { data: proj } = await db.from('projects').insert({
+    customer_id: customerId,
+    name: work.substring(0, 40),
+    address: address,
+    total_amount: budget || 0,
+    status: 'planning',
+    progress: 0
+  }).select().single();
+
+  await db.from('contracts').insert({
+    project_id: proj.id,
+    version: 1,
+    status: 'amount_discussion',
+    final_amount: budget || 0,
+    scope: work,
+    proposed_by: currentUser.id
+  });
+
+  await db.from('enquiries').update({ status: 'approved' }).eq('id', enqId);
+  alert('इन्क्वायरी स्वीकृत! प्रोजेक्ट और कॉन्ट्रैक्ट तैयार हो गया है।');
+  openView('contracts');
+}
+
+async function deleteEnquiry(id) {
+  if (!confirm('क्या आप इस इन्क्वायरी को हटाना चाहते हैं?')) return;
+  await db.from('enquiries').delete().eq('id', id);
+  openView('enquiries');
+}
+
+async function approveAttendance(attId) {
+  await db.from('attendance').update({ status: 'approved', approved_by: currentUser.id, approved_at: new Date().toISOString() }).eq('id', attId);
+  openView('enquiries');
+}
+
+async function rejectAttendance(attId) {
+  await db.from('attendance').update({ status: 'rejected' }).eq('id', attId);
+  openView('enquiries');
+}
+
+async function deleteAttendance(id) {
+  if (!confirm('क्या आप इस हाजिरी रिकॉर्ड को हटाना चाहते हैं?')) return;
+  await db.from('attendance').delete().eq('id', id);
+  openView('enquiries');
+}
+
+// ==========================================
+// ADMIN: CONTRACTS & AGREEMENT MODAL
 // ==========================================
 async function renderAdminContracts(container) {
   const { data: contracts } = await db.from('contracts')
@@ -594,67 +817,6 @@ async function renderAdminContracts(container) {
         </tbody>
       </table>
     </div>
-  `;
-}
-
-async function renderCustomerContracts(container) {
-  const { data: myProjects } = await db.from('projects').select('id, name').eq('customer_id', currentUser.id);
-  const projIds = (myProjects || []).map(p => p.id);
-
-  let contracts = [];
-  if (projIds.length > 0) {
-    const { data } = await db.from('contracts')
-      .select('*, project:project_id(name, address, customer:customer_id(name, phone, address))')
-      .in('project_id', projIds)
-      .order('created_at', { ascending: false });
-    contracts = data || [];
-  }
-
-  container.innerHTML = `
-    <div class="page-head"><h1>मेरे अनुबंध / कॉन्ट्रैक्ट्स (My Contracts)</h1></div>
-    ${contracts.length === 0 ? '<div class="card"><p>आपके पास अभी कोई अनुबंध उपलब्ध नहीं है।</p></div>' : ''}
-    ${contracts.map(c => {
-      const isLocked = c.status === 'locked' || (c.admin_approved_at && c.customer_approved_at);
-      return `
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <h3>${c.project?.name || 'Construction Contract'}</h3>
-            <span class="btn-sm ${isLocked ? 'btn-success' : 'btn-warning'}">Version v${c.version} — ${isLocked ? '🔒 Locked & Active' : 'Negotiation Mode'}</span>
-          </div>
-
-          <!-- Negotiation Box -->
-          <div class="amount-badge-box">
-            <div>
-              <span style="font-size:12px; color:var(--muted); font-weight:700;">फाइनल अनुबंध राशि (Contract Amount)</span>
-              <div style="font-size:22px; font-weight:800; color:var(--primary); margin-top:2px;">
-                ₹${Number(c.final_amount || 0).toLocaleString('en-IN')}
-              </div>
-            </div>
-            ${!isLocked ? `
-              <button class="btn-sm btn-gold" style="padding:9px 14px; font-size:13px;" onclick="proposeContractAmountPrompt('${c.id}', ${c.final_amount})">
-                <i class="fa-solid fa-pen-to-square"></i> नया Amount Propose / Edit करें
-              </button>
-            ` : '<span style="font-size:12px; font-weight:700; color:var(--success);"><i class="fa-solid fa-lock"></i> Amount Locked</span>'}
-          </div>
-
-          <!-- Full PDF Agreement Format -->
-          ${generateLegalAgreementHtml(c, isLocked)}
-
-          <!-- Digital Approval Button -->
-          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
-            ${!c.customer_approved_at && !isLocked ? `
-              <button class="btn-primary" style="width:auto; padding:12px 24px; background:var(--success);" onclick="approveCustomerContract('${c.id}')">
-                <i class="fa-solid fa-file-signature"></i> Approve Contract Digitally (अनुबंध स्वीकार करें)
-              </button>
-            ` : `
-              <span class="btn-sm btn-success" style="padding:10px 18px; font-size:13px;">
-                <i class="fa-solid fa-circle-check"></i> ${isLocked ? 'Contract Fully Locked & Active' : 'You have approved this contract ✅'}
-              </span>
-            `}
-          </div>
-        </div>
-      `;
-    }).join('')}
   `;
 }
 
@@ -733,29 +895,6 @@ async function adminApproveContract(contractId) {
   openView('contracts');
 }
 
-async function approveCustomerContract(contractId) {
-  if (!confirm('क्या आप इस अनुबंध को अपनी डिजिटल स्वीकृति देना चाहते हैं?')) return;
-  const now = new Date().toISOString();
-  const { data: c } = await db.from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
-  const isFullyApproved = Boolean(c.admin_approved_at);
-
-  await db.from('contracts').update({
-    customer_approved_at: now,
-    customer_approved_by: currentUser.id,
-    status: isFullyApproved ? 'locked' : 'amount_discussion',
-    locked_at: isFullyApproved ? now : null
-  }).eq('id', contractId);
-
-  if (isFullyApproved && c.project_id) {
-    await db.from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
-    alert('अनुबंध पूरी तरह लॉक हो गया है और प्रोजेक्ट शुरू हो चुका है! 🔒');
-  } else {
-    alert('आपकी डिजिटल स्वीकृति दर्ज हो गई है!');
-  }
-
-  openView('my_contracts');
-}
-
 async function deleteContract(id) {
   if (!confirm('क्या आप इस कॉन्ट्रैक्ट को हटाना चाहते हैं?')) return;
   await db.from('contracts').delete().eq('id', id);
@@ -763,7 +902,160 @@ async function deleteContract(id) {
 }
 
 // ==========================================
-// 2. ADMIN: CUSTOMERS MANAGEMENT (WITH PAYMENT "CHECK" BUTTON)
+// ADMIN: PROJECTS
+// ==========================================
+async function renderAdminProjects(container) {
+  const { data: projects } = await db.from('projects').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head"><h1>All Construction Projects</h1></div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Project</th><th>Customer</th><th>Progress %</th><th>Status</th><th>Amount</th><th>Action</th></tr></thead>
+        <tbody>
+          ${(projects || []).map(p => `
+            <tr>
+              <td><b>${p.name}</b><br><small>${p.address || ''}</small></td>
+              <td>${p.customer?.name || '-'}<br><small>${p.customer?.phone || ''}</small></td>
+              <td>${p.progress}%<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div></td>
+              <td><span class="btn-sm btn-success">${p.status}</span></td>
+              <td>₹${Number(p.total_amount || 0).toLocaleString('en-IN')}</td>
+              <td>
+                <div class="btn-action-group">
+                  <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
+                  <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function openEditProjectModal(id) {
+  const { data: p } = await db.from('projects').select('*').eq('id', id).single();
+  if (!p) return;
+
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>प्रोजेक्ट एडिट करें</h3>
+      <form onsubmit="updateProjectRecord(event, '${id}')">
+        <div class="form-group"><label>Project Name</label><input id="epName" value="${p.name || ''}" required></div>
+        <div class="form-group"><label>Site Address</label><input id="epAddress" value="${p.address || ''}"></div>
+        <div class="form-group"><label>Total Amount ₹</label><input id="epAmount" type="number" value="${p.total_amount || 0}"></div>
+        <div class="form-group"><label>Progress %</label><input id="epProg" type="number" min="0" max="100" value="${p.progress || 0}"></div>
+        <button type="submit" class="btn-primary">Update Project</button>
+      </form>
+    </div>
+  `;
+}
+
+async function updateProjectRecord(e, id) {
+  e.preventDefault();
+  await db.from('projects').update({
+    name: $('epName').value,
+    address: $('epAddress').value,
+    total_amount: Number($('epAmount').value),
+    progress: Number($('epProg').value)
+  }).eq('id', id);
+
+  $('modalContainer').classList.add('hidden');
+  openView('projects');
+}
+
+async function deleteProject(id) {
+  if (!confirm('क्या आप इस प्रोजेक्ट को हटाना चाहते हैं?')) return;
+  await db.from('projects').delete().eq('id', id);
+  openView('projects');
+}
+
+// ==========================================
+// ADMIN: DAILY UPDATES
+// ==========================================
+async function renderAdminDailyUpdates(container) {
+  const [projRes, updatesRes] = await Promise.all([
+    db.from('projects').select('id, name, address, progress'),
+    db.from('daily_updates').select('*, project:project_id(name)').order('created_at', { ascending: false })
+  ]);
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>Project Progress & Daily Updates</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openAddDailyUpdateModal()"><i class="fa-solid fa-plus"></i> Post Daily Update</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Date</th><th>Project</th><th>Work Details</th><th>Photo</th><th>Action</th></tr></thead>
+        <tbody>
+          ${(updatesRes.data || []).map(u => `
+            <tr>
+              <td>${new Date(u.created_at).toLocaleDateString()}</td>
+              <td><b>${u.project?.name || 'Site Work'}</b></td>
+              <td>${u.work_done}</td>
+              <td>${u.image_url ? `<img src="${u.image_url}" class="avatar-thumb" onclick="showFullImage('${u.image_url}', 'Site Work Photo')">` : '-'}</td>
+              <td><button class="btn-sm btn-danger" onclick="deleteDailyUpdate('${u.id}')"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAddDailyUpdateModal() {
+  db.from('projects').select('id, name').then(({ data: projects }) => {
+    const modal = $('modalContainer');
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="modal-card">
+        <h3>नया Daily Work Update पोस्ट करें</h3>
+        <form onsubmit="saveDailyUpdate(event)">
+          <div class="form-group"><label>प्रोजेक्ट चुनें</label><select id="uProjId">${(projects || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+          <div class="form-group"><label>आज क्या काम हुआ</label><textarea id="uWork" rows="3" required></textarea></div>
+          <div class="form-group"><label>नया Progress %</label><input id="uProg" type="number" min="0" max="100"></div>
+          <div class="form-group"><label>साइट फ़ोटो</label><input type="file" id="uPhoto" accept="image/*"></div>
+          <button type="submit" class="btn-primary">Post Update</button>
+        </form>
+      </div>
+    `;
+  });
+}
+
+async function saveDailyUpdate(e) {
+  e.preventDefault();
+  const fileInput = $('uPhoto');
+  let imgUrl = '';
+  if (fileInput.files && fileInput.files[0]) {
+    imgUrl = await readFileAsBase64(fileInput.files[0]);
+  }
+
+  await db.from('daily_updates').insert({
+    project_id: $('uProjId').value,
+    author_id: currentUser.id,
+    work_done: $('uWork').value,
+    image_url: imgUrl
+  });
+
+  if ($('uProg').value !== '') {
+    await db.from('projects').update({ progress: Number($('uProg').value) }).eq('id', $('uProjId').value);
+  }
+
+  $('modalContainer').classList.add('hidden');
+  openView('daily_updates');
+}
+
+async function deleteDailyUpdate(id) {
+  if (!confirm('क्या आप इस अपडेट को हटाना चाहते हैं?')) return;
+  await db.from('daily_updates').delete().eq('id', id);
+  openView('daily_updates');
+}
+
+// ==========================================
+// ADMIN: CUSTOMERS
 // ==========================================
 async function renderAdminCustomers(container) {
   const [custRes, projRes, payRes] = await Promise.all([
@@ -798,10 +1090,6 @@ async function renderAdminCustomers(container) {
         <tbody>
           ${customers.length === 0 ? '<tr><td colspan="8" style="text-align:center; padding:20px;">कोई कस्टमर नहीं मिला।</td></tr>' : ''}
           ${customers.map(c => {
-            const custTotalValue = projects.filter(p => p.customer_id === c.id).reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-            const custTotalPaid = payments.filter(p => p.customer_id === c.id).reduce((sum, p) => sum + Number(p.amount || 0), 0);
-            const custDue = custTotalValue - custTotalPaid;
-
             return `
               <tr>
                 <td>
@@ -811,14 +1099,11 @@ async function renderAdminCustomers(container) {
                 <td>${c.phone || '-'}</td>
                 <td>${c.email || '-'}</td>
                 <td>${c.address || '-'}</td>
-                
-                <!-- Payment Check Column -->
                 <td>
                   <button class="btn-sm btn-check" onclick="openCustomerPaymentModal('${c.id}', '${c.name.replace(/'/g, "\\'")}', '${c.phone || ''}')">
                     <i class="fa-solid fa-receipt"></i> Check
                   </button>
                 </td>
-
                 <td><span class="btn-sm ${c.is_active ? 'btn-success' : 'btn-danger'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
                 <td>
                   <div class="btn-action-group">
@@ -835,7 +1120,75 @@ async function renderAdminCustomers(container) {
   `;
 }
 
-// --- CUSTOMER FINANCIAL LEDGER MODAL (ADMIN CHECK) ---
+function openAddCustomerModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>नया कस्टमर जोड़ें</h3>
+      <form onsubmit="saveCustomerByAdmin(event)">
+        <div class="form-group"><label>Customer Name</label><input id="acName" required placeholder="ग्राहक का नाम"></div>
+        <div class="form-group"><label>Mobile Number</label><input id="acPhone" type="tel" required placeholder="9876543210"></div>
+        <div class="form-group"><label>Email (Optional)</label><input id="acEmail" type="email" placeholder="customer@gmail.com"></div>
+        <div class="form-group"><label>Address</label><input id="acAddress" placeholder="साइट का पता"></div>
+        <button type="submit" class="btn-primary">Save Customer</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveCustomerByAdmin(e) {
+  e.preventDefault();
+  await db.from('profiles').insert({
+    name: $('acName').value.trim(),
+    phone: $('acPhone').value.trim(),
+    email: $('acEmail').value.trim() || `${$('acPhone').value.trim()}@customer.local`,
+    address: $('acAddress').value.trim(),
+    role: 'customer',
+    is_active: true
+  });
+
+  $('modalContainer').classList.add('hidden');
+  openView('customers');
+}
+
+async function openEditCustomerModal(id) {
+  const { data: c } = await db.from('profiles').select('*').eq('id', id).single();
+  if (!c) return;
+
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>कस्टमर एडिट करें</h3>
+      <form onsubmit="updateCustomerRecord(event, '${id}')">
+        <div class="form-group"><label>Customer Name</label><input id="ecName" value="${c.name || ''}" required></div>
+        <div class="form-group"><label>Mobile</label><input id="ecPhone" value="${c.phone || ''}" required></div>
+        <div class="form-group"><label>Address</label><input id="ecAddress" value="${c.address || ''}"></div>
+        <button type="submit" class="btn-primary">Update Customer</button>
+      </form>
+    </div>
+  `;
+}
+
+async function updateCustomerRecord(e, id) {
+  e.preventDefault();
+  await db.from('profiles').update({
+    name: $('ecName').value,
+    phone: $('ecPhone').value,
+    address: $('ecAddress').value
+  }).eq('id', id);
+
+  $('modalContainer').classList.add('hidden');
+  openView('customers');
+}
+
+async function deleteCustomer(id) {
+  if (!confirm('क्या आप इस कस्टमर को हटाना चाहते हैं?')) return;
+  await db.from('profiles').delete().eq('id', id);
+  openView('customers');
+}
+
 async function openCustomerPaymentModal(customerId, customerName, customerPhone) {
   const [projRes, payRes] = await Promise.all([
     db.from('projects').select('*').eq('customer_id', customerId),
@@ -860,34 +1213,25 @@ async function openCustomerPaymentModal(customerId, customerName, customerPhone)
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
       </div>
 
-      <!-- Financial Calculation Summary Box -->
       <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:16px;">
-        <div class="stat-card" style="padding:14px;">
-          <div><h4>कुल प्रोजेक्ट लागत</h4><div class="val" style="font-size:20px;">₹${totalProjectValue.toLocaleString('en-IN')}</div></div>
-        </div>
-        <div class="stat-card" style="padding:14px;">
-          <div><h4>प्राप्त राशि (Paid)</h4><div class="val" style="font-size:20px; color:var(--success);">₹${totalPaid.toLocaleString('en-IN')}</div></div>
-        </div>
-        <div class="stat-card" style="padding:14px; background:#fff1f2; border-color:#fecdd3;">
-          <div><h4>बकाया राशि (Due)</h4><div class="val" style="font-size:20px; color:var(--danger);">₹${remainingDue.toLocaleString('en-IN')}</div></div>
-        </div>
+        <div class="stat-card" style="padding:14px;"><div><h4>कुल प्रोजेक्ट लागत</h4><div class="val" style="font-size:20px;">₹${totalProjectValue.toLocaleString('en-IN')}</div></div></div>
+        <div class="stat-card" style="padding:14px;"><div><h4>प्राप्त राशि</h4><div class="val" style="font-size:20px; color:var(--success);">₹${totalPaid.toLocaleString('en-IN')}</div></div></div>
+        <div class="stat-card" style="padding:14px; background:#fff1f2; border-color:#fecdd3;"><div><h4>बकाया राशि</h4><div class="val" style="font-size:20px; color:var(--danger);">₹${remainingDue.toLocaleString('en-IN')}</div></div></div>
       </div>
 
-      <!-- Record Customer Payment Form -->
       <div class="card" style="padding:16px; margin-bottom:16px;">
-        <h4 style="margin-bottom:10px;">नया पेमेंट प्राप्त दर्ज करें (Record Received Payment)</h4>
+        <h4 style="margin-bottom:10px;">नया पेमेंट दर्ज करें</h4>
         <form onsubmit="recordCustomerPaymentSubmit(event, '${customerId}', '${customerName.replace(/'/g, "\\'")}', '${customerPhone}')">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div class="form-group"><label>प्राप्त राशि (Amount ₹)</label><input id="cpAmount" type="number" required placeholder="50000"></div>
-            <div class="form-group"><label>माध्यम (Method)</label><select id="cpMethod"><option value="UPI">UPI</option><option value="Bank">Bank Transfer</option><option value="Cash">Cash (नकद)</option></select></div>
+            <div class="form-group"><label>Amount ₹</label><input id="cpAmount" type="number" required placeholder="50000"></div>
+            <div class="form-group"><label>Method</label><select id="cpMethod"><option value="UPI">UPI</option><option value="Bank">Bank Transfer</option><option value="Cash">Cash</option></select></div>
           </div>
-          <div class="form-group"><label>UTR / Reference / Note</label><input id="cpRef" placeholder="उदा: UTR No. या चेक नंबर"></div>
-          <button type="submit" class="btn-primary" style="background:var(--success);"><i class="fa-solid fa-check"></i> Save Received Payment</button>
+          <div class="form-group"><label>UTR / Ref</label><input id="cpRef" placeholder="12 अंकों का UTR"></div>
+          <button type="submit" class="btn-primary" style="background:var(--success);">Save Payment</button>
         </form>
       </div>
 
-      <!-- Payment History Table -->
-      <h4>भुगतान इतिहास (Payment History)</h4>
+      <h4>भुगतान इतिहास</h4>
       <div class="table-container" style="max-height:200px; overflow-y:auto; margin-top:8px;">
         <table>
           <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Action</th></tr></thead>
@@ -911,16 +1255,12 @@ async function openCustomerPaymentModal(customerId, customerName, customerPhone)
 
 async function recordCustomerPaymentSubmit(e, customerId, customerName, customerPhone) {
   e.preventDefault();
-  const amt = Number($('cpAmount').value);
-  const method = $('cpMethod').value;
-  const ref = $('cpRef').value;
-
   await db.from('payments').insert({
     customer_id: customerId,
     direction: 'customer_to_business',
-    amount: amt,
-    method: method,
-    reference: ref,
+    amount: Number($('cpAmount').value),
+    method: $('cpMethod').value,
+    reference: $('cpRef').value,
     created_by: currentUser.id
   });
 
@@ -935,8 +1275,605 @@ async function deleteCustomerPaymentRecord(payId, customerId, customerName, cust
 }
 
 // ==========================================
-// 3. CUSTOMER: PAYMENTS & DIRECT UPI PAY
+// ADMIN: WORKERS
 // ==========================================
+async function renderAdminWorkers(container) {
+  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+
+  const [workRes, attRes, payRes] = await Promise.all([
+    db.from('profiles').select('*').eq('role', 'worker').order('created_at', { ascending: false }),
+    db.from('attendance').select('worker_id, work_date, status').eq('status', 'approved').gte('work_date', `${currentMonthPrefix}-01`),
+    db.from('payments').select('worker_id, amount').eq('direction', 'business_to_worker')
+  ]);
+
+  const workers = workRes.data || [];
+  const attendances = attRes.data || [];
+  const payments = payRes.data || [];
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>Workers Management</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openAddWorkerModal()"><i class="fa-solid fa-plus"></i> Add New Worker</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Registered Face</th>
+            <th>Worker Name</th>
+            <th>Mobile (Login ID)</th>
+            <th>Address</th>
+            <th>Daily Wage</th>
+            <th>Attendance (इस माह)</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${workers.length === 0 ? '<tr><td colspan="9" style="text-align:center; padding:20px;">कोई वर्कर नहीं मिला। नया वर्कर जोड़ें।</td></tr>' : ''}
+          ${workers.map(w => {
+            const monthlyPresentCount = attendances.filter(a => a.worker_id === w.id).length;
+
+            return `
+              <tr>
+                <td>
+                  ${w.image_url ? `<img src="${w.image_url}" class="avatar-thumb" onclick="showFullImage('${w.image_url}', '${w.name.replace(/'/g, "\\'")}')">` : '<i class="fa-solid fa-user-circle fa-2x" style="color:var(--muted);"></i>'}
+                </td>
+                <td><b>${w.name}</b></td>
+                <td>${w.phone}</td>
+                <td>${w.address || '-'}</td>
+                <td><b>₹${w.daily_wage || 0} / दिन</b></td>
+                <td>
+                  <button class="btn-sm btn-edit" onclick="openWorkerAttendanceModal('${w.id}', '${w.name.replace(/'/g, "\\'")}', ${w.daily_wage || 0})">
+                    <i class="fa-solid fa-calendar-check"></i> Present: ${monthlyPresentCount} / 30
+                  </button>
+                </td>
+                <td>
+                  <button class="btn-sm btn-check" onclick="openWorkerPaymentModal('${w.id}', '${w.name.replace(/'/g, "\\'")}', '${w.phone}', ${w.daily_wage || 0})">
+                    <i class="fa-solid fa-wallet"></i> Check
+                  </button>
+                </td>
+                <td><span class="btn-sm ${w.is_active ? 'btn-success' : 'btn-danger'}">${w.is_active ? 'Active' : 'Inactive'}</span></td>
+                <td>
+                  <div class="btn-action-group">
+                    <button class="btn-sm btn-edit" onclick="openEditWorkerModal('${w.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
+                    <button class="btn-sm btn-danger" onclick="deleteWorker('${w.id}')"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function openWorkerAttendanceModal(workerId, workerName, dailyWage) {
+  const { data: records } = await db.from('attendance')
+    .select('*')
+    .eq('worker_id', workerId)
+    .order('scanned_at', { ascending: false });
+
+  const totalPresent = (records || []).filter(r => r.status === 'approved').length;
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <div>
+          <h3>${workerName} — हाजिरी रिकॉर्ड (Attendance Log)</h3>
+          <p style="color:var(--muted); font-size:13px; margin-top:2px;">कुल उपस्थिति: <b>${totalPresent} दिन</b> | दर: ₹${dailyWage}/दिन</p>
+        </div>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+
+      <div class="table-container" style="max-height:60vh; overflow-y:auto;">
+        <table>
+          <thead><tr><th>Date</th><th>Scan Time</th><th>Face Photo</th><th>Status</th></tr></thead>
+          <tbody>
+            ${(records || []).length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:20px;">कोई हाजिरी रिकॉर्ड नहीं मिला।</td></tr>' : ''}
+            ${(records || []).map(r => `
+              <tr>
+                <td><b>${r.work_date}</b></td>
+                <td>${new Date(r.scanned_at).toLocaleTimeString()}</td>
+                <td>
+                  ${r.face_image_url ? `<img src="${r.face_image_url}" class="avatar-thumb" onclick="showFullImage('${r.face_image_url}', 'Scanned Attendance')">` : '-'}
+                </td>
+                <td><span class="btn-sm ${r.status === 'approved' ? 'btn-success' : 'btn-warning'}">${r.status === 'approved' ? 'Present' : r.status}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWage) {
+  const [attRes, payRes] = await Promise.all([
+    db.from('attendance').select('*').eq('worker_id', workerId).eq('status', 'approved'),
+    db.from('payments').select('*').eq('worker_id', workerId).eq('direction', 'business_to_worker').order('paid_at', { ascending: false })
+  ]);
+
+  const daysWorked = (attRes.data || []).length;
+  const totalEarned = daysWorked * dailyWage;
+  const payments = payRes.data || [];
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const remainingDue = totalEarned - totalPaid;
+  const upiPayUrl = `upi://pay?pa=${workerPhone}@upi&pn=${encodeURIComponent(workerName)}&am=${remainingDue > 0 ? remainingDue : 0}&cu=INR`;
+
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <div>
+          <h3>${workerName} — वेतन व भुगतान खाता</h3>
+          <p style="color:var(--muted); font-size:13px;">Phone: ${workerPhone} | दर: ₹${dailyWage}/दिन</p>
+        </div>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:16px;">
+        <div class="stat-card" style="padding:14px;"><div><h4>कुल कमाई</h4><div class="val" style="font-size:20px;">₹${totalEarned}</div><small>${daysWorked} दिन हाजिरी</small></div></div>
+        <div class="stat-card" style="padding:14px;"><div><h4>दिया गया</h4><div class="val" style="font-size:20px; color:var(--success);">₹${totalPaid}</div></div></div>
+        <div class="stat-card" style="padding:14px; background:#fff1f2; border-color:#fecdd3;"><div><h4>बकाया</h4><div class="val" style="font-size:20px; color:var(--danger);">₹${remainingDue}</div></div></div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid var(--border); padding:16px; border-radius:12px; margin-bottom:18px; text-align:center;">
+        <p style="font-size:13px; font-weight:700; margin-bottom:8px;">Direct UPI Payment (PhonePe / GPay / Paytm):</p>
+        <a href="${upiPayUrl}" target="_blank" class="btn-primary" style="display:inline-flex; width:auto; padding:11px 24px; background:#4f46e5; text-decoration:none;">
+          <i class="fa-solid fa-bolt"></i> Pay ₹${remainingDue > 0 ? remainingDue : 0} via UPI
+        </a>
+      </div>
+
+      <div class="card" style="padding:16px; margin-bottom:16px;">
+        <h4 style="margin-bottom:10px;">नया भुगतान दर्ज करें</h4>
+        <form onsubmit="recordWorkerPaymentSubmit(event, '${workerId}', '${workerName}')">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="form-group"><label>राशि (Amount ₹)</label><input id="wpAmount" type="number" required value="${remainingDue > 0 ? remainingDue : ''}"></div>
+            <div class="form-group"><label>Method</label><select id="wpMethod"><option value="UPI">UPI</option><option value="Cash">Cash</option><option value="Bank">Bank Transfer</option></select></div>
+          </div>
+          <div class="form-group"><label>Note / Ref</label><input id="wpNote"></div>
+          <button type="submit" class="btn-primary" style="background:var(--success);"><i class="fa-solid fa-check"></i> Save Payment Record</button>
+        </form>
+      </div>
+
+      <h4>भुगतान इतिहास</h4>
+      <div class="table-container" style="max-height:200px; overflow-y:auto; margin-top:8px;">
+        <table>
+          <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Note</th><th>Action</th></tr></thead>
+          <tbody>
+            ${payments.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:10px;">कोई भुगतान इतिहास नहीं है।</td></tr>' : ''}
+            ${payments.map(p => `
+              <tr>
+                <td>${new Date(p.paid_at).toLocaleDateString()}</td>
+                <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
+                <td>${p.method}</td>
+                <td>${p.note || '-'}</td>
+                <td><button class="btn-sm btn-danger" onclick="deleteWorkerPayment('${p.id}', '${workerId}', '${workerName.replace(/'/g, "\\'")}', '${workerPhone}', ${dailyWage})"><i class="fa-solid fa-trash"></i></button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function recordWorkerPaymentSubmit(e, workerId, workerName) {
+  e.preventDefault();
+  await db.from('payments').insert({
+    worker_id: workerId,
+    direction: 'business_to_worker',
+    amount: Number($('wpAmount').value),
+    method: $('wpMethod').value,
+    note: $('wpNote').value,
+    created_by: currentUser.id
+  });
+
+  alert('भुगतान रिकॉर्ड दर्ज हो गया!');
+  $('modalContainer').classList.add('hidden');
+  openView('workers');
+}
+
+async function deleteWorkerPayment(paymentId, workerId, workerName, workerPhone, dailyWage) {
+  if (!confirm('क्या आप इस भुगतान रिकॉर्ड को हटाना चाहते हैं?')) return;
+  await db.from('payments').delete().eq('id', paymentId);
+  openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWage);
+}
+
+async function openEditWorkerModal(id) {
+  const { data: w } = await db.from('profiles').select('*').eq('id', id).single();
+  if (!w) return;
+
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>वर्कर एडिट करें</h3>
+      <form onsubmit="updateWorkerRecord(event, '${id}')">
+        <div class="form-group"><label>Worker Name</label><input id="ewName" value="${w.name || ''}" required></div>
+        <div class="form-group"><label>Mobile</label><input id="ewPhone" value="${w.phone || ''}" required></div>
+        <div class="form-group"><label>Daily Wage ₹</label><input id="ewWage" type="number" value="${w.daily_wage || 0}" required></div>
+        <div class="form-group"><label>Address</label><input id="ewAddress" value="${w.address || ''}"></div>
+        <button type="submit" class="btn-primary">Update Worker</button>
+      </form>
+    </div>
+  `;
+}
+
+async function updateWorkerRecord(e, id) {
+  e.preventDefault();
+  await db.from('profiles').update({
+    name: $('ewName').value,
+    phone: $('ewPhone').value,
+    daily_wage: Number($('ewWage').value),
+    address: $('ewAddress').value
+  }).eq('id', id);
+
+  $('modalContainer').classList.add('hidden');
+  openView('workers');
+}
+
+let workerCameraStream = null;
+let capturedWorkerFaceData = '';
+
+function openAddWorkerModal() {
+  capturedWorkerFaceData = '';
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3>नया वर्कर जोड़ें (Face Registration के साथ)</h3>
+        <button onclick="closeWorkerModal()" style="border:0; background:transparent; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+      <form onsubmit="saveNewWorker(event)">
+        <div class="form-group"><label>Worker Name</label><input id="wName" required placeholder="जैसे: रमेश स्वामी"></div>
+        <div class="form-group"><label>Mobile Number (Login ID)</label><input id="wPhone" type="tel" required placeholder="9876543210"></div>
+        <div class="form-group"><label>Daily Wage (प्रतिदिन मजदूरी ₹)</label><input id="wWage" type="number" required placeholder="600"></div>
+        <div class="form-group"><label>Address</label><input id="wAddress" placeholder="गाँव/तहसील"></div>
+        
+        <div class="form-group" style="background:#f8fafc; padding:14px; border-radius:12px; border:1px solid var(--border);">
+          <label><i class="fa-solid fa-camera"></i> Worker Face Registration</label>
+          <div style="display:flex; gap:10px; margin-top:8px;">
+            <button type="button" class="btn-secondary" onclick="startWorkerFaceCamera()"><i class="fa-solid fa-video"></i> Live Camera Scan</button>
+            <input type="file" id="wFileFace" accept="image/*" style="display:none;" onchange="handleWorkerFaceFile(this)">
+            <button type="button" class="btn-secondary" onclick="$('wFileFace').click()"><i class="fa-solid fa-upload"></i> Upload Photo</button>
+          </div>
+          
+          <div id="cameraPreviewBox" style="display:none; margin-top:10px;">
+            <video id="wVideo" style="width:100%; height:180px; background:#000; border-radius:10px; object-fit:cover;" autoplay playsinline></video>
+            <button type="button" class="btn-primary" style="margin-top:6px;" onclick="snapWorkerFace()"><i class="fa-solid fa-camera-retro"></i> Capture Face</button>
+          </div>
+          
+          <div id="capturedFaceBox" style="display:none; margin-top:10px; text-align:center;">
+            <img id="wFaceImg" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--success);">
+            <p style="font-size:11px; color:var(--success); font-weight:700; margin-top:4px;">Face Registered ✅</p>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top:10px;">Save Worker</button>
+      </form>
+    </div>
+  `;
+}
+
+function closeWorkerModal() {
+  if (workerCameraStream) workerCameraStream.getTracks().forEach(t => t.stop());
+  $('modalContainer').classList.add('hidden');
+}
+
+async function startWorkerFaceCamera() {
+  try {
+    $('cameraPreviewBox').style.display = 'block';
+    $('capturedFaceBox').style.display = 'none';
+    workerCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    $('wVideo').srcObject = workerCameraStream;
+  } catch (err) {
+    alert('कैमरा एक्सेस नहीं मिला: ' + err.message);
+  }
+}
+
+function snapWorkerFace() {
+  const vid = $('wVideo');
+  const canvas = document.createElement('canvas');
+  canvas.width = vid.videoWidth || 300;
+  canvas.height = vid.videoHeight || 300;
+  canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
+  capturedWorkerFaceData = canvas.toDataURL('image/jpeg', 0.6);
+
+  if (workerCameraStream) workerCameraStream.getTracks().forEach(t => t.stop());
+  $('cameraPreviewBox').style.display = 'none';
+  $('capturedFaceBox').style.display = 'block';
+  $('wFaceImg').src = capturedWorkerFaceData;
+}
+
+async function handleWorkerFaceFile(input) {
+  if (input.files && input.files[0]) {
+    capturedWorkerFaceData = await readFileAsBase64(input.files[0]);
+    $('capturedFaceBox').style.display = 'block';
+    $('wFaceImg').src = capturedWorkerFaceData;
+  }
+}
+
+async function saveNewWorker(e) {
+  e.preventDefault();
+  await db.from('profiles').insert({
+    name: $('wName').value.trim(),
+    phone: $('wPhone').value.trim(),
+    daily_wage: Number($('wWage').value),
+    address: $('wAddress').value.trim(),
+    image_url: capturedWorkerFaceData || '',
+    role: 'worker',
+    is_active: true
+  });
+
+  closeWorkerModal();
+  openView('workers');
+}
+
+async function deleteWorker(id) {
+  if (!confirm('क्या आप इस वर्कर को हटाना चाहते हैं?')) return;
+  await db.from('profiles').delete().eq('id', id);
+  openView('workers');
+}
+
+// ==========================================
+// ADMIN: PAYMENTS, EXPENSES, SETTINGS
+// ==========================================
+async function renderAdminPayments(container) {
+  const { data: payments } = await db.from('payments').select('*, project:project_id(name), customer:customer_id(name), worker:worker_id(name)').order('paid_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Payments Ledger</h1></div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Date</th><th>Direction</th><th>Party</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead>
+        <tbody>
+          ${(payments || []).map(p => `
+            <tr>
+              <td>${new Date(p.paid_at).toLocaleDateString()}</td>
+              <td><span class="btn-sm ${p.direction === 'customer_to_business' ? 'btn-success' : 'btn-danger'}">${p.direction}</span></td>
+              <td>${p.customer?.name || p.worker?.name || 'Expense'}</td>
+              <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
+              <td>${p.method}</td>
+              <td><button class="btn-sm btn-danger" onclick="deletePayment('${p.id}')"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function deletePayment(id) {
+  if (!confirm('क्या आप इस पेमेंट रिकॉर्ड को हटाना चाहते हैं?')) return;
+  await db.from('payments').delete().eq('id', id);
+  openView('payments');
+}
+
+async function renderAdminExpenses(container) {
+  const { data: expenses } = await db.from('expenses').select('*').order('spent_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>Site Expenses</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openAddExpenseModal()"><i class="fa-solid fa-plus"></i> Add Expense</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Date</th><th>Item</th><th>Category</th><th>Amount</th><th>Action</th></tr></thead>
+        <tbody>
+          ${(expenses || []).map(x => `
+            <tr>
+              <td>${new Date(x.spent_at).toLocaleDateString()}</td>
+              <td><b>${x.title}</b></td>
+              <td>${x.category}</td>
+              <td><b>₹${Number(x.amount || 0).toLocaleString('en-IN')}</b></td>
+              <td><button class="btn-sm btn-danger" onclick="deleteExpense('${x.id}')"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAddExpenseModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>नया खर्च जोड़ें</h3>
+      <form onsubmit="saveExpense(event)">
+        <div class="form-group"><label>Title</label><input id="expTitle" required placeholder="50 बोरी सीमेंट"></div>
+        <div class="form-group"><label>Category</label><select id="expCat"><option value="cement">Cement</option><option value="sand">Sand</option><option value="steel">Steel</option><option value="labour">Labour</option></select></div>
+        <div class="form-group"><label>Amount ₹</label><input id="expAmount" type="number" required placeholder="18500"></div>
+        <button type="submit" class="btn-primary">Save Expense</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveExpense(e) {
+  e.preventDefault();
+  await db.from('expenses').insert({
+    title: $('expTitle').value,
+    category: $('expCat').value,
+    amount: Number($('expAmount').value),
+    created_by: currentUser.id
+  });
+  $('modalContainer').classList.add('hidden');
+  openView('expenses');
+}
+
+async function deleteExpense(id) {
+  if (!confirm('क्या आप इस खर्च को हटाना चाहते हैं?')) return;
+  await db.from('expenses').delete().eq('id', id);
+  openView('expenses');
+}
+
+async function renderAdminSettings(container) {
+  const { data: settings } = await db.from('business_settings').select('*').eq('id', true).maybeSingle();
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Business & UPI Payment Settings</h1></div>
+    <div class="card" style="max-width:600px;">
+      <form onsubmit="saveBusinessSettings(event)">
+        <div class="form-group"><label>Admin Phone</label><input id="bPhone" value="${settings?.phone || '9785438345'}"></div>
+        <div class="form-group"><label>Admin Address</label><input id="bAddress" value="${settings?.address || 'Mandawara, Jhunjhunu, Rajasthan'}"></div>
+        <div class="form-group"><label>Admin UPI ID</label><input id="bUpi" value="${settings?.upi_id || '9785438345@upi'}"></div>
+        <button type="submit" class="btn-primary">Save Settings</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveBusinessSettings(e) {
+  e.preventDefault();
+  await db.from('business_settings').upsert({
+    id: true,
+    phone: $('bPhone').value,
+    address: $('bAddress').value,
+    upi_id: $('bUpi').value
+  });
+  alert('सेटिंग्स सेव हो गई हैं!');
+}
+
+// ==========================================
+// CUSTOMER MODULES (PROJECTS, CONTRACTS, ENQUIRY, PAYMENTS, PROFILE)
+// ==========================================
+async function renderCustomerProjects(container) {
+  const { data: projects } = await db.from('projects').select('*').eq('customer_id', currentUser.id);
+
+  container.innerHTML = `
+    <div class="page-head"><h1>मेरे प्रोजेक्ट्स (My Projects)</h1></div>
+    ${(projects || []).length === 0 ? '<div class="card"><p>आपका कोई सक्रिय प्रोजेक्ट नहीं है। "New Enquiry" से नया काम दर्ज करें।</p></div>' : ''}
+    ${(projects || []).map(p => `
+      <div class="card">
+        <h3>${p.name}</h3>
+        <p style="color:var(--muted); font-size:13px; margin:4px 0 14px;">📍 ${p.address || 'Site Address'}</p>
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700;"><span>Progress</span><span>${p.progress}%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
+      </div>
+    `).join('')}
+  `;
+}
+
+async function renderCustomerContracts(container) {
+  const { data: myProjects } = await db.from('projects').select('id, name').eq('customer_id', currentUser.id);
+  const projIds = (myProjects || []).map(p => p.id);
+
+  let contracts = [];
+  if (projIds.length > 0) {
+    const { data } = await db.from('contracts')
+      .select('*, project:project_id(name, address, customer:customer_id(name, phone, address))')
+      .in('project_id', projIds)
+      .order('created_at', { ascending: false });
+    contracts = data || [];
+  }
+
+  container.innerHTML = `
+    <div class="page-head"><h1>मेरे अनुबंध / कॉन्ट्रैक्ट्स (My Contracts)</h1></div>
+    ${contracts.length === 0 ? '<div class="card"><p>आपके पास अभी कोई अनुबंध उपलब्ध नहीं है।</p></div>' : ''}
+    ${contracts.map(c => {
+      const isLocked = c.status === 'locked' || (c.admin_approved_at && c.customer_approved_at);
+      return `
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <h3>${c.project?.name || 'Construction Contract'}</h3>
+            <span class="btn-sm ${isLocked ? 'btn-success' : 'btn-warning'}">Version v${c.version} — ${isLocked ? '🔒 Locked & Active' : 'Negotiation Mode'}</span>
+          </div>
+
+          <div class="amount-badge-box">
+            <div>
+              <span style="font-size:12px; color:var(--muted); font-weight:700;">फाइनल अनुबंध राशि (Contract Amount)</span>
+              <div style="font-size:22px; font-weight:800; color:var(--primary); margin-top:2px;">
+                ₹${Number(c.final_amount || 0).toLocaleString('en-IN')}
+              </div>
+            </div>
+            ${!isLocked ? `
+              <button class="btn-sm btn-gold" style="padding:9px 14px; font-size:13px;" onclick="proposeContractAmountPrompt('${c.id}', ${c.final_amount})">
+                <i class="fa-solid fa-pen-to-square"></i> नया Amount Propose / Edit करें
+              </button>
+            ` : '<span style="font-size:12px; font-weight:700; color:var(--success);"><i class="fa-solid fa-lock"></i> Amount Locked</span>'}
+          </div>
+
+          ${generateLegalAgreementHtml(c, isLocked)}
+
+          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+            ${!c.customer_approved_at && !isLocked ? `
+              <button class="btn-primary" style="width:auto; padding:12px 24px; background:var(--success);" onclick="approveCustomerContract('${c.id}')">
+                <i class="fa-solid fa-file-signature"></i> Approve Contract Digitally (स्वीकार करें)
+              </button>
+            ` : `
+              <span class="btn-sm btn-success" style="padding:10px 18px; font-size:13px;">
+                <i class="fa-solid fa-circle-check"></i> ${isLocked ? 'Contract Fully Locked & Active' : 'You have approved this contract ✅'}
+              </span>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+async function approveCustomerContract(contractId) {
+  if (!confirm('क्या आप इस अनुबंध को अपनी डिजिटल स्वीकृति देना चाहते हैं?')) return;
+  const now = new Date().toISOString();
+  const { data: c } = await db.from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
+  const isFullyApproved = Boolean(c.admin_approved_at);
+
+  await db.from('contracts').update({
+    customer_approved_at: now,
+    customer_approved_by: currentUser.id,
+    status: isFullyApproved ? 'locked' : 'amount_discussion',
+    locked_at: isFullyApproved ? now : null
+  }).eq('id', contractId);
+
+  if (isFullyApproved && c.project_id) {
+    await db.from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
+    alert('अनुबंध पूरी तरह स्वीकृत व लॉक हो गया है और प्रोजेक्ट शुरू हो चुका है! 🔒');
+  } else {
+    alert('आपकी डिजिटल स्वीकृति दर्ज हो गई है!');
+  }
+
+  openView('my_contracts');
+}
+
+async function renderCustomerEnquiryForm(container) {
+  container.innerHTML = `
+    <div class="page-head"><h1>नई इन्क्वायरी भेजें</h1></div>
+    <div class="card" style="max-width:600px;">
+      <form onsubmit="submitCustomerEnquiry(event)">
+        <div class="form-group"><label>काम का विवरण</label><textarea id="enqWork" rows="3" required placeholder="जैसे: 2 मंज़िला मकान"></textarea></div>
+        <div class="form-group"><label>बजट ₹</label><input id="enqBudget" type="number" placeholder="2500000"></div>
+        <div class="form-group"><label>साइट का पता</label><input id="enqAddress" required placeholder="Mandawara, Jhunjhunu"></div>
+        <button type="submit" class="btn-primary">इन्क्वायरी सबमिट करें</button>
+      </form>
+    </div>
+  `;
+}
+
+async function submitCustomerEnquiry(e) {
+  e.preventDefault();
+  await db.from('enquiries').insert({
+    customer_id: currentUser.id,
+    work: $('enqWork').value,
+    budget: Number($('enqBudget').value || 0),
+    address: $('enqAddress').value,
+    status: 'pending'
+  });
+  alert('इन्क्वायरी सबमिट हो गई!');
+  openView('my_projects');
+}
+
 async function renderCustomerPayments(container) {
   const [setRes, projRes, payRes] = await Promise.all([
     db.from('business_settings').select('*').eq('id', true).maybeSingle(),
@@ -957,7 +1894,6 @@ async function renderCustomerPayments(container) {
   container.innerHTML = `
     <div class="page-head"><h1>Payments & UPI Details</h1></div>
 
-    <!-- Financial Stats -->
     <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:20px;">
       <div class="stat-card"><div><h4>कुल प्रोजेक्ट लागत</h4><div class="val" style="font-size:22px;">₹${totalProjectValue.toLocaleString('en-IN')}</div></div></div>
       <div class="stat-card"><div><h4>जमा राशि (Paid)</h4><div class="val" style="font-size:22px; color:var(--success);">₹${totalPaid.toLocaleString('en-IN')}</div></div></div>
@@ -966,7 +1902,6 @@ async function renderCustomerPayments(container) {
       </div>
     </div>
 
-    <!-- Direct UPI Payment Card -->
     <div class="card" style="background:#fff7ed; border-color:#fed7aa; text-align:center; padding:24px;">
       <h3 style="color:#9a3412; font-size:18px;"><i class="fa-solid fa-qrcode"></i> Admin UPI Payment</h3>
       <p style="margin-top:6px; font-size:14px;"><b>UPI ID:</b> ${adminUpi} | <b>Phone:</b> ${settings?.phone || '9785438345'}</p>
@@ -978,7 +1913,6 @@ async function renderCustomerPayments(container) {
       </div>
     </div>
 
-    <!-- Submit Payment Reference Form -->
     <div class="card" style="max-width:600px;">
       <h3>भुगतान के बाद UTR / Reference सबमिट करें</h3>
       <form onsubmit="submitCustomerPayment(event)" style="margin-top:14px;">
@@ -989,7 +1923,6 @@ async function renderCustomerPayments(container) {
       </form>
     </div>
 
-    <!-- Payment History -->
     <div class="card">
       <h3 style="margin-bottom:12px;">आपका भुगतान इतिहास (Payment History)</h3>
       <div class="table-container">
@@ -1025,8 +1958,110 @@ async function submitCustomerPayment(e) {
   openView('my_payments');
 }
 
+async function renderCustomerProfile(container) {
+  container.innerHTML = `
+    <div class="page-head"><h1>मेरी प्रोफ़ाइल (My Profile)</h1></div>
+    <div class="card" style="max-width:600px;">
+      <div style="text-align:center; margin-bottom:18px;">
+        ${currentUser.image_url ? `<img src="${currentUser.image_url}" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);">` : '<i class="fa-solid fa-user-circle fa-5x" style="color:var(--muted);"></i>'}
+        <h3 style="margin-top:10px;">${currentUser.name || 'Customer'}</h3>
+        <p style="color:var(--muted); font-size:13px;">${currentUser.email || ''}</p>
+      </div>
+
+      <form onsubmit="updateMyProfile(event)">
+        <div class="form-group"><label>Name</label><input id="mpName" value="${currentUser.name || ''}" required></div>
+        <div class="form-group"><label>Phone</label><input id="mpPhone" value="${currentUser.phone || ''}" required></div>
+        <div class="form-group"><label>Address</label><input id="mpAddress" value="${currentUser.address || ''}"></div>
+        <button type="submit" class="btn-primary">Update Profile</button>
+      </form>
+    </div>
+  `;
+}
+
+async function updateMyProfile(e) {
+  e.preventDefault();
+  const updated = {
+    name: $('mpName').value,
+    phone: $('mpPhone').value,
+    address: $('mpAddress').value
+  };
+
+  await db.from('profiles').update(updated).eq('id', currentUser.id);
+  currentUser = { ...currentUser, ...updated };
+  alert('प्रोफ़ाइल अपडेट हो गई!');
+  openView('my_profile');
+}
+
+function openCustomerSignupModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3>नया कस्टमर अकाउंट बनाएं (Sign Up)</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <form onsubmit="handleCustomerSignup(event)">
+        <div class="form-group"><label>पूरा नाम (Full Name)</label><input id="suName" required placeholder="जैसे: विकास शर्मा"></div>
+        <div class="form-group"><label>Mobile Number</label><input id="suPhone" type="tel" required placeholder="9876543210"></div>
+        <div class="form-group"><label>Email Address</label><input id="suEmail" type="email" required placeholder="name@example.com"></div>
+        <div class="form-group"><label>Password (कम से कम 6 अक्षर)</label><input id="suPass" type="password" required placeholder="••••••••"></div>
+        <div class="form-group"><label>पता (Site / Home Address)</label><input id="suAddress" placeholder="गाँव/शहर"></div>
+        <button type="submit" id="suBtn" class="btn-primary" style="margin-top:10px;"><i class="fa-solid fa-user-plus"></i> Create Customer Account</button>
+      </form>
+    </div>
+  `;
+}
+
+async function handleCustomerSignup(e) {
+  e.preventDefault();
+  const name = $('suName').value.trim();
+  const phone = $('suPhone').value.trim();
+  const email = $('suEmail').value.trim();
+  const pass = $('suPass').value;
+  const address = $('suAddress').value.trim();
+
+  const btn = $('suBtn');
+  btn.disabled = true;
+  btn.textContent = 'Account बन रहा है...';
+
+  try {
+    const { data, error } = await db.auth.signUp({
+      email,
+      password: pass,
+      options: { data: { name, phone, address, role: 'customer' } }
+    });
+
+    if (error) throw error;
+
+    const userId = data.user?.id || (await db.from('profiles').select('id').eq('email', email).maybeSingle())?.data?.id;
+    if (userId) {
+      await db.from('profiles').upsert({
+        id: userId,
+        email,
+        name,
+        phone,
+        address,
+        role: 'customer',
+        is_active: true
+      });
+    }
+
+    alert('अकाउंट सफलतापूर्वक बन गया! अब आप लॉगिन कर सकते हैं।');
+    $('modalContainer').classList.add('hidden');
+    selectRole('customer');
+    $('loginId').value = email;
+    $('loginPassword').value = pass;
+  } catch (err) {
+    alert('Sign Up Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Customer Account';
+  }
+}
+
 // ==========================================
-// 4 & 5. WORKER: ATTENDANCE & EARNINGS HISTORY
+// WORKER MODULES (ATTENDANCE, EARNINGS, UPDATES)
 // ==========================================
 let videoStream = null;
 
@@ -1199,7 +2234,6 @@ function extractGrayscalePixels(img, w, h) {
   return gray;
 }
 
-// --- WORKER EARNINGS & PAYOUT HISTORY ---
 async function renderWorkerEarnings(container) {
   const [attRes, payRes] = await Promise.all([
     db.from('attendance').select('*').eq('worker_id', currentUser.id).eq('status', 'approved'),
@@ -1222,7 +2256,6 @@ async function renderWorkerEarnings(container) {
       <div class="stat-card" style="background:#fff1f2; border-color:#fecdd3;"><div><h4>बकाया राशि</h4><div class="val" style="color:var(--danger);">₹${remaining}</div></div></div>
     </div>
 
-    <!-- Payout History Table -->
     <div class="card">
       <h3 style="margin-bottom:12px;">वेतन भुगतान इतिहास (Payout History)</h3>
       <div class="table-container">
@@ -1245,6 +2278,41 @@ async function renderWorkerEarnings(container) {
   `;
 }
 
+async function renderWorkerUpdates(container) {
+  const { data: projects } = await db.from('projects').select('id, name');
+
+  container.innerHTML = `
+    <div class="page-head"><h1>दैनिक कार्य रिपोर्ट (Daily Work Update)</h1></div>
+    <div class="card" style="max-width:600px;">
+      <form onsubmit="submitWorkerDailyUpdate(event)">
+        <div class="form-group"><label>प्रोजेक्ट</label><select id="wuProj">${(projects || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label>आज क्या काम किया</label><textarea id="wuWork" rows="3" required placeholder="कार्य का विवरण"></textarea></div>
+        <div class="form-group"><label>साइट फ़ोटो</label><input type="file" id="wuPhoto" accept="image/*"></div>
+        <button type="submit" class="btn-primary">Post Update</button>
+      </form>
+    </div>
+  `;
+}
+
+async function submitWorkerDailyUpdate(e) {
+  e.preventDefault();
+  const fileInput = $('wuPhoto');
+  let imgUrl = '';
+  if (fileInput.files && fileInput.files[0]) {
+    imgUrl = await readFileAsBase64(fileInput.files[0]);
+  }
+
+  await db.from('daily_updates').insert({
+    project_id: $('wuProj').value,
+    author_id: currentUser.id,
+    work_done: $('wuWork').value,
+    image_url: imgUrl
+  });
+
+  alert('कार्य रिपोर्ट सबमिट हो गई है!');
+  openView('worker_attendance');
+}
+
 // Helpers
 function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
@@ -1261,5 +2329,5 @@ async function handleLogout() {
   location.reload();
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
