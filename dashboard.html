@@ -1,212 +1,308 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Dashboard - Prakash Swami Constructions</title>
-  
-  <!-- Supabase CDN with fallback mirror -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script>
-    if (!window.supabase) {
-      document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
-    }
-  </script>
-
-  <!-- FontAwesome Icons CDN -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Prakash Swami Constructions — Dashboard</title>
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
   <style>
     :root {
       --primary: #0b1220;
-      --primary-light: #162032;
-      --accent: #d97706;
-      --accent-hover: #b45309;
-      --gold: #e65100;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --border: #e2e8f0;
-      --text: #0f172a;
+      --accent: #e65100;
+      --bg: #f4f6fa;
+      --card: #ffffff;
+      --text: #1e293b;
       --muted: #64748b;
+      --border: #e2e8f0;
       --success: #16a34a;
       --danger: #dc2626;
-      --warning: #ca8a04;
+      --warning: #d97706;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; }
     
-    /* Layout */
-    .app-container { display: flex; min-height: 100vh; }
+    /* Login Page */
+    .login-wrapper { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%); padding: 16px; }
+    .login-card { width: min(450px, 100%); background: var(--card); border-radius: 20px; padding: 32px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+    .brand-header { text-align: center; margin-bottom: 20px; }
+    .brand-header h2 { color: var(--primary); font-size: 22px; font-weight: 800; }
+    .brand-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
     
-    /* Sidebar */
-    .sidebar { width: 260px; background: var(--primary); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; }
-    .sidebar-brand { padding: 24px 20px; font-size: 18px; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
-    .sidebar-brand i { color: var(--accent); }
-    .sidebar-menu { list-style: none; padding: 15px 10px; flex: 1; }
-    .sidebar-menu li { margin-bottom: 4px; }
-    .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: #94a3b8; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: 0.2s; }
-    .sidebar-menu a:hover, .sidebar-menu a.active { background: var(--primary-light); color: #fff; }
-    .sidebar-menu a.active { border-left: 4px solid var(--accent); }
-    .sidebar-menu a i { width: 20px; text-align: center; }
-
-    /* Main Content */
-    .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-    .topbar { height: 64px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 40; }
-    .page-content { padding: 24px; flex: 1; overflow-y: auto; }
+    .role-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #e2e8f0; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
+    .role-tabs button { padding: 10px 4px; border: 0; background: transparent; font-weight: 700; font-size: 13px; border-radius: 8px; cursor: pointer; color: var(--muted); transition: 0.2s; }
+    .role-tabs button.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
     
-    /* Cards & Containers */
-    .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
-    
-    /* Stats Grid */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
-    .stat-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-    .stat-val { font-size: 22px; font-weight: 800; }
-    .stat-lbl { color: var(--muted); font-size: 13px; font-weight: 600; }
-
-    /* Tables */
-    .table-container { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-    th { background: #f8fafc; padding: 12px 14px; font-weight: 700; color: #475569; border-bottom: 1px solid var(--border); }
-    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background: #f8fafc; }
-    
-    /* Buttons */
-    .btn-primary { background: var(--accent); color: #fff; border: 0; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-secondary { background: #fff; border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; border: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
-    .btn-gold { background: #ea580c; color: #fff !important; }
-    .btn-success { background: #dcfce7; color: #166534; }
-    .btn-danger { background: #fee2e2; color: #991b1b; }
-    .btn-edit { background: #e0e7ff; color: #3730a3; }
-    .btn-action-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-
-    /* Note Box in Table */
-    .note-box { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 8px; min-width: 140px; }
-    .note-text { font-size: 12px; color: #334155; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    /* Forms */
     .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; color: #334155; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; outline: none; transition: 0.2s; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); }
+    
+    .btn-primary { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: 0; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+    .btn-primary:hover { opacity: 0.95; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { padding: 8px 14px; background: var(--border); color: var(--text); border: 0; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    
+    /* Action Buttons */
+    .btn-action-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 0; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+    .btn-success { background: #dcfce7; color: #15803d; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; }
+    .btn-warning { background: #fef3c7; color: #b45309; }
+    .btn-edit { background: #e0e7ff; color: #4338ca; }
+    .btn-gold { background: #fef08a; color: #854d0e; font-weight: 700; border: 1px solid #fde047; }
+    .btn-check { background: #0b1220; color: #fff; font-weight: 700; }
+    
+    .alert-box { padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; line-height: 1.5; }
+    .alert-error { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+    .alert-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .hidden { display: none !important; }
+
+    /* Dashboard Layout */
+    .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+    .app-header { height: 64px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 40; }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-title { font-size: 16px; font-weight: 800; color: var(--primary); }
+    .role-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .role-badge.admin { background: #fee2e2; color: var(--danger); }
+    .role-badge.customer { background: #e0e7ff; color: #4338ca; }
+    .role-badge.worker { background: #fef3c7; color: var(--warning); }
+    
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .notif-btn { position: relative; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: #fff; display: grid; place-items: center; cursor: pointer; color: var(--text); }
+    .notif-badge { position: absolute; top: -4px; right: -4px; background: var(--danger); color: #fff; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; }
+
+    .app-body { display: grid; grid-template-columns: 240px 1fr; flex: 1; }
+    .app-sidebar { background: var(--primary); color: #fff; padding: 16px 10px; display: flex; flex-direction: column; gap: 4px; min-height: calc(100vh - 64px); }
+    .sidebar-btn { width: 100%; padding: 11px 14px; border: 0; background: transparent; color: #94a3b8; border-radius: 10px; text-align: left; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+    .sidebar-btn:hover, .sidebar-btn.active { background: rgba(255,255,255,0.1); color: #fff; }
+    .sidebar-btn i { width: 18px; font-size: 15px; }
+
+    .app-main { padding: 24px; max-width: 1300px; width: 100%; margin: 0 auto; }
+    .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .page-head h1 { font-size: 22px; font-weight: 800; color: var(--primary); }
+
+    /* Universal Search Bar */
+    .search-box { width: 100%; max-width: 400px; position: relative; }
+    .search-box input { width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-size: 13px; outline: none; }
+    .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: #fff; padding: 18px; border-radius: 14px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .stat-card h4 { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .stat-card .val { font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 4px; }
+    .stat-card .icon-box { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; }
+
+    /* Cards & Tables */
+    .card { background: #fff; border-radius: 16px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+    .table-container { width: 100%; overflow-x: auto; background: #fff; border-radius: 14px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+    th { background: #f8fafc; padding: 12px 16px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: 0; }
+    
+    /* Progress Bar */
+    .progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+    .progress-bar-fill { height: 100%; background: var(--success); border-radius: 4px; }
+
+    /* Note display box */
+    .note-box { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px dashed #cbd5e1; max-width: 220px; font-size: 12px; line-height: 1.4; }
+    .note-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Legal Contract Agreement Document Box */
+    .contract-doc { background: #fff; border: 2px solid #334155; border-radius: 16px; padding: 28px; margin-top: 14px; position: relative; box-shadow: 0 6px 18px rgba(0,0,0,0.06); font-size: 13px; line-height: 1.6; color: #1e293b; }
+    .contract-header { border-bottom: 2px double #0b1220; padding-bottom: 14px; margin-bottom: 16px; text-align: center; }
+    .contract-header h2 { font-size: 20px; font-weight: 800; color: var(--primary); text-transform: uppercase; }
+    .contract-header h3 { font-size: 15px; font-weight: 700; color: #b45309; margin-top: 4px; }
+    .contract-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .contract-section { margin-bottom: 18px; }
+    .contract-section h4 { color: var(--primary); border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 8px; font-size: 14px; font-weight: 800; }
+    .milestone-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+    .milestone-table th { background: #f1f5f9; padding: 8px 10px; border: 1px solid #cbd5e1; }
+    .milestone-table td { padding: 8px 10px; border: 1px solid #cbd5e1; }
+    .sign-box-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; border-top: 2px solid #cbd5e1; padding-top: 16px; }
+    .sign-card { background: #f8fafc; padding: 14px; border-radius: 12px; border: 1px solid var(--border); font-size: 12px; }
+
+    /* Sub-Tabs */
+    .sub-tabs { display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .sub-tab-btn { padding: 8px 16px; border-radius: 8px; border: 0; background: #e2e8f0; font-weight: 700; font-size: 13px; cursor: pointer; color: var(--muted); }
+    .sub-tab-btn.active { background: var(--primary); color: #fff; }
 
     /* Modal */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .modal-backdrop.hidden { display: none; }
-    .modal-card { background: #fff; width: 100%; max-width: 700px; border-radius: 16px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: grid; place-items: center; z-index: 100; padding: 16px; }
+    .modal-card { width: min(750px, 100%); background: #fff; border-radius: 18px; padding: 24px; max-height: 90vh; overflow-y: auto; }
 
-    /* Contract Legal Styling */
-    .contract-doc { background: #fff; border: 2px solid #0f172a; padding: 28px; border-radius: 12px; color: #000; font-family: 'Times New Roman', serif; line-height: 1.6; }
-    .contract-header { text-align: center; border-bottom: 2px double #000; padding-bottom: 12px; margin-bottom: 18px; }
-    .contract-header h2 { font-size: 22px; font-weight: 900; margin-bottom: 2px; }
-    .contract-header h3 { font-size: 16px; font-weight: 800; }
-    .contract-section { margin-bottom: 16px; }
-    .contract-section h4 { font-size: 14px; font-weight: 800; margin-bottom: 6px; text-decoration: underline; }
-    .milestone-table { width: 100%; border: 1px solid #000; margin-top: 8px; }
-    .milestone-table th, .milestone-table td { border: 1px solid #000; padding: 6px 10px; font-size: 12px; }
-    .sign-box-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; border-top: 1px solid #94a3b8; padding-top: 16px; }
-    .sign-card { border: 1px dashed #475569; padding: 12px; border-radius: 8px; font-size: 12px; text-align: center; }
+    /* Mobile Slide-in Drawer Sidebar */
+    .mobile-menu-toggle {
+      display: none;
+      background: transparent;
+      border: 0;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin-right: 6px;
+    }
+    .mobile-menu-toggle:hover { background: #f1f5f9; }
 
-    /* Auth Screen */
-    .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0b1220; padding: 20px; }
-    .auth-card { background: #fff; width: 100%; max-width: 440px; border-radius: 20px; padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-    .role-tabs { display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; margin-bottom: 20px; }
-    .role-tab { flex: 1; padding: 8px; text-align: center; font-size: 13px; font-weight: 700; border: 0; background: transparent; border-radius: 7px; cursor: pointer; color: var(--muted); }
-    .role-tab.active { background: #fff; color: var(--text); box-shadow: 0 2px 5px rgba(0,0,0,0.08); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 18, 32, 0.65);
+      backdrop-filter: blur(3px);
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .sidebar-overlay.active {
+      display: block;
+      opacity: 1;
+    }
 
-    /* Progress bar */
-    .progress-bar-bg { background: #e2e8f0; border-radius: 99px; height: 8px; overflow: hidden; margin-top: 4px; }
-    .progress-bar-fill { background: var(--accent); height: 100%; border-radius: 99px; }
+    .sidebar-mobile-header {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      margin-bottom: 12px;
+    }
 
-    @media(max-width:768px){
-      .app-container { flex-direction: column; }
-      .sidebar { width: 100%; height: auto; }
-      .sidebar-menu { display: flex; overflow-x: auto; padding: 8px; }
-      .sidebar-menu a { padding: 8px 12px; font-size: 12px; white-space: nowrap; }
-      .topbar { padding: 0 16px; }
-      .page-content { padding: 16px; }
+    @media(max-width: 840px) {
+      .mobile-menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
+      .sidebar-mobile-header { display: flex; }
+      
+      .app-body { display: block; }
+      
+      .app-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 280px;
+        height: 100vh;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 6px 0 25px rgba(0,0,0,0.4);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 16px 12px;
+      }
+      .app-sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar-btn {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        font-size: 14px;
+        padding: 12px 16px;
+        gap: 12px;
+        white-space: normal;
+      }
+      .sidebar-btn i { width: 20px; font-size: 16px; }
       .sign-box-grid { grid-template-columns: 1fr; }
+      .app-main { padding: 16px; }
+      .app-header { padding: 0 14px; }
     }
   </style>
 </head>
 <body>
 
-<div id="authScreen" class="auth-wrap">
-  <div class="auth-card">
-    <div style="text-align:center; margin-bottom:20px;">
-      <h2 style="font-size:22px; font-weight:800; color:var(--primary);"><i class="fa-solid fa-helmet-safety" style="color:var(--accent);"></i> Prakash Swami Constructions</h2>
-      <p style="color:var(--muted); font-size:13px; margin-top:4px;">Mandawara, Jhunjhunu • Portal Login</p>
+<!-- 1. LOGIN SCREEN -->
+<div id="loginSection" class="login-wrapper">
+  <div class="login-card">
+    <div class="brand-header">
+      <i class="fa-solid fa-helmet-safety" style="font-size:32px; color:var(--accent); margin-bottom:8px;"></i>
+      <h2>Prakash Swami Constructions</h2>
+      <p>Construction Management Portal</p>
     </div>
 
     <div class="role-tabs">
-      <button class="role-tab active" id="tabAdmin" onclick="setLoginRole('admin')"><i class="fa-solid fa-crown"></i> Admin</button>
-      <button class="role-tab" id="tabCustomer" onclick="setLoginRole('customer')"><i class="fa-solid fa-user"></i> Customer</button>
-      <button class="role-tab" id="tabWorker" onclick="setLoginRole('worker')"><i class="fa-solid fa-hammer"></i> Worker</button>
+      <button type="button" id="tabAdmin" class="active" onclick="selectRole('admin')"><i class="fa-solid fa-crown"></i> Admin</button>
+      <button type="button" id="tabCustomer" onclick="selectRole('customer')"><i class="fa-solid fa-user"></i> Customer</button>
+      <button type="button" id="tabWorker" onclick="selectRole('worker')"><i class="fa-solid fa-hammer"></i> Worker</button>
     </div>
 
-    <!-- Div container instead of form to prevent browser reload -->
-    <div id="authForm">
-      <div class="form-group" id="userGroup">
-        <label id="userLabel">Admin Email</label>
-        <input id="loginUser" type="text" value="satpalswami22742@gmail.com" placeholder="Email दर्ज करें" required onkeydown="if(event.key==='Enter') handleLoginClick()">
+    <div id="loginAlert" class="alert-box alert-error hidden"></div>
+
+    <form id="authForm" onsubmit="handleAuthSubmit(event)">
+      <div class="form-group">
+        <label id="inputLabel">Admin Email</label>
+        <input id="loginId" type="text" required value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com">
       </div>
-      <div class="form-group" id="passGroup">
-        <label>पासवर्ड (Password)</label>
-        <input id="loginPass" type="password" placeholder="••••••••" required onkeydown="if(event.key==='Enter') handleLoginClick()">
+
+      <div class="form-group" id="pwGroup">
+        <label>Password</label>
+        <input id="loginPassword" type="password" placeholder="••••••••">
       </div>
-      <button type="button" class="btn-primary" style="width:100%; justify-content:center; padding:12px;" onclick="handleLoginClick()">
-        <i class="fa-solid fa-right-to-bracket"></i> Login Dashboard
+
+      <button id="loginSubmitBtn" type="submit" class="btn-primary">
+        <i class="fa-solid fa-right-to-bracket"></i> Login
       </button>
+    </form>
+
+    <div id="signupGroup" class="hidden" style="margin-top: 14px; text-align: center;">
+      <p style="font-size: 13px; color: var(--muted);">नया खाता बनाना चाहते हैं? 
+        <a href="javascript:void(0)" onclick="openCustomerSignupModal()" style="color:var(--accent); font-weight:700; text-decoration:underline;">Customer Sign Up</a>
+      </p>
     </div>
 
-    <div id="authHelp" style="text-align:center; margin-top:16px; font-size:12px; color:var(--muted);">
-      कस्टमर नया खाता बनाने के लिए <a href="javascript:void(0)" onclick="openCustomerSignupModal()" style="color:var(--accent); font-weight:700;">Sign Up करें</a>
+    <div style="margin-top: 20px; font-size: 12px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 14px;">
+      <p><b>Worker Login:</b> सिर्फ अपना रजिस्टर्ड मोबाइल नंबर डालें (No Password/OTP)।</p>
     </div>
   </div>
 </div>
 
-<div id="appScreen" class="app-container" style="display:none;">
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <i class="fa-solid fa-city"></i>
-      <span>Prakash Swami</span>
+<!-- 2. MAIN DASHBOARD APP -->
+<div id="appSection" class="app-container hidden">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()" title="Menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <i class="fa-solid fa-building" style="color:var(--accent); font-size:20px;"></i>
+      <span class="header-title">Prakash Swami</span>
+      <span id="roleBadge" class="role-badge admin">Admin</span>
     </div>
-    <ul class="sidebar-menu" id="sidebarMenu">
-      <!-- Injected Dynamically based on role -->
-    </ul>
-  </aside>
+    <div class="header-right">
+      <!-- Notification Bell with Red Badge -->
+      <button class="notif-btn" onclick="openNotificationsModal()" title="Notifications">
+        <i class="fa-regular fa-bell"></i>
+        <span id="notifBadge" class="notif-badge hidden">0</span>
+      </button>
+      <button class="btn-secondary" onclick="handleLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+    </div>
+  </header>
 
-  <!-- Main Container -->
-  <div class="main-content">
-    <header class="topbar">
-      <div style="font-weight:700; font-size:15px;" id="topbarTitle">Dashboard</div>
-      <div style="display:flex; align-items:center; gap:14px;">
-        <span id="roleBadge" class="btn-sm btn-gold" style="text-transform:uppercase;"></span>
-        <button class="btn-secondary btn-sm" onclick="handleLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
-      </div>
-    </header>
+  <!-- Sidebar Overlay for Phone -->
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMobileSidebar(false)"></div>
 
-    <main class="page-content" id="mainContainer">
-      <!-- Section Content Injected Dynamically -->
-    </main>
+  <div class="app-body">
+    <aside class="app-sidebar" id="sidebarNav"></aside>
+    <main class="app-main" id="mainContent"></main>
   </div>
 </div>
 
-<!-- Modal Container -->
-<div id="modalContainer" class="modal-backdrop hidden"></div>
+<!-- Reusable Modal Container -->
+<div id="modalContainer" class="modal-overlay hidden"></div>
 
 <script>
-// Supabase Credentials
+// --- SUPABASE CONFIGURATION ---
 const SUPABASE_URL = 'https://aamstyeeewncmgqdxpoh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
 const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 function getDB() { return db; }
 
 const ADMIN_EMAIL = 'satpalswami22742@gmail.com';
+
 let currentRole = 'admin';
 let currentUser = null;
 let activeEnqTab = 'customer_enq';
@@ -228,10 +324,11 @@ function escapeAttr(val) {
     .replace(/\n/g, ' ');
 }
 
+// --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', async () => {
   const hash = window.location.hash.replace('#', '');
   if (['admin', 'customer', 'worker'].includes(hash)) {
-    setLoginRole(hash);
+    selectRole(hash);
   }
   
   if (db) {
@@ -242,139 +339,188 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-function setLoginRole(role) {
+function selectRole(role) {
   currentRole = role;
   ['tabAdmin', 'tabCustomer', 'tabWorker'].forEach(t => $(t).classList.remove('active'));
   
-  const userIn = $('loginUser');
-  const userLbl = $('userLabel');
-  const passGrp = $('passGroup');
-  const authHelp = $('authHelp');
+  const inputLabel = $('inputLabel');
+  const loginId = $('loginId');
+  const pwGroup = $('pwGroup');
+  const signupGroup = $('signupGroup');
+  const alertBox = $('loginAlert');
+  alertBox.classList.add('hidden');
 
   if (role === 'admin') {
     $('tabAdmin').classList.add('active');
-    userLbl.innerText = 'Admin Email';
-    userIn.value = ADMIN_EMAIL;
-    userIn.type = 'email';
-    passGrp.style.display = 'block';
-    authHelp.style.display = 'none';
+    inputLabel.innerText = 'Admin Email';
+    loginId.value = ADMIN_EMAIL;
+    loginId.type = 'email';
+    pwGroup.classList.remove('hidden');
+    signupGroup.classList.add('hidden');
   } else if (role === 'customer') {
     $('tabCustomer').classList.add('active');
-    userLbl.innerText = 'Mobile Number / Email';
-    userIn.value = '';
-    userIn.type = 'text';
-    passGrp.style.display = 'block';
-    authHelp.style.display = 'block';
+    inputLabel.innerText = 'Mobile Number / Email';
+    loginId.value = '';
+    loginId.type = 'text';
+    loginId.placeholder = 'मोबाइल नंबर दर्ज करें';
+    pwGroup.classList.remove('hidden');
+    signupGroup.classList.remove('hidden');
   } else if (role === 'worker') {
     $('tabWorker').classList.add('active');
-    userLbl.innerText = 'Worker Phone Number';
-    userIn.value = '';
-    userIn.type = 'tel';
-    passGrp.style.display = 'none';
-    authHelp.style.display = 'none';
+    inputLabel.innerText = 'Worker Phone Number';
+    loginId.value = '';
+    loginId.type = 'tel';
+    loginId.placeholder = 'अपना 10-अंकों का मोबाइल नंबर डालें';
+    pwGroup.classList.add('hidden');
+    signupGroup.classList.add('hidden');
   }
 }
 
-async function handleLoginClick() {
-  const userVal = $('loginUser').value.trim();
-  const passVal = $('loginPass').value.trim();
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  const alertBox = $('loginAlert');
+  alertBox.classList.add('hidden');
+  
+  const idVal = $('loginId').value.trim();
+  const pwVal = $('loginPassword').value.trim();
 
-  if (!userVal) return alert('कृपया Email या मोबाइल नंबर दर्ज करें।');
-
-  if (currentRole === 'worker') {
-    const { data, error } = await getDB().from('profiles').select('*').eq('phone', userVal).eq('role', 'worker').single();
-    if (error || !data) return alert('कारीगर प्रोफाइल नहीं मिली। कृपया एडमिन से संपर्क करें।');
-    currentUser = data;
-    showAppScreen('worker');
+  if (!idVal) {
+    alertBox.innerText = 'कृपया Email या मोबाइल नंबर दर्ज करें।';
+    alertBox.classList.remove('hidden');
     return;
   }
 
-  let loginEmail = userVal;
-  if (currentRole === 'customer' && !userVal.includes('@')) {
-    loginEmail = `${userVal}@psconstructions.in`;
+  if (currentRole === 'worker') {
+    // Direct worker phone login
+    const { data: worker, error } = await db.from('profiles').select('*').eq('phone', idVal).eq('role', 'worker').single();
+    if (error || !worker) {
+      alertBox.innerText = 'यह मोबाइल नंबर कारीगर के रूप में पंजीकृत नहीं है। कृपया एडमिन से संपर्क करें।';
+      alertBox.classList.remove('hidden');
+      return;
+    }
+    currentUser = worker;
+    showDashboard('worker');
+    return;
   }
 
-  if (!passVal) return alert('कृपया पासवर्ड दर्ज करें।');
+  // Admin / Customer Login via Supabase Auth
+  let loginEmail = idVal;
+  if (currentRole === 'customer' && !idVal.includes('@')) {
+    loginEmail = `${idVal}@psconstructions.in`;
+  }
 
-  const { data, error } = await getDB().auth.signInWithPassword({
+  if (!pwVal) {
+    alertBox.innerText = 'कृपया पासवर्ड दर्ज करें।';
+    alertBox.classList.remove('hidden');
+    return;
+  }
+
+  const { data, error } = await db.auth.signInWithPassword({
     email: loginEmail,
-    password: passVal
+    password: pwVal
   });
 
   if (error) {
-    return alert('लॉगिन विफल: ' + error.message);
+    alertBox.innerText = 'लॉगिन असफल: ' + error.message;
+    alertBox.classList.remove('hidden');
+    return;
   }
 
   await bootstrapUser(data.user);
 }
 
 async function bootstrapUser(authUser) {
-  const { data: profile } = await getDB().from('profiles').select('*').eq('id', authUser.id).single();
+  const { data: profile } = await db.from('profiles').select('*').eq('id', authUser.id).single();
   if (profile) {
     currentUser = profile;
     currentRole = profile.role;
   } else {
     currentUser = { id: authUser.id, email: authUser.email, role: currentRole, name: 'User' };
   }
-  showAppScreen(currentRole);
+  showDashboard(currentRole);
 }
 
-function showAppScreen(role) {
-  $('authScreen').style.display = 'none';
-  $('appScreen').style.display = 'flex';
-  $('roleBadge').innerText = role;
+function showDashboard(role) {
+  $('loginSection').classList.add('hidden');
+  $('appSection').classList.remove('hidden');
+  
+  const badge = $('roleBadge');
+  badge.className = `role-badge ${role}`;
+  badge.innerText = role.toUpperCase();
 
-  buildSidebarMenu(role);
-  openView(role === 'admin' ? 'overview' : (role === 'customer' ? 'my_projects' : 'attendance'));
+  renderSidebar();
+  updateNotificationBadge();
+  openView(role === 'admin' ? 'overview' : (role === 'customer' ? 'my_projects' : 'worker_attendance'));
 }
 
-function buildSidebarMenu(role) {
-  const menu = $('sidebarMenu');
-  let items = [];
+function renderSidebar() {
+  const nav = $('sidebarNav');
+  let menus = [];
 
-  if (role === 'admin') {
-    items = [
+  if (currentRole === 'admin') {
+    menus = [
       { id: 'overview', icon: 'fa-chart-pie', label: 'Overview' },
-      { id: 'enquiries', icon: 'fa-bell', label: 'Enquiries & Approvals' },
-      { id: 'projects', icon: 'fa-diagram-project', label: 'Projects & Contracts' },
-      { id: 'daily_updates', icon: 'fa-camera-retro', label: 'Daily Updates' },
+      { id: 'enquiries', icon: 'fa-inbox', label: 'Enquiries & Approvals' },
+      { id: 'projects', icon: 'fa-trowel-bricks', label: 'Projects' },
+      { id: 'daily_updates', icon: 'fa-pen-ruler', label: 'Daily Updates' },
       { id: 'customers', icon: 'fa-users', label: 'Customers' },
       { id: 'workers', icon: 'fa-helmet-safety', label: 'Workers' },
-      { id: 'payments', icon: 'fa-indian-rupee-sign', label: 'Payments' },
+      { id: 'payments', icon: 'fa-money-bill-wave', label: 'Payments' },
       { id: 'expenses', icon: 'fa-receipt', label: 'Expenses' },
       { id: 'settings', icon: 'fa-gear', label: 'Settings' }
     ];
-  } else if (role === 'customer') {
-    items = [
-      { id: 'my_projects', icon: 'fa-house-chimney', label: 'My Projects & Contract' },
-      { id: 'new_enquiry', icon: 'fa-paper-plane', label: 'New Work Enquiry' },
-      { id: 'my_payments', icon: 'fa-wallet', label: 'Payments & Balance' },
-      { id: 'profile', icon: 'fa-user', label: 'My Profile' }
+  } else if (currentRole === 'customer') {
+    menus = [
+      { id: 'my_projects', icon: 'fa-house-chimney', label: 'My Projects' },
+      { id: 'my_enquiries', icon: 'fa-paper-plane', label: 'New Enquiry' },
+      { id: 'my_payments', icon: 'fa-wallet', label: 'Payments & UPI' },
+      { id: 'my_profile', icon: 'fa-user', label: 'My Profile' }
     ];
-  } else if (role === 'worker') {
-    items = [
-      { id: 'attendance', icon: 'fa-clipboard-user', label: 'Daily Attendance' },
-      { id: 'earnings', icon: 'fa-hand-holding-dollar', label: 'Earnings & Wages' },
-      { id: 'site_updates', icon: 'fa-camera', label: 'Upload Work Photo' }
+  } else {
+    menus = [
+      { id: 'worker_attendance', icon: 'fa-camera', label: 'Face Attendance' },
+      { id: 'worker_earnings', icon: 'fa-hand-holding-dollar', label: 'My Earnings' },
+      { id: 'worker_updates', icon: 'fa-pen-to-square', label: 'Daily Work Update' }
     ];
   }
 
-  menu.innerHTML = items.map(item => `
-    <li>
-      <a href="javascript:void(0)" id="menu-${item.id}" onclick="openView('${item.id}')">
-        <i class="fa-solid ${item.icon}"></i>
-        <span>${item.label}</span>
-      </a>
-    </li>
+  nav.innerHTML = `
+    <div class="sidebar-mobile-header">
+      <div style="font-weight:800; font-size:15px; color:#fff; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-helmet-safety" style="color:var(--accent);"></i> Menu
+      </div>
+      <button onclick="toggleMobileSidebar(false)" style="background:transparent; border:0; color:#94a3b8; font-size:26px; cursor:pointer; padding:2px 8px;">&times;</button>
+    </div>
+  ` + menus.map((m, idx) => `
+    <button class="sidebar-btn ${idx === 0 ? 'active' : ''}" id="btn-${m.id}" onclick="openView('${m.id}')">
+      <i class="fa-solid ${m.icon}"></i>
+      <span>${m.label}</span>
+    </button>
   `).join('');
 }
 
-async function openView(viewId) {
-  document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-  const activeMenu = $(`menu-${viewId}`);
-  if (activeMenu) activeMenu.classList.add('active');
+function toggleMobileSidebar(forceState) {
+  const sidebar = document.getElementById('sidebarNav');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (!sidebar || !overlay) return;
 
-  const main = $('mainContainer');
+  const isOpen = forceState !== undefined ? forceState : !sidebar.classList.contains('open');
+  if (isOpen) {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+  } else {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  }
+}
+
+async function openView(viewId) {
+  toggleMobileSidebar(false);
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+  const btn = $(`btn-${viewId}`);
+  if (btn) btn.classList.add('active');
+
+  const main = $('mainContent');
   main.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br>लोड हो रहा है...</div>';
 
   try {
@@ -390,13 +536,13 @@ async function openView(viewId) {
       else if (viewId === 'settings') await renderAdminSettings(main);
     } else if (currentRole === 'customer') {
       if (viewId === 'my_projects' || viewId === 'my_contracts') await renderCustomerProjects(main);
-      else if (viewId === 'new_enquiry') await renderCustomerEnquiryForm(main);
+      else if (viewId === 'my_enquiries') await renderCustomerEnquiryForm(main);
       else if (viewId === 'my_payments') await renderCustomerPayments(main);
-      else if (viewId === 'profile') await renderCustomerProfile(main);
-    } else if (currentRole === 'worker') {
-      if (viewId === 'attendance') await renderWorkerAttendance(main);
-      else if (viewId === 'earnings') await renderWorkerEarnings(main);
-      else if (viewId === 'site_updates') await renderWorkerUpdates(main);
+      else if (viewId === 'my_profile') await renderCustomerProfile(main);
+    } else {
+      if (viewId === 'worker_attendance') await renderWorkerAttendance(main);
+      else if (viewId === 'worker_earnings') await renderWorkerEarnings(main);
+      else if (viewId === 'worker_updates') await renderWorkerUpdates(main);
     }
   } catch (err) {
     main.innerHTML = `<div class="card" style="color:var(--danger);"><i class="fa-solid fa-circle-exclamation"></i> Error loading section: ${err.message}</div>`;
@@ -404,11 +550,32 @@ async function openView(viewId) {
 }
 
 function handleLogout() {
-  if (db) getDB().auth.signOut();
+  if (db) db.auth.signOut();
   currentUser = null;
-  $('appScreen').style.display = 'none';
-  $('authScreen').style.display = 'flex';
-  setLoginRole('admin');
+  $('appSection').classList.add('hidden');
+  $('loginSection').classList.remove('hidden');
+  selectRole('admin');
+}
+
+// Notification Badge Counter
+async function updateNotificationBadge() {
+  if (currentRole !== 'admin') return;
+  const [enqRes, attRes] = await Promise.all([
+    db.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    db.from('attendance').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+  ]);
+  const total = (enqRes.count || 0) + (attRes.count || 0);
+  const badge = $('notifBadge');
+  if (total > 0) {
+    badge.innerText = total;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function openNotificationsModal() {
+  openView('enquiries');
 }
 
 // ==========================================
@@ -567,39 +734,37 @@ async function renderAdminOverview(container) {
   container.innerHTML = `
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon" style="background:#e0f2fe; color:#0284c7;"><i class="fa-solid fa-diagram-project"></i></div>
         <div>
-          <div class="stat-val">${totalProjects}</div>
-          <div class="stat-lbl">कुल प्रोजेक्ट्स (${activeProjects} चालू)</div>
+          <h4>कुल प्रोजेक्ट्स</h4>
+          <div class="val">${totalProjects} <small style="font-size:12px; color:var(--success);">(${activeProjects} चालू)</small></div>
         </div>
+        <div class="icon-box" style="background:#e0f2fe; color:#0284c7;"><i class="fa-solid fa-diagram-project"></i></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#fef3c7; color:#d97706;"><i class="fa-solid fa-bell"></i></div>
         <div>
-          <div class="stat-val">${pendingEnq}</div>
-          <div class="stat-lbl">पेंडिंग इन्क्वायरी / अप्रूवल</div>
+          <h4>पेंडिंग इन्क्वायरी / अप्रूवल</h4>
+          <div class="val" style="color:var(--warning);">${pendingEnq}</div>
         </div>
+        <div class="icon-box" style="background:#fef3c7; color:#d97706;"><i class="fa-solid fa-bell"></i></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="fa-solid fa-indian-rupee-sign"></i></div>
         <div>
-          <div class="stat-val">₹${totalReceived.toLocaleString('en-IN')}</div>
-          <div class="stat-lbl">कुल प्राप्त भुगतान</div>
+          <h4>कुल प्राप्त भुगतान</h4>
+          <div class="val" style="color:var(--success);">₹${totalReceived.toLocaleString('en-IN')}</div>
         </div>
+        <div class="icon-box" style="background:#dcfce7; color:#16a34a;"><i class="fa-solid fa-indian-rupee-sign"></i></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#f3e8ff; color:#9333ea;"><i class="fa-solid fa-users"></i></div>
         <div>
-          <div class="stat-val">${custRes.count || 0}</div>
-          <div class="stat-lbl">रजिस्टर्ड ग्राहक</div>
+          <h4>रजिस्टर्ड ग्राहक</h4>
+          <div class="val">${custRes.count || 0}</div>
         </div>
+        <div class="icon-box" style="background:#f3e8ff; color:#9333ea;"><i class="fa-solid fa-users"></i></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">
-        <span><i class="fa-solid fa-bolt" style="color:var(--accent);"></i> क्विक एक्शन (Quick Actions)</span>
-      </div>
+      <div style="font-weight:700; margin-bottom:14px;"><i class="fa-solid fa-bolt" style="color:var(--accent);"></i> क्विक एक्शन (Quick Actions)</div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn-secondary" onclick="openView('enquiries')"><i class="fa-solid fa-user-plus"></i> नए आवेदन व हाजिरी</button>
         <button class="btn-secondary" onclick="openView('projects')"><i class="fa-solid fa-file-contract"></i> प्रोजेक्ट्स व अनुबंध</button>
@@ -625,36 +790,36 @@ async function renderAdminEnquiriesAndAttendance(container) {
   const pendingAttCount = attendances.filter(a => a.status === 'pending').length;
 
   container.innerHTML = `
-    <div class="role-tabs" style="max-width:400px; margin-bottom:20px;">
-      <button class="role-tab ${activeEnqTab === 'customer_enq' ? 'active' : ''}" onclick="activeEnqTab='customer_enq'; openView('enquiries')">
+    <div class="sub-tabs">
+      <button class="sub-tab-btn ${activeEnqTab === 'customer_enq' ? 'active' : ''}" onclick="activeEnqTab='customer_enq'; openView('enquiries')">
         <i class="fa-solid fa-envelope-open-text"></i> कस्टमर इन्क्वायरी (${pendingEnqCount})
       </button>
-      <button class="role-tab ${activeEnqTab === 'worker_att' ? 'active' : ''}" onclick="activeEnqTab='worker_att'; openView('enquiries')">
+      <button class="sub-tab-btn ${activeEnqTab === 'worker_att' ? 'active' : ''}" onclick="activeEnqTab='worker_att'; openView('enquiries')">
         <i class="fa-solid fa-clipboard-check"></i> लेबर हाजिरी (${pendingAttCount})
       </button>
     </div>
 
     ${activeEnqTab === 'customer_enq' ? `
       <div class="card">
-        <div class="card-title">ग्राहक निर्माण आवेदन एवं इन्क्वायरी</div>
+        <div style="font-weight:700; margin-bottom:12px;">ग्राहक निर्माण आवेदन एवं इन्क्वायरी</div>
         <div class="table-container">
           <table>
             <thead>
-              <tr><th>दिनांक</th><th>ग्राहक</th><th>कार्य का विवरण</th><th>अनुमानित बजट</th><th>स्टेटस</th><th>Action</th></tr>
+              <tr><th>दिनांक</th><th>ग्राहक</th><th>कार्य विवरण</th><th>अनुमानित बजट</th><th>स्टेटस</th><th>Action</th></tr>
             </thead>
             <tbody>
               ${enquiries.length === 0 ? '<tr><td colspan="6" style="text-align:center;">कोई इन्क्वायरी नहीं है।</td></tr>' : ''}
               ${enquiries.map(e => `
                 <tr>
                   <td>${new Date(e.created_at).toLocaleDateString('en-IN')}</td>
-                  <td><b>${safeStr(e.customer?.name, 'New Customer')}</b><br><small>${safeStr(e.customer?.phone, e.phone || '-')}</small></td>
+                  <td><b>${safeStr(e.customer?.name, 'Customer')}</b><br><small>${safeStr(e.customer?.phone, e.phone || '-')}</small></td>
                   <td><b>${safeStr(e.work_details)}</b><br><small style="color:var(--muted);">${safeStr(e.address)}</small></td>
                   <td>₹${Number(e.estimated_budget || 0).toLocaleString('en-IN')}</td>
                   <td><span class="btn-sm ${e.status === 'approved' ? 'btn-success' : 'btn-gold'}">${e.status}</span></td>
                   <td>
                     ${e.status === 'pending' ? `
                       <div class="btn-action-group">
-                        <button class="btn-sm btn-gold" onclick="approveEnquiry('${e.id}', '${e.customer_id}', '${escapeAttr(e.work_details)}', '${escapeAttr(e.address)}', ${e.estimated_budget || 0})"><i class="fa-solid fa-check"></i> Approve & Create Contract</button>
+                        <button class="btn-sm btn-gold" onclick="approveEnquiry('${e.id}', '${e.customer_id}', '${escapeAttr(e.work_details)}', '${escapeAttr(e.address)}', ${e.estimated_budget || 0})"><i class="fa-solid fa-check"></i> Approve & Contract</button>
                         <button class="btn-sm btn-danger" onclick="deleteEnquiry('${e.id}')"><i class="fa-solid fa-trash"></i></button>
                       </div>
                     ` : '<span>Approved</span>'}
@@ -667,7 +832,7 @@ async function renderAdminEnquiriesAndAttendance(container) {
       </div>
     ` : `
       <div class="card">
-        <div class="card-title">दैनिक कारीगर / लेबर हाजिरी अप्रूवल</div>
+        <div style="font-weight:700; margin-bottom:12px;">दैनिक कारीगर / लेबर हाजिरी अप्रूवल</div>
         <div class="table-container">
           <table>
             <thead>
@@ -1655,7 +1820,7 @@ async function renderCustomerProjects(container) {
   container.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <h2>मेरे प्रोजेक्ट्स एवं अनुबंध (My Projects)</h2>
-      <button class="btn-primary" onclick="openView('new_enquiry')"><i class="fa-solid fa-plus"></i> नया काम / इन्क्वायरी भेजें</button>
+      <button class="btn-primary" onclick="openView('my_enquiries')"><i class="fa-solid fa-plus"></i> नया काम / इन्क्वायरी भेजें</button>
     </div>
 
     <div class="card">
@@ -1884,9 +2049,9 @@ async function handleCustomerSignup(e) {
 
   alert('खाता सफलतापूर्वक बन गया! अब लॉगिन करें।');
   $('modalContainer').classList.add('hidden');
-  setLoginRole('customer');
-  $('loginUser').value = phone;
-  $('loginPass').value = pass;
+  selectRole('customer');
+  $('loginId').value = phone;
+  $('loginPassword').value = pass;
 }
 
 // ==========================================
@@ -1930,7 +2095,7 @@ async function renderWorkerAttendance(container) {
     </div>
 
     <div class="card">
-      <div class="card-title">पिछली हाजिरी हिस्ट्री</div>
+      <div style="font-weight:700; margin-bottom:10px;">पिछली हाजिरी हिस्ट्री</div>
       <div class="table-container">
         <table>
           <thead><tr><th>तारीख</th><th>समय</th><th>स्टेटस</th></tr></thead>
@@ -1994,7 +2159,7 @@ async function submitDailyAttendance() {
     status: 'pending'
   });
   alert('हाजिरी सफलतापूर्वक दर्ज हुई! एडमिन स्वीकृति के बाद यह वेरीफाई हो जाएगी।');
-  openView('attendance');
+  openView('worker_attendance');
 }
 
 async function renderWorkerEarnings(container) {
@@ -2016,25 +2181,28 @@ async function renderWorkerEarnings(container) {
     <h2>मेरी कमाई व मजदूरी हिसाब</h2>
     <div class="stats-grid" style="margin-top:16px;">
       <div class="stat-card">
-        <div class="stat-icon" style="background:#e0f2fe; color:#0284c7;"><i class="fa-solid fa-calendar-check"></i></div>
         <div>
-          <div class="stat-val">${totalDays} दिन</div>
-          <div class="stat-lbl">स्वीकृत कार्य दिवस (₹${dailyWage}/दिन)</div>
+          <h4>स्वीकृत कार्य दिवस</h4> style="margin-top:16px;">
+      <div class="stat-card">
+        <div>
+          <h4>स्वीकृत कार्य दिवस</h4>
+          <div class="val">${totalDays} दिन <small style="font-size:12px; color:var(--muted);">(₹${dailyWage}/दिन)</small></div>
         </div>
+        <div class="icon-box" style="background:#e0f2fe; color:#0284c7;"><i class="fa-solid fa-calendar-check"></i></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="fa-solid fa-wallet"></i></div>
         <div>
-          <div class="stat-val">₹${totalReceived.toLocaleString('en-IN')}</div>
-          <div class="stat-lbl">प्राप्त मजदूरी</div>
+          <h4>प्राप्त मजदूरी</h4>
+          <div class="val" style="color:var(--success);">₹${totalReceived.toLocaleString('en-IN')}</div>
         </div>
+        <div class="icon-box" style="background:#dcfce7; color:#16a34a;"><i class="fa-solid fa-wallet"></i></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#fee2e2; color:#dc2626;"><i class="fa-solid fa-clock-rotate-left"></i></div>
         <div>
-          <div class="stat-val">₹${pendingPay.toLocaleString('en-IN')}</div>
-          <div class="stat-lbl">बकाया मजदूरी</div>
+          <h4>बकाया मजदूरी</h4>
+          <div class="val" style="color:var(--danger);">₹${pendingPay.toLocaleString('en-IN')}</div>
         </div>
+        <div class="icon-box" style="background:#fee2e2; color:#dc2626;"><i class="fa-solid fa-clock-rotate-left"></i></div>
       </div>
     </div>
   `;
@@ -2084,5 +2252,5 @@ async function saveWorkerSiteUpdate(e) {
   $('wuPhotoPreview').innerHTML = '';
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
