@@ -377,7 +377,6 @@ function launchDashboard() {
   loadNotificationsBadge();
 }
 
-// --- SIDEBAR (CONTRACTS MERGED INSIDE PROJECTS) ---
 function renderSidebar() {
   const nav = $('sidebarNav');
   let menus = [];
@@ -470,7 +469,7 @@ function showFullImage(url, title = 'Photo Preview') {
 }
 
 // ==========================================
-// NOTIFICATIONS SYSTEM (WITH RED BADGE & AUTO OPEN)
+// NOTIFICATIONS SYSTEM
 // ==========================================
 async function loadNotificationsBadge() {
   if (!db || !currentUser) return;
@@ -861,7 +860,7 @@ async function deleteAttendance(id) {
 }
 
 // ==========================================
-// ADMIN: PROJECTS (WITH CONTRACT VIEW, RECEIVED & REMAINING AMOUNT)
+// ADMIN: PROJECTS
 // ==========================================
 async function renderAdminProjects(container) {
   const [projRes, payRes, contRes] = await Promise.all([
@@ -905,7 +904,7 @@ async function renderAdminProjects(container) {
               <tr>
                 <td><b>${p.name}</b><br><small style="color:var(--muted);">${p.address || ''}</small></td>
                 
-                <!-- Contract Column (Tap View to Open Agreement) -->
+                <!-- Contract Column -->
                 <td>
                   ${contract ? `
                     <button class="btn-sm btn-edit" onclick="openFullAgreementModal('${contract.id}')">
@@ -987,7 +986,7 @@ async function deleteProject(id) {
 }
 
 // ==========================================
-// ADMIN: CONTRACTS MODAL & APPROVAL
+// ADMIN & CUSTOMER: FULL AGREEMENT MODAL & APPROVAL
 // ==========================================
 async function openFullAgreementModal(contractId) {
   const { data: c } = await db.from('contracts')
@@ -1488,7 +1487,7 @@ async function openWorkerAttendanceModal(workerId, workerName, dailyWage) {
 
       <div class="table-container" style="max-height:60vh; overflow-y:auto;">
         <table>
-          <thead><tr><th>Date</th><th>Scan Time</th><th>Face Photo</th><th>Status</th></tr></thead>
+          <thead><tr><th>Date</th><th>Scan Time</th><th>Photo</th><th>Status</th></tr></thead>
           <tbody>
             ${(records || []).length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:20px;">कोई हाजिरी रिकॉर्ड नहीं मिला।</td></tr>' : ''}
             ${(records || []).map(r => `
@@ -1863,11 +1862,11 @@ async function saveBusinessSettings(e) {
 }
 
 // ==========================================
-// CUSTOMER MODULES (PROJECTS WITH CONTRACT & FINANCIAL SNAPSHOT)
+// CUSTOMER MODULES (PROJECTS TABLE VIEW - MATCHING USER SPEC)
 // ==========================================
 async function renderCustomerProjects(container) {
   const [projRes, contRes, payRes] = await Promise.all([
-    db.from('projects').select('*').eq('customer_id', currentUser.id),
+    db.from('projects').select('*').eq('customer_id', currentUser.id).order('created_at', { ascending: false }),
     db.from('contracts').select('*, project:project_id(name, address, customer:customer_id(name, phone, address))'),
     db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business')
   ]);
@@ -1876,65 +1875,92 @@ async function renderCustomerProjects(container) {
   const contracts = contRes.data || [];
   const payments = payRes.data || [];
 
+  const totalAllProjects = projects.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+  const totalAllPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const totalAllDue = totalAllProjects - totalAllPaid;
+
   container.innerHTML = `
-    <div class="page-head"><h1>मेरे प्रोजेक्ट्स व अनुबंध (My Projects & Contracts)</h1></div>
-    ${projects.length === 0 ? '<div class="card"><p>आपका कोई सक्रिय प्रोजेक्ट नहीं है। "New Enquiry" से नया काम दर्ज करें।</p></div>' : ''}
-    ${projects.map(p => {
-      const c = contracts.find(con => con.project_id === p.id);
-      const isLocked = c ? (c.status === 'locked' || (c.admin_approved_at && c.customer_approved_at)) : false;
-      const totalAmt = Number(p.total_amount || (c?.final_amount || 0));
-      const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
-      const remainAmt = totalAmt - receivedAmt;
+    <div class="page-head">
+      <h1>मेरे प्रोजेक्ट्स व अनुबंध (My Projects & Contracts)</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openView('my_enquiries')"><i class="fa-solid fa-plus"></i> New Enquiry</button>
+    </div>
 
-      return `
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <h3>${p.name}</h3>
-            <span class="btn-sm ${isLocked ? 'btn-success' : 'btn-warning'}">Status: ${p.status.toUpperCase()} ${isLocked ? '🔒 Locked' : '• In Negotiation'}</span>
-          </div>
-          <p style="color:var(--muted); font-size:13px; margin:4px 0 14px;">📍 ${p.address || 'Site Address'}</p>
+    <!-- Financial Summary Cards -->
+    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:20px;">
+      <div class="stat-card"><div><h4>कुल लागत (TOTAL)</h4><div class="val" style="font-size:22px;">₹${totalAllProjects.toLocaleString('en-IN')}</div></div></div>
+      <div class="stat-card"><div><h4>जमा राशि (PAID)</h4><div class="val" style="font-size:22px; color:var(--success);">₹${totalAllPaid.toLocaleString('en-IN')}</div></div></div>
+      <div class="stat-card" style="background:#fff1f2; border-color:#fecdd3;">
+        <div><h4>बाकी देय (DUE)</h4><div class="val" style="font-size:22px; color:var(--danger);">₹${totalAllDue.toLocaleString('en-IN')}</div></div>
+      </div>
+    </div>
 
-          <!-- Financial Snapshot Bar -->
-          <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:16px;">
-            <div class="stat-card" style="padding:12px;"><div><h4>कुल लागत (Total)</h4><div class="val" style="font-size:18px;">₹${totalAmt.toLocaleString('en-IN')}</div></div></div>
-            <div class="stat-card" style="padding:12px;"><div><h4>जमा राशि (Paid)</h4><div class="val" style="font-size:18px; color:var(--success);">₹${receivedAmt.toLocaleString('en-IN')}</div></div></div>
-            <div class="stat-card" style="padding:12px; background:#fff1f2;"><div><h4>बाकी देय (Due)</h4><div class="val" style="font-size:18px; color:var(--danger);">₹${remainAmt.toLocaleString('en-IN')}</div></div></div>
-          </div>
+    <!-- Projects Table View Matching User's Required Columns -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Project Name</th>
+              <th>Contract</th>
+              <th>Progress</th>
+              <th>Total</th>
+              <th>Paid</th>
+              <th>Due</th>
+              <th>Note</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${projects.length === 0 ? '<tr><td colspan="8" style="text-align:center; padding:24px;">आपका कोई प्रोजेक्ट नहीं है। ऊपर से नई इन्क्वायरी सबमिट करें।</td></tr>' : ''}
+            ${projects.map(p => {
+              const contract = contracts.find(c => c.project_id === p.id);
+              const isLocked = contract ? (contract.status === 'locked' || (contract.admin_approved_at && contract.customer_approved_at)) : false;
+              const totalAmt = Number(p.total_amount || (contract?.final_amount || 0));
+              const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+              const remainAmt = totalAmt - receivedAmt;
 
-          <!-- Progress Bar -->
-          <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700;"><span>कार्य प्रगति (Progress)</span><span>${p.progress}%</span></div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
-
-          <!-- Contract Section Inside Project -->
-          ${c ? `
-            <div style="margin-top:20px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <h4><i class="fa-solid fa-file-contract" style="color:var(--accent);"></i> प्रोजेक्ट अनुबंध (Project Agreement v${c.version})</h4>
-                ${!isLocked ? `
-                  <button class="btn-sm btn-gold" onclick="proposeContractAmountPrompt('${c.id}', ${c.final_amount})">
-                    <i class="fa-solid fa-pen-to-square"></i> नया Amount Propose / Edit करें
-                  </button>
-                ` : '<span style="font-size:12px; font-weight:700; color:var(--success);"><i class="fa-solid fa-lock"></i> Contract Locked</span>'}
-              </div>
-
-              ${generateLegalAgreementHtml(c, isLocked)}
-
-              <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:10px;">
-                ${!c.customer_approved_at && !isLocked ? `
-                  <button class="btn-primary" style="width:auto; padding:11px 24px; background:var(--success);" onclick="approveCustomerContract('${c.id}')">
-                    <i class="fa-solid fa-file-signature"></i> Approve Contract Digitally (स्वीकार करें)
-                  </button>
-                ` : `
-                  <span class="btn-sm btn-success" style="padding:8px 16px;">
-                    <i class="fa-solid fa-circle-check"></i> ${isLocked ? 'Contract Fully Locked & Project Active' : 'You have approved this contract ✅'}
-                  </span>
-                `}
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }).join('')}
+              return `
+                <tr>
+                  <td>
+                    <b>${p.name}</b><br>
+                    <small style="color:var(--muted);"><i class="fa-solid fa-location-dot"></i> ${p.address || 'Site Address'}</small>
+                  </td>
+                  <td>
+                    ${contract ? `
+                      <button class="btn-sm btn-edit" onclick="openFullAgreementModal('${contract.id}')">
+                        <i class="fa-solid fa-file-contract"></i> View
+                      </button>
+                    ` : '<span style="color:var(--muted); font-size:11px;">-</span>'}
+                  </td>
+                  <td>
+                    <b>${p.progress}%</b>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
+                  </td>
+                  <td><b>₹${totalAmt.toLocaleString('en-IN')}</b></td>
+                  <td><span style="color:var(--success); font-weight:700;">₹${receivedAmt.toLocaleString('en-IN')}</span></td>
+                  <td><span style="color:var(--danger); font-weight:700;">₹${remainAmt.toLocaleString('en-IN')}</span></td>
+                  <td>
+                    <span style="font-size:12px; color:var(--muted);">${p.status === 'planning' ? 'Planning' : (p.status === 'active' ? 'Active Work' : p.status)}</span>
+                  </td>
+                  <td>
+                    <div class="btn-action-group">
+                      <span class="btn-sm ${isLocked ? 'btn-success' : 'btn-warning'}">
+                        ${isLocked ? '🔒 Active' : 'Negotiation'}
+                      </span>
+                      ${remainAmt > 0 ? `
+                        <button class="btn-sm btn-gold" onclick="openView('my_payments')">
+                          <i class="fa-solid fa-bolt"></i> Pay
+                        </button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
   `;
 }
 
@@ -2344,7 +2370,6 @@ async function renderWorkerEarnings(container) {
       <div class="stat-card"><div><h4>कुल हाजिरी</h4><div class="val">${daysWorked} दिन</div></div></div>
       <div class="stat-card"><div><h4>कुल कमाई</h4><div class="val">₹${totalEarned}</div></div></div>
       <div class="stat-card"><div><h4>प्राप्त राशि</h4><div class="val" style="color:var(--success);">₹${totalReceived}</div></div></div>
-      <div class="stat" style="color:var(--success);">₹${totalReceived}</div></div></div>
       <div class="stat-card" style="background:#fff1f2; border-color:#fecdd3;"><div><h4>बकाया राशि</h4><div class="val" style="color:var(--danger);">₹${remaining}</div></div></div>
     </div>
 
@@ -2421,5 +2446,5 @@ async function handleLogout() {
   location.reload();
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
