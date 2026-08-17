@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="hi">
 <head>
@@ -72,6 +71,8 @@
     .role-badge.worker { background: #fef3c7; color: var(--warning); }
     
     .header-right { display: flex; align-items: center; gap: 12px; }
+    .notif-btn { position: relative; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: #fff; display: grid; place-items: center; cursor: pointer; color: var(--text); }
+    .notif-badge { position: absolute; top: -4px; right: -4px; background: var(--danger); color: #fff; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; }
 
     .app-body { display: grid; grid-template-columns: 240px 1fr; flex: 1; }
     .app-sidebar { background: var(--primary); color: #fff; padding: 16px 10px; display: flex; flex-direction: column; gap: 4px; min-height: calc(100vh - 64px); }
@@ -203,6 +204,11 @@
       <span id="roleBadge" class="role-badge admin">Admin</span>
     </div>
     <div class="header-right">
+      <!-- Notification Bell with Red Badge -->
+      <button class="notif-btn" onclick="openNotificationsModal()" title="Notifications">
+        <i class="fa-regular fa-bell"></i>
+        <span id="notifBadge" class="notif-badge hidden">0</span>
+      </button>
       <button class="btn-secondary" onclick="handleLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
     </div>
   </header>
@@ -368,8 +374,10 @@ function launchDashboard() {
   badge.className = `role-badge ${currentRole}`;
 
   renderSidebar();
+  loadNotificationsBadge();
 }
 
+// --- SIDEBAR (CONTRACTS MERGED INSIDE PROJECTS) ---
 function renderSidebar() {
   const nav = $('sidebarNav');
   let menus = [];
@@ -378,7 +386,6 @@ function renderSidebar() {
     menus = [
       { id: 'overview', icon: 'fa-chart-pie', label: 'Overview' },
       { id: 'enquiries', icon: 'fa-inbox', label: 'Enquiries & Approvals' },
-      { id: 'contracts', icon: 'fa-file-signature', label: 'Contracts' },
       { id: 'projects', icon: 'fa-trowel-bricks', label: 'Projects' },
       { id: 'daily_updates', icon: 'fa-pen-ruler', label: 'Daily Updates' },
       { id: 'customers', icon: 'fa-users', label: 'Customers' },
@@ -390,7 +397,6 @@ function renderSidebar() {
   } else if (currentRole === 'customer') {
     menus = [
       { id: 'my_projects', icon: 'fa-house-chimney', label: 'My Projects' },
-      { id: 'my_contracts', icon: 'fa-file-contract', label: 'My Contracts' },
       { id: 'my_enquiries', icon: 'fa-paper-plane', label: 'New Enquiry' },
       { id: 'my_payments', icon: 'fa-wallet', label: 'Payments & UPI' },
       { id: 'my_profile', icon: 'fa-user', label: 'My Profile' }
@@ -426,8 +432,7 @@ async function openView(viewId, btnElement) {
     if (currentRole === 'admin') {
       if (viewId === 'overview') await renderAdminOverview(main);
       else if (viewId === 'enquiries') await renderAdminEnquiriesAndAttendance(main);
-      else if (viewId === 'contracts') await renderAdminContracts(main);
-      else if (viewId === 'projects') await renderAdminProjects(main);
+      else if (viewId === 'contracts' || viewId === 'projects') await renderAdminProjects(main);
       else if (viewId === 'daily_updates') await renderAdminDailyUpdates(main);
       else if (viewId === 'customers') await renderAdminCustomers(main);
       else if (viewId === 'workers') await renderAdminWorkers(main);
@@ -435,8 +440,7 @@ async function openView(viewId, btnElement) {
       else if (viewId === 'expenses') await renderAdminExpenses(main);
       else if (viewId === 'settings') await renderAdminSettings(main);
     } else if (currentRole === 'customer') {
-      if (viewId === 'my_projects') await renderCustomerProjects(main);
-      else if (viewId === 'my_contracts') await renderCustomerContracts(main);
+      if (viewId === 'my_projects' || viewId === 'my_contracts') await renderCustomerProjects(main);
       else if (viewId === 'my_enquiries') await renderCustomerEnquiryForm(main);
       else if (viewId === 'my_payments') await renderCustomerPayments(main);
       else if (viewId === 'my_profile') await renderCustomerProfile(main);
@@ -466,7 +470,92 @@ function showFullImage(url, title = 'Photo Preview') {
 }
 
 // ==========================================
-// 1. LEGAL CONTRACT BUILDER (MATCHING PDF)
+// NOTIFICATIONS SYSTEM (WITH RED BADGE & AUTO OPEN)
+// ==========================================
+async function loadNotificationsBadge() {
+  if (!db || !currentUser) return;
+  let count = 0;
+
+  if (currentRole === 'admin') {
+    const [enqRes, attRes] = await Promise.all([
+      db.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
+      db.from('attendance').select('id', { count: 'exact' }).eq('status', 'pending')
+    ]);
+    count = (enqRes.count || 0) + (attRes.count || 0);
+  } else if (currentRole === 'customer') {
+    const { count: cCount } = await db.from('daily_updates').select('id', { count: 'exact' });
+    count = cCount || 0;
+  }
+
+  const badge = $('notifBadge');
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+async function openNotificationsModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+
+  let notifs = [];
+  if (currentRole === 'admin') {
+    const [enqRes, attRes, payRes] = await Promise.all([
+      db.from('enquiries').select('id, work, created_at').eq('status', 'pending').limit(5),
+      db.from('attendance').select('id, worker:worker_id(name), scanned_at').eq('status', 'pending').limit(5),
+      db.from('payments').select('id, amount, customer:customer_id(name), paid_at').eq('direction', 'customer_to_business').limit(5)
+    ]);
+
+    (enqRes.data || []).forEach(e => notifs.push({
+      icon: 'fa-inbox', title: 'New Customer Enquiry', desc: e.work, time: e.created_at, target: 'enquiries'
+    }));
+    (attRes.data || []).forEach(a => notifs.push({
+      icon: 'fa-clipboard-user', title: 'Worker Attendance Request', desc: `${a.worker?.name || 'Worker'} marked attendance`, time: a.scanned_at, target: 'enquiries'
+    }));
+    (payRes.data || []).forEach(p => notifs.push({
+      icon: 'fa-money-bill', title: 'Customer Payment Received', desc: `₹${p.amount} from ${p.customer?.name || 'Customer'}`, time: p.paid_at, target: 'payments'
+    }));
+  } else {
+    notifs.push({
+      icon: 'fa-bell', title: 'Welcome to Prakash Swami Constructions', desc: 'Check your project updates and payment receipts here.', time: new Date().toISOString(), target: 'my_projects'
+    });
+  }
+
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:500px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <h3><i class="fa-solid fa-bell" style="color:var(--accent);"></i> Notifications</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="max-height:60vh; overflow-y:auto;">
+        ${notifs.length === 0 ? '<p style="text-align:center; padding:20px; color:var(--muted);">कोई नया नोटिफिकेशन नहीं है।</p>' : ''}
+        ${notifs.map(n => `
+          <div style="display:flex; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer; border-radius:10px; transition:0.2s;" onclick="handleNotificationClick('${n.target}')" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+            <div style="width:36px; height:36px; border-radius:50%; background:#e0e7ff; color:#4338ca; display:grid; place-items:center;">
+              <i class="fa-solid ${n.icon}"></i>
+            </div>
+            <div style="flex:1;">
+              <b style="font-size:13px;">${n.title}</b>
+              <p style="font-size:12px; color:var(--muted); margin-top:2px;">${n.desc}</p>
+              <small style="color:#94a3b8;">${new Date(n.time).toLocaleDateString()} • Tap to open section</small>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function handleNotificationClick(targetView) {
+  $('modalContainer').classList.add('hidden');
+  $('notifBadge').classList.add('hidden');
+  openView(targetView);
+}
+
+// ==========================================
+// LEGAL CONTRACT AGREEMENT (PDF FORMAT)
 // ==========================================
 function generateLegalAgreementHtml(c, isLocked) {
   const custName = c.project?.customer?.name || 'श्रीमान / श्रीमती';
@@ -614,7 +703,7 @@ async function handleUniversalSearch(query) {
 }
 
 // ==========================================
-// ADMIN: ENQUIRIES & ATTENDANCE (MERGED)
+// ADMIN: ENQUIRIES & ATTENDANCE
 // ==========================================
 async function renderAdminEnquiriesAndAttendance(container) {
   const [enqRes, attRes] = await Promise.all([
@@ -746,7 +835,7 @@ async function approveEnquiry(enqId, customerId, work, address, budget) {
 
   await db.from('enquiries').update({ status: 'approved' }).eq('id', enqId);
   alert('इन्क्वायरी स्वीकृत! प्रोजेक्ट और कॉन्ट्रैक्ट तैयार हो गया है।');
-  openView('contracts');
+  openView('projects');
 }
 
 async function deleteEnquiry(id) {
@@ -772,43 +861,72 @@ async function deleteAttendance(id) {
 }
 
 // ==========================================
-// ADMIN: CONTRACTS & AGREEMENT MODAL
+// ADMIN: PROJECTS (WITH CONTRACT VIEW, RECEIVED & REMAINING AMOUNT)
 // ==========================================
-async function renderAdminContracts(container) {
-  const { data: contracts } = await db.from('contracts')
-    .select('*, project:project_id(name, address, customer:customer_id(name, phone, address))')
-    .order('created_at', { ascending: false });
+async function renderAdminProjects(container) {
+  const [projRes, payRes, contRes] = await Promise.all([
+    db.from('projects').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
+    db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
+    db.from('contracts').select('id, project_id, version, final_amount, status, admin_approved_at, customer_approved_at')
+  ]);
+
+  const projects = projRes.data || [];
+  const payments = payRes.data || [];
+  const contracts = contRes.data || [];
 
   container.innerHTML = `
-    <div class="page-head"><h1>Contracts Management</h1></div>
+    <div class="page-head">
+      <h1>All Construction Projects</h1>
+    </div>
     <div class="table-container">
       <table>
         <thead>
           <tr>
-            <th>Project & Customer</th>
-            <th>Ver</th>
-            <th>Contract Amount</th>
+            <th>Project</th>
+            <th>Contract</th>
+            <th>Customer</th>
+            <th>Progress %</th>
             <th>Status</th>
-            <th>Approvals</th>
+            <th>Total Amount</th>
+            <th>Received Amount</th>
+            <th>Remaining Amount</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          ${(contracts || []).length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:20px;">कोई कॉन्ट्रैक्ट उपलब्ध नहीं है।</td></tr>' : ''}
-          ${(contracts || []).map(c => {
-            const isLocked = c.status === 'locked' || (c.admin_approved_at && c.customer_approved_at);
+          ${projects.length === 0 ? '<tr><td colspan="9" style="text-align:center; padding:20px;">कोई प्रोजेक्ट नहीं मिला।</td></tr>' : ''}
+          ${projects.map(p => {
+            const contract = contracts.find(c => c.project_id === p.id);
+            const totalAmt = Number(p.total_amount || (contract?.final_amount || 0));
+            const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+            const remainAmt = totalAmt - receivedAmt;
+
             return `
               <tr>
-                <td><b>${c.project?.name}</b><br><small style="color:var(--muted);">${c.project?.customer?.name || 'Customer'} (${c.project?.customer?.phone || ''})</small></td>
-                <td>v${c.version}</td>
-                <td><b style="font-size:14px; color:var(--primary);">₹${Number(c.final_amount || 0).toLocaleString('en-IN')}</b></td>
-                <td><span class="btn-sm ${isLocked ? 'btn-success' : 'btn-warning'}">${isLocked ? '🔒 Locked & Active' : 'Negotiation'}</span></td>
-                <td>Admin: ${c.admin_approved_at ? '✅' : '⏳'}<br>Customer: ${c.customer_approved_at ? '✅' : '⏳'}</td>
+                <td><b>${p.name}</b><br><small style="color:var(--muted);">${p.address || ''}</small></td>
+                
+                <!-- Contract Column (Tap View to Open Agreement) -->
+                <td>
+                  ${contract ? `
+                    <button class="btn-sm btn-edit" onclick="openFullAgreementModal('${contract.id}')">
+                      <i class="fa-solid fa-file-contract"></i> View
+                    </button>
+                  ` : '<span style="color:var(--muted); font-size:11px;">No Contract</span>'}
+                </td>
+
+                <td>${p.customer?.name || '-'}<br><small>${p.customer?.phone || ''}</small></td>
+                <td>
+                  ${p.progress}%
+                  <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
+                </td>
+                <td><span class="btn-sm btn-success">${p.status}</span></td>
+                <td><b>₹${totalAmt.toLocaleString('en-IN')}</b></td>
+                <td><span style="color:var(--success); font-weight:700;">₹${receivedAmt.toLocaleString('en-IN')}</span></td>
+                <td><span style="color:var(--danger); font-weight:700;">₹${remainAmt.toLocaleString('en-IN')}</span></td>
                 <td>
                   <div class="btn-action-group">
-                    <button class="btn-sm btn-edit" onclick="openFullAgreementModal('${c.id}')"><i class="fa-solid fa-file-contract"></i> View Agreement</button>
-                    ${!isLocked ? `<button class="btn-sm btn-gold" onclick="proposeContractAmountPrompt('${c.id}', ${c.final_amount})"><i class="fa-solid fa-pen"></i> Amount</button>` : ''}
-                    <button class="btn-sm btn-danger" onclick="deleteContract('${c.id}')"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
+                    <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')"><i class="fa-solid fa-trash"></i></button>
                   </div>
                 </td>
               </tr>
@@ -820,6 +938,57 @@ async function renderAdminContracts(container) {
   `;
 }
 
+async function openEditProjectModal(id) {
+  const { data: p } = await db.from('projects').select('*').eq('id', id).single();
+  if (!p) return;
+
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>प्रोजेक्ट एडिट करें</h3>
+      <form onsubmit="updateProjectRecord(event, '${id}')">
+        <div class="form-group"><label>Project Name</label><input id="epName" value="${p.name || ''}" required></div>
+        <div class="form-group"><label>Site Address</label><input id="epAddress" value="${p.address || ''}"></div>
+        <div class="form-group"><label>Total Amount ₹</label><input id="epAmount" type="number" value="${p.total_amount || 0}"></div>
+        <div class="form-group"><label>Progress % (0 - 100)</label><input id="epProg" type="number" min="0" max="100" value="${p.progress || 0}"></div>
+        <div class="form-group"><label>Status</label>
+          <select id="epStatus">
+            <option value="planning" ${p.status === 'planning' ? 'selected' : ''}>Planning</option>
+            <option value="active" ${p.status === 'active' ? 'selected' : ''}>Active</option>
+            <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>Completed</option>
+            <option value="hold" ${p.status === 'hold' ? 'selected' : ''}>On Hold</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-primary">Update Project</button>
+      </form>
+    </div>
+  `;
+}
+
+async function updateProjectRecord(e, id) {
+  e.preventDefault();
+  await db.from('projects').update({
+    name: $('epName').value,
+    address: $('epAddress').value,
+    total_amount: Number($('epAmount').value),
+    progress: Number($('epProg').value),
+    status: $('epStatus').value
+  }).eq('id', id);
+
+  $('modalContainer').classList.add('hidden');
+  openView('projects');
+}
+
+async function deleteProject(id) {
+  if (!confirm('क्या आप इस प्रोजेक्ट को हटाना चाहते हैं?')) return;
+  await db.from('projects').delete().eq('id', id);
+  openView('projects');
+}
+
+// ==========================================
+// ADMIN: CONTRACTS MODAL & APPROVAL
+// ==========================================
 async function openFullAgreementModal(contractId) {
   const { data: c } = await db.from('contracts')
     .select('*, project:project_id(name, address, customer:customer_id(name, phone, address))')
@@ -845,7 +1014,8 @@ async function openFullAgreementModal(contractId) {
       ${!isLocked ? `
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
           <button class="btn-secondary" onclick="proposeContractAmountPrompt('${c.id}', ${c.final_amount})"><i class="fa-solid fa-pen"></i> Edit Amount</button>
-          ${!c.admin_approved_at ? `<button class="btn-primary" style="width:auto; background:var(--success);" onclick="adminApproveContract('${c.id}')"><i class="fa-solid fa-check"></i> Approve Contract as Admin</button>` : ''}
+          ${!c.admin_approved_at && currentRole === 'admin' ? `<button class="btn-primary" style="width:auto; background:var(--success);" onclick="adminApproveContract('${c.id}')"><i class="fa-solid fa-check"></i> Approve Contract as Admin</button>` : ''}
+          ${!c.customer_approved_at && currentRole === 'customer' ? `<button class="btn-primary" style="width:auto; background:var(--success);" onclick="approveCustomerContract('${c.id}')"><i class="fa-solid fa-file-signature"></i> Approve Contract Digitally</button>` : ''}
         </div>
       ` : ''}
     </div>
@@ -868,7 +1038,7 @@ async function proposeContractAmountPrompt(contractId, currentAmount) {
 
   alert(`नया अमाउंट ₹${num.toLocaleString('en-IN')} प्रपोज़ हो गया है। दोनों पक्षों को इसे री-अप्रूव करना होगा।`);
   $('modalContainer').classList.add('hidden');
-  openView(currentRole === 'admin' ? 'contracts' : 'my_contracts');
+  openView(currentRole === 'admin' ? 'projects' : 'my_projects');
 }
 
 async function adminApproveContract(contractId) {
@@ -892,85 +1062,31 @@ async function adminApproveContract(contractId) {
   }
 
   $('modalContainer').classList.add('hidden');
-  openView('contracts');
+  openView('projects');
 }
 
-async function deleteContract(id) {
-  if (!confirm('क्या आप इस कॉन्ट्रैक्ट को हटाना चाहते हैं?')) return;
-  await db.from('contracts').delete().eq('id', id);
-  openView('contracts');
-}
+async function approveCustomerContract(contractId) {
+  if (!confirm('क्या आप इस अनुबंध को अपनी डिजिटल स्वीकृति देना चाहते हैं?')) return;
+  const now = new Date().toISOString();
+  const { data: c } = await db.from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
+  const isFullyApproved = Boolean(c.admin_approved_at);
 
-// ==========================================
-// ADMIN: PROJECTS
-// ==========================================
-async function renderAdminProjects(container) {
-  const { data: projects } = await db.from('projects').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false });
+  await db.from('contracts').update({
+    customer_approved_at: now,
+    customer_approved_by: currentUser.id,
+    status: isFullyApproved ? 'locked' : 'amount_discussion',
+    locked_at: isFullyApproved ? now : null
+  }).eq('id', contractId);
 
-  container.innerHTML = `
-    <div class="page-head"><h1>All Construction Projects</h1></div>
-    <div class="table-container">
-      <table>
-        <thead><tr><th>Project</th><th>Customer</th><th>Progress %</th><th>Status</th><th>Amount</th><th>Action</th></tr></thead>
-        <tbody>
-          ${(projects || []).map(p => `
-            <tr>
-              <td><b>${p.name}</b><br><small>${p.address || ''}</small></td>
-              <td>${p.customer?.name || '-'}<br><small>${p.customer?.phone || ''}</small></td>
-              <td>${p.progress}%<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div></td>
-              <td><span class="btn-sm btn-success">${p.status}</span></td>
-              <td>₹${Number(p.total_amount || 0).toLocaleString('en-IN')}</td>
-              <td>
-                <div class="btn-action-group">
-                  <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
-                  <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')"><i class="fa-solid fa-trash"></i></button>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-async function openEditProjectModal(id) {
-  const { data: p } = await db.from('projects').select('*').eq('id', id).single();
-  if (!p) return;
-
-  const modal = $('modalContainer');
-  modal.classList.remove('hidden');
-  modal.innerHTML = `
-    <div class="modal-card">
-      <h3>प्रोजेक्ट एडिट करें</h3>
-      <form onsubmit="updateProjectRecord(event, '${id}')">
-        <div class="form-group"><label>Project Name</label><input id="epName" value="${p.name || ''}" required></div>
-        <div class="form-group"><label>Site Address</label><input id="epAddress" value="${p.address || ''}"></div>
-        <div class="form-group"><label>Total Amount ₹</label><input id="epAmount" type="number" value="${p.total_amount || 0}"></div>
-        <div class="form-group"><label>Progress %</label><input id="epProg" type="number" min="0" max="100" value="${p.progress || 0}"></div>
-        <button type="submit" class="btn-primary">Update Project</button>
-      </form>
-    </div>
-  `;
-}
-
-async function updateProjectRecord(e, id) {
-  e.preventDefault();
-  await db.from('projects').update({
-    name: $('epName').value,
-    address: $('epAddress').value,
-    total_amount: Number($('epAmount').value),
-    progress: Number($('epProg').value)
-  }).eq('id', id);
+  if (isFullyApproved && c.project_id) {
+    await db.from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
+    alert('अनुबंध पूरी तरह स्वीकृत व लॉक हो गया है और प्रोजेक्ट शुरू हो चुका है! 🔒');
+  } else {
+    alert('आपकी डिजिटल स्वीकृति दर्ज हो गई है!');
+  }
 
   $('modalContainer').classList.add('hidden');
-  openView('projects');
-}
-
-async function deleteProject(id) {
-  if (!confirm('क्या आप इस प्रोजेक्ट को हटाना चाहते हैं?')) return;
-  await db.from('projects').delete().eq('id', id);
-  openView('projects');
+  openView('my_projects');
 }
 
 // ==========================================
@@ -1747,104 +1863,79 @@ async function saveBusinessSettings(e) {
 }
 
 // ==========================================
-// CUSTOMER MODULES (PROJECTS, CONTRACTS, ENQUIRY, PAYMENTS, PROFILE)
+// CUSTOMER MODULES (PROJECTS WITH CONTRACT & FINANCIAL SNAPSHOT)
 // ==========================================
 async function renderCustomerProjects(container) {
-  const { data: projects } = await db.from('projects').select('*').eq('customer_id', currentUser.id);
+  const [projRes, contRes, payRes] = await Promise.all([
+    db.from('projects').select('*').eq('customer_id', currentUser.id),
+    db.from('contracts').select('*, project:project_id(name, address, customer:customer_id(name, phone, address))'),
+    db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business')
+  ]);
+
+  const projects = projRes.data || [];
+  const contracts = contRes.data || [];
+  const payments = payRes.data || [];
 
   container.innerHTML = `
-    <div class="page-head"><h1>मेरे प्रोजेक्ट्स (My Projects)</h1></div>
-    ${(projects || []).length === 0 ? '<div class="card"><p>आपका कोई सक्रिय प्रोजेक्ट नहीं है। "New Enquiry" से नया काम दर्ज करें।</p></div>' : ''}
-    ${(projects || []).map(p => `
-      <div class="card">
-        <h3>${p.name}</h3>
-        <p style="color:var(--muted); font-size:13px; margin:4px 0 14px;">📍 ${p.address || 'Site Address'}</p>
-        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700;"><span>Progress</span><span>${p.progress}%</span></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
-      </div>
-    `).join('')}
-  `;
-}
+    <div class="page-head"><h1>मेरे प्रोजेक्ट्स व अनुबंध (My Projects & Contracts)</h1></div>
+    ${projects.length === 0 ? '<div class="card"><p>आपका कोई सक्रिय प्रोजेक्ट नहीं है। "New Enquiry" से नया काम दर्ज करें।</p></div>' : ''}
+    ${projects.map(p => {
+      const c = contracts.find(con => con.project_id === p.id);
+      const isLocked = c ? (c.status === 'locked' || (c.admin_approved_at && c.customer_approved_at)) : false;
+      const totalAmt = Number(p.total_amount || (c?.final_amount || 0));
+      const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+      const remainAmt = totalAmt - receivedAmt;
 
-async function renderCustomerContracts(container) {
-  const { data: myProjects } = await db.from('projects').select('id, name').eq('customer_id', currentUser.id);
-  const projIds = (myProjects || []).map(p => p.id);
-
-  let contracts = [];
-  if (projIds.length > 0) {
-    const { data } = await db.from('contracts')
-      .select('*, project:project_id(name, address, customer:customer_id(name, phone, address))')
-      .in('project_id', projIds)
-      .order('created_at', { ascending: false });
-    contracts = data || [];
-  }
-
-  container.innerHTML = `
-    <div class="page-head"><h1>मेरे अनुबंध / कॉन्ट्रैक्ट्स (My Contracts)</h1></div>
-    ${contracts.length === 0 ? '<div class="card"><p>आपके पास अभी कोई अनुबंध उपलब्ध नहीं है।</p></div>' : ''}
-    ${contracts.map(c => {
-      const isLocked = c.status === 'locked' || (c.admin_approved_at && c.customer_approved_at);
       return `
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <h3>${c.project?.name || 'Construction Contract'}</h3>
-            <span class="btn-sm ${isLocked ? 'btn-success' : 'btn-warning'}">Version v${c.version} — ${isLocked ? '🔒 Locked & Active' : 'Negotiation Mode'}</span>
+            <h3>${p.name}</h3>
+            <span class="btn-sm ${isLocked ? 'btn-success' : 'btn-warning'}">Status: ${p.status.toUpperCase()} ${isLocked ? '🔒 Locked' : '• In Negotiation'}</span>
+          </div>
+          <p style="color:var(--muted); font-size:13px; margin:4px 0 14px;">📍 ${p.address || 'Site Address'}</p>
+
+          <!-- Financial Snapshot Bar -->
+          <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:16px;">
+            <div class="stat-card" style="padding:12px;"><div><h4>कुल लागत (Total)</h4><div class="val" style="font-size:18px;">₹${totalAmt.toLocaleString('en-IN')}</div></div></div>
+            <div class="stat-card" style="padding:12px;"><div><h4>जमा राशि (Paid)</h4><div class="val" style="font-size:18px; color:var(--success);">₹${receivedAmt.toLocaleString('en-IN')}</div></div></div>
+            <div class="stat-card" style="padding:12px; background:#fff1f2;"><div><h4>बाकी देय (Due)</h4><div class="val" style="font-size:18px; color:var(--danger);">₹${remainAmt.toLocaleString('en-IN')}</div></div></div>
           </div>
 
-          <div class="amount-badge-box">
-            <div>
-              <span style="font-size:12px; color:var(--muted); font-weight:700;">फाइनल अनुबंध राशि (Contract Amount)</span>
-              <div style="font-size:22px; font-weight:800; color:var(--primary); margin-top:2px;">
-                ₹${Number(c.final_amount || 0).toLocaleString('en-IN')}
+          <!-- Progress Bar -->
+          <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700;"><span>कार्य प्रगति (Progress)</span><span>${p.progress}%</span></div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
+
+          <!-- Contract Section Inside Project -->
+          ${c ? `
+            <div style="margin-top:20px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <h4><i class="fa-solid fa-file-contract" style="color:var(--accent);"></i> प्रोजेक्ट अनुबंध (Project Agreement v${c.version})</h4>
+                ${!isLocked ? `
+                  <button class="btn-sm btn-gold" onclick="proposeContractAmountPrompt('${c.id}', ${c.final_amount})">
+                    <i class="fa-solid fa-pen-to-square"></i> नया Amount Propose / Edit करें
+                  </button>
+                ` : '<span style="font-size:12px; font-weight:700; color:var(--success);"><i class="fa-solid fa-lock"></i> Contract Locked</span>'}
+              </div>
+
+              ${generateLegalAgreementHtml(c, isLocked)}
+
+              <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:10px;">
+                ${!c.customer_approved_at && !isLocked ? `
+                  <button class="btn-primary" style="width:auto; padding:11px 24px; background:var(--success);" onclick="approveCustomerContract('${c.id}')">
+                    <i class="fa-solid fa-file-signature"></i> Approve Contract Digitally (स्वीकार करें)
+                  </button>
+                ` : `
+                  <span class="btn-sm btn-success" style="padding:8px 16px;">
+                    <i class="fa-solid fa-circle-check"></i> ${isLocked ? 'Contract Fully Locked & Project Active' : 'You have approved this contract ✅'}
+                  </span>
+                `}
               </div>
             </div>
-            ${!isLocked ? `
-              <button class="btn-sm btn-gold" style="padding:9px 14px; font-size:13px;" onclick="proposeContractAmountPrompt('${c.id}', ${c.final_amount})">
-                <i class="fa-solid fa-pen-to-square"></i> नया Amount Propose / Edit करें
-              </button>
-            ` : '<span style="font-size:12px; font-weight:700; color:var(--success);"><i class="fa-solid fa-lock"></i> Amount Locked</span>'}
-          </div>
-
-          ${generateLegalAgreementHtml(c, isLocked)}
-
-          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
-            ${!c.customer_approved_at && !isLocked ? `
-              <button class="btn-primary" style="width:auto; padding:12px 24px; background:var(--success);" onclick="approveCustomerContract('${c.id}')">
-                <i class="fa-solid fa-file-signature"></i> Approve Contract Digitally (स्वीकार करें)
-              </button>
-            ` : `
-              <span class="btn-sm btn-success" style="padding:10px 18px; font-size:13px;">
-                <i class="fa-solid fa-circle-check"></i> ${isLocked ? 'Contract Fully Locked & Active' : 'You have approved this contract ✅'}
-              </span>
-            `}
-          </div>
+          ` : ''}
         </div>
       `;
     }).join('')}
   `;
-}
-
-async function approveCustomerContract(contractId) {
-  if (!confirm('क्या आप इस अनुबंध को अपनी डिजिटल स्वीकृति देना चाहते हैं?')) return;
-  const now = new Date().toISOString();
-  const { data: c } = await db.from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
-  const isFullyApproved = Boolean(c.admin_approved_at);
-
-  await db.from('contracts').update({
-    customer_approved_at: now,
-    customer_approved_by: currentUser.id,
-    status: isFullyApproved ? 'locked' : 'amount_discussion',
-    locked_at: isFullyApproved ? now : null
-  }).eq('id', contractId);
-
-  if (isFullyApproved && c.project_id) {
-    await db.from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
-    alert('अनुबंध पूरी तरह स्वीकृत व लॉक हो गया है और प्रोजेक्ट शुरू हो चुका है! 🔒');
-  } else {
-    alert('आपकी डिजिटल स्वीकृति दर्ज हो गई है!');
-  }
-
-  openView('my_contracts');
 }
 
 async function renderCustomerEnquiryForm(container) {
@@ -2253,6 +2344,7 @@ async function renderWorkerEarnings(container) {
       <div class="stat-card"><div><h4>कुल हाजिरी</h4><div class="val">${daysWorked} दिन</div></div></div>
       <div class="stat-card"><div><h4>कुल कमाई</h4><div class="val">₹${totalEarned}</div></div></div>
       <div class="stat-card"><div><h4>प्राप्त राशि</h4><div class="val" style="color:var(--success);">₹${totalReceived}</div></div></div>
+      <div class="stat" style="color:var(--success);">₹${totalReceived}</div></div></div>
       <div class="stat-card" style="background:#fff1f2; border-color:#fecdd3;"><div><h4>बकाया राशि</h4><div class="val" style="color:var(--danger);">₹${remaining}</div></div></div>
     </div>
 
@@ -2329,5 +2421,5 @@ async function handleLogout() {
   location.reload();
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
