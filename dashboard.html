@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dashboard - Prakash Swami Constructions</title>
   
-  <!-- Supabase CDN with multiple fallback mirrors for 100% loading guarantee -->
+  <!-- Supabase CDN with fallback mirror -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
     if (!window.supabase) {
@@ -220,7 +220,12 @@ function safeStr(val, fallback = '') {
 }
 
 function escapeAttr(val) {
-  return safeStr(val).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\"/g, '&quot;')
+    .replace(/\n/g, ' ');
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -277,7 +282,6 @@ async function handleLoginClick() {
   if (!userVal) return alert('कृपया Email या मोबाइल नंबर दर्ज करें।');
 
   if (currentRole === 'worker') {
-    // Worker login via phone
     const { data, error } = await getDB().from('profiles').select('*').eq('phone', userVal).eq('role', 'worker').single();
     if (error || !data) return alert('कारीगर प्रोफाइल नहीं मिली। कृपया एडमिन से संपर्क करें।');
     currentUser = data;
@@ -285,7 +289,6 @@ async function handleLoginClick() {
     return;
   }
 
-  // Admin / Customer Login via Supabase Auth
   let loginEmail = userVal;
   if (currentRole === 'customer' && !userVal.includes('@')) {
     loginEmail = `${userVal}@psconstructions.in`;
@@ -418,9 +421,10 @@ function parseContractDetails(c) {
   let notes = '';
 
   if (c?.scope && typeof c.scope === 'string') {
-    if (c.scope.trim().startsWith('{') && c.scope.trim().endsWith('}')) {
+    const trimmed = c.scope.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
       try {
-        const obj = JSON.parse(c.scope);
+        const obj = JSON.parse(trimmed);
         rateType = obj.rate_type || 'lumpsum';
         rateDetail = obj.rate_detail || '';
         scopeText = obj.scope || scopeText;
@@ -901,7 +905,7 @@ function openEditProjectNoteModal(projectId, currentNote) {
         <div class="form-group">
           <textarea id="projectNoteInput" rows="4" placeholder="प्रोजेक्ट से जुड़ी कोई भी टिप्पणी या निर्देश यहाँ लिखें..." required>${currentNote}</textarea>
         </div>
-        <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <div style="display:flex; gap:10px; justify-flex-end;">
           <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
           <button type="submit" class="btn-primary">नोट सेव करें</button>
         </div>
@@ -1639,9 +1643,9 @@ async function saveBusinessSettings(e) {
 // ==========================================
 async function renderCustomerProjects(container) {
   const [projRes, contRes, payRes] = await Promise.all([
-    getDB().from('projects').select('*').eq('customer_id', currentUser?.id).order('created_at', { ascending: false }),
+    getDB().from('projects').select('*').eq('customer_id', currentUser ? currentUser.id : '').order('created_at', { ascending: false }),
     getDB().from('contracts').select('*'),
-    getDB().from('payments').select('*').eq('customer_id', currentUser?.id)
+    getDB().from('payments').select('*').eq('customer_id', currentUser ? currentUser.id : '')
   ]);
 
   const projects = projRes.data || [];
@@ -1785,7 +1789,7 @@ async function submitCustomerEnquiry(e) {
 async function renderCustomerPayments(container) {
   const { data: payments } = await getDB().from('payments')
     .select('*, project:project_id(name)')
-    .eq('customer_id', currentUser?.id)
+    .eq('customer_id', currentUser ? currentUser.id : '')
     .order('paid_at', { ascending: false });
 
   container.innerHTML = `
@@ -1892,13 +1896,13 @@ async function renderWorkerAttendance(container) {
   const today = new Date().toISOString().split('T')[0];
   const { data: todayAtt } = await getDB().from('attendance')
     .select('*')
-    .eq('worker_id', currentUser?.id)
+    .eq('worker_id', currentUser ? currentUser.id : '')
     .eq('work_date', today)
     .single();
 
   const { data: recentAtt } = await getDB().from('attendance')
     .select('*')
-    .eq('worker_id', currentUser?.id)
+    .eq('worker_id', currentUser ? currentUser.id : '')
     .order('work_date', { ascending: false })
     .limit(10);
 
@@ -1995,8 +1999,8 @@ async function submitDailyAttendance() {
 
 async function renderWorkerEarnings(container) {
   const [attRes, payRes] = await Promise.all([
-    getDB().from('attendance').select('*').eq('worker_id', currentUser?.id).eq('status', 'approved'),
-    getDB().from('payments').select('*').eq('worker_id', currentUser?.id).eq('direction', 'business_to_worker')
+    getDB().from('attendance').select('*').eq('worker_id', currentUser ? currentUser.id : '').eq('status', 'approved'),
+    getDB().from('payments').select('*').eq('worker_id', currentUser ? currentUser.id : '').eq('direction', 'business_to_worker')
   ]);
 
   const dailyWage = Number(currentUser?.daily_wage || 0);
@@ -2047,8 +2051,6 @@ async function renderWorkerUpdates(container) {
         </div>
         <div class="form-group">
           <label>साइट फोटो चुनें</label>
-          <input type="file" id="wuPhoto" accept="image/*" on
-          <label>साइट फोटो चुनें</label>
           <input type="file" id="wuPhoto" accept="image/*" onchange="previewWorkerUpdateImage(event)" required>
           <input type="hidden" id="wuPhotoBase64">
           <div id="wuPhotoPreview" style="margin-top:10px;"></div>
@@ -2082,5 +2084,5 @@ async function saveWorkerSiteUpdate(e) {
   $('wuPhotoPreview').innerHTML = '';
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
