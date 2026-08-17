@@ -7,7 +7,7 @@
   <!-- Supabase JS Library with Fallback -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
-    if (!window.supabase) {
+    if (typeof window !== 'undefined' && !window.supabase) {
       document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
     }
   </script>
@@ -115,7 +115,7 @@
 
     /* Note display box */
     .note-box { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px dashed #cbd5e1; max-width: 220px; font-size: 12px; line-height: 1.4; }
-    .note-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .note-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* Legal Contract Agreement Document Box (Matching PDF) */
     .contract-doc { background: #fff; border: 2px solid #334155; border-radius: 16px; padding: 28px; margin-top: 14px; position: relative; box-shadow: 0 6px 18px rgba(0,0,0,0.06); font-size: 13px; line-height: 1.6; color: #1e293b; }
@@ -159,7 +159,7 @@
 </head>
 <body>
 
-<!-- 1. LOGIN SCREEN (NO FORM SUBMISSION BUG) -->
+<!-- 1. LOGIN SCREEN -->
 <div id="loginSection" class="login-wrapper">
   <div class="login-card">
     <div class="brand-header">
@@ -251,26 +251,43 @@ let activeEnqTab = 'customer_enq';
 
 const $ = id => document.getElementById(id);
 
+// Safe String Utilities to Prevent Any Null / Undefined Crashes
+function safeStr(val, fallback = '') {
+  if (val === null || val === undefined) return fallback;
+  return String(val);
+}
+
+function escapeAttr(val) {
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, ' ');
+}
+
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', async () => {
-  const hash = window.location.hash.replace('#', '');
+  const hash = (window.location.hash || '').replace('#', '');
   if (['admin', 'customer', 'worker'].includes(hash)) {
     selectRole(hash);
   }
 
   const savedWorker = sessionStorage.getItem('ps_worker_session');
   if (savedWorker) {
-    currentUser = JSON.parse(savedWorker);
-    currentRole = 'worker';
-    launchDashboard();
-    return;
+    try {
+      currentUser = JSON.parse(savedWorker);
+      currentRole = 'worker';
+      launchDashboard();
+      return;
+    } catch(e) { sessionStorage.removeItem('ps_worker_session'); }
   }
 
   const client = getDB();
   if (client) {
     try {
       const { data: { session } } = await client.auth.getSession();
-      if (session?.user) {
+      if (session && session.user) {
         await loadUserProfile(session.user);
       }
     } catch (e) {
@@ -362,7 +379,7 @@ async function handleLoginClick() {
     });
 
     if (error) {
-      if (error.message.includes('Invalid login credentials')) {
+      if (error.message && error.message.includes('Invalid login credentials')) {
         return showLoginError('गलत Email या Password दर्ज किया गया है।');
       }
       throw error;
@@ -383,7 +400,6 @@ async function handleLoginClick() {
   }
 }
 
-// Alias for backwards compatibility
 const handleAuthSubmit = handleLoginClick;
 
 function showLoginError(msg) {
@@ -399,10 +415,10 @@ async function loadUserProfile(authUser) {
   let { data: profile } = await client.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
   
   if (!profile) {
-    const roleToSet = authUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'customer';
+    const roleToSet = (authUser.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'customer';
     const newProfile = {
       id: authUser.id,
-      email: authUser.email,
+      email: authUser.email || '',
       name: authUser.user_metadata?.name || (roleToSet === 'admin' ? 'Prakash Swami' : 'Customer'),
       role: roleToSet,
       phone: authUser.user_metadata?.phone || '',
@@ -418,12 +434,16 @@ async function loadUserProfile(authUser) {
 }
 
 function launchDashboard() {
-  $('loginSection').classList.add('hidden');
-  $('appSection').classList.remove('hidden');
+  const logSec = $('loginSection');
+  const appSec = $('appSection');
+  if (logSec) logSec.classList.add('hidden');
+  if (appSec) appSec.classList.remove('hidden');
   
   const badge = $('roleBadge');
-  badge.textContent = currentRole.toUpperCase();
-  badge.className = `role-badge ${currentRole}`;
+  if (badge) {
+    badge.textContent = currentRole.toUpperCase();
+    badge.className = `role-badge ${currentRole}`;
+  }
 
   renderSidebar();
   loadNotificationsBadge();
@@ -431,6 +451,7 @@ function launchDashboard() {
 
 function renderSidebar() {
   const nav = $('sidebarNav');
+  if (!nav) return;
   let menus = [];
 
   if (currentRole === 'admin') {
@@ -477,6 +498,7 @@ async function openView(viewId, btnElement) {
   }
 
   const main = $('mainContent');
+  if (!main) return;
   main.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
 
   try {
@@ -501,7 +523,8 @@ async function openView(viewId, btnElement) {
       else if (viewId === 'worker_updates') await renderWorkerUpdates(main);
     }
   } catch (err) {
-    main.innerHTML = `<div class="card alert-box alert-error">Error loading section: ${err.message}</div>`;
+    console.error('openView error:', err);
+    main.innerHTML = `<div class="card alert-box alert-error">Error loading section: ${err.message || 'Unknown error'}</div>`;
   }
 }
 
@@ -512,7 +535,7 @@ function showFullImage(url, title = 'Photo Preview') {
   modal.innerHTML = `
     <div class="modal-card" style="text-align:center; max-width:600px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h4>${title}</h4>
+        <h4>${safeStr(title)}</h4>
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:20px; cursor:pointer;">&times;</button>
       </div>
       <img src="${url}" style="width:100%; max-height:70vh; object-fit:contain; border-radius:12px;">
@@ -528,23 +551,27 @@ async function loadNotificationsBadge() {
   if (!client || !currentUser) return;
   let count = 0;
 
-  if (currentRole === 'admin') {
-    const [enqRes, attRes] = await Promise.all([
-      client.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
-      client.from('attendance').select('id', { count: 'exact' }).eq('status', 'pending')
-    ]);
-    count = (enqRes.count || 0) + (attRes.count || 0);
-  } else if (currentRole === 'customer') {
-    const { count: cCount } = await client.from('daily_updates').select('id', { count: 'exact' });
-    count = cCount || 0;
-  }
+  try {
+    if (currentRole === 'admin') {
+      const [enqRes, attRes] = await Promise.all([
+        client.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
+        client.from('attendance').select('id', { count: 'exact' }).eq('status', 'pending')
+      ]);
+      count = (enqRes.count || 0) + (attRes.count || 0);
+    } else if (currentRole === 'customer') {
+      const { count: cCount } = await client.from('daily_updates').select('id', { count: 'exact' });
+      count = cCount || 0;
+    }
+  } catch (e) { console.log('notif count error:', e); }
 
   const badge = $('notifBadge');
-  if (count > 0) {
-    badge.textContent = count;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
+  if (badge) {
+    if (count > 0) {
+      badge.textContent = count;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
   }
 }
 
@@ -555,21 +582,23 @@ async function openNotificationsModal() {
 
   let notifs = [];
   if (currentRole === 'admin' && client) {
-    const [enqRes, attRes, payRes] = await Promise.all([
-      client.from('enquiries').select('id, work, created_at').eq('status', 'pending').limit(5),
-      client.from('attendance').select('id, worker:worker_id(name), scanned_at').eq('status', 'pending').limit(5),
-      client.from('payments').select('id, amount, customer:customer_id(name), paid_at').eq('direction', 'customer_to_business').limit(5)
-    ]);
+    try {
+      const [enqRes, attRes, payRes] = await Promise.all([
+        client.from('enquiries').select('id, work, created_at').eq('status', 'pending').limit(5),
+        client.from('attendance').select('id, worker:worker_id(name), scanned_at').eq('status', 'pending').limit(5),
+        client.from('payments').select('id, amount, customer:customer_id(name), paid_at').eq('direction', 'customer_to_business').limit(5)
+      ]);
 
-    (enqRes.data || []).forEach(e => notifs.push({
-      icon: 'fa-inbox', title: 'New Customer Enquiry', desc: e.work, time: e.created_at, target: 'enquiries'
-    }));
-    (attRes.data || []).forEach(a => notifs.push({
-      icon: 'fa-clipboard-user', title: 'Worker Attendance Request', desc: `${a.worker?.name || 'Worker'} marked attendance`, time: a.scanned_at, target: 'enquiries'
-    }));
-    (payRes.data || []).forEach(p => notifs.push({
-      icon: 'fa-money-bill', title: 'Customer Payment Received', desc: `₹${p.amount} from ${p.customer?.name || 'Customer'}`, time: p.paid_at, target: 'payments'
-    }));
+      (enqRes.data || []).forEach(e => notifs.push({
+        icon: 'fa-inbox', title: 'New Customer Enquiry', desc: safeStr(e.work, 'Enquiry'), time: e.created_at, target: 'enquiries'
+      }));
+      (attRes.data || []).forEach(a => notifs.push({
+        icon: 'fa-clipboard-user', title: 'Worker Attendance Request', desc: `${a.worker?.name || 'Worker'} marked attendance`, time: a.scanned_at, target: 'enquiries'
+      }));
+      (payRes.data || []).forEach(p => notifs.push({
+        icon: 'fa-money-bill', title: 'Customer Payment Received', desc: `₹${p.amount} from ${p.customer?.name || 'Customer'}`, time: p.paid_at, target: 'payments'
+      }));
+    } catch(e) { console.error('notif load error:', e); }
   } else {
     notifs.push({
       icon: 'fa-bell', title: 'Welcome to Prakash Swami Constructions', desc: 'Check your project updates and payment receipts here.', time: new Date().toISOString(), target: 'my_projects'
@@ -603,7 +632,8 @@ async function openNotificationsModal() {
 
 function handleNotificationClick(targetView) {
   $('modalContainer').classList.add('hidden');
-  $('notifBadge').classList.add('hidden');
+  const badge = $('notifBadge');
+  if (badge) badge.classList.add('hidden');
   openView(targetView);
 }
 
@@ -611,12 +641,12 @@ function handleNotificationClick(targetView) {
 // LEGAL CONTRACT AGREEMENT (PDF FORMAT)
 // ==========================================
 function generateLegalAgreementHtml(c, isLocked) {
-  const custName = c.project?.customer?.name || 'श्रीमान / श्रीमती';
-  const custPhone = c.project?.customer?.phone || '-';
-  const custAddr = c.project?.customer?.address || c.project?.address || 'मंडावरा, राजस्थान';
-  const siteAddr = c.project?.address || 'साइट का पता';
+  const custName = safeStr(c.project?.customer?.name, 'श्रीमान / श्रीमती');
+  const custPhone = safeStr(c.project?.customer?.phone, '-');
+  const custAddr = safeStr(c.project?.customer?.address || c.project?.address, 'मंडावरा, राजस्थान');
+  const siteAddr = safeStr(c.project?.address, 'साइट का पता');
   const amountStr = Number(c.final_amount || 0).toLocaleString('en-IN');
-  const scopeText = c.scope || 'नींव खुदाई, दीवार चिनाई, RCC छत ढलाई एवं प्लास्टर कार्य';
+  const scopeText = safeStr(c.scope, 'नींव खुदाई, दीवार चिनाई, RCC छत ढलाई एवं प्लास्टर कार्य');
 
   return `
     <div class="contract-doc">
@@ -711,7 +741,7 @@ async function renderAdminOverview(container) {
     <div class="page-head">
       <div>
         <h1>Admin Overview</h1>
-        <p style="color:var(--muted); font-size:13px;">Welcome back, ${currentUser.name || 'Prakash Swami'}</p>
+        <p style="color:var(--muted); font-size:13px;">Welcome back, ${safeStr(currentUser?.name, 'Prakash Swami')}</p>
       </div>
       <div class="search-box">
         <i class="fa-solid fa-magnifying-glass"></i>
@@ -734,9 +764,10 @@ async function renderAdminOverview(container) {
 }
 
 async function handleUniversalSearch(query) {
-  query = query.trim().toLowerCase();
+  query = (query || '').trim().toLowerCase();
   const resCard = $('searchResultsCard');
   const resList = $('searchResultsList');
+  if (!resCard || !resList) return;
   if (!query) { resCard.style.display = 'none'; return; }
 
   resCard.style.display = 'block';
@@ -750,8 +781,8 @@ async function handleUniversalSearch(query) {
   ]);
 
   let html = '<ul style="list-style:none;">';
-  (cRes.data || []).forEach(c => html += `<li style="padding:8px 0; border-bottom:1px solid #eee;"><b>[User - ${c.role}]</b> ${c.name} (${c.phone || c.email})</li>`);
-  (pRes.data || []).forEach(p => html += `<li style="padding:8px 0; border-bottom:1px solid #eee;"><b>[Project]</b> ${p.name} - ${p.address} (${p.status})</li>`);
+  (cRes.data || []).forEach(c => html += `<li style="padding:8px 0; border-bottom:1px solid #eee;"><b>[User - ${c.role}]</b> ${safeStr(c.name)} (${safeStr(c.phone || c.email)})</li>`);
+  (pRes.data || []).forEach(p => html += `<li style="padding:8px 0; border-bottom:1px solid #eee;"><b>[Project]</b> ${safeStr(p.name)} - ${safeStr(p.address)} (${safeStr(p.status)})</li>`);
   html += '</ul>';
 
   resList.innerHTML = html === '<ul style="list-style:none;"></ul>' ? 'No matching records found.' : html;
@@ -795,14 +826,14 @@ async function renderAdminEnquiriesAndAttendance(container) {
             ${enquiries.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:20px;">कोई इन्क्वायरी नहीं मिली।</td></tr>' : ''}
             ${enquiries.map(e => `
               <tr>
-                <td><b>${e.customer?.name || 'Customer'}</b><br><small>${e.customer?.phone || ''}</small></td>
-                <td>${e.work}</td>
+                <td><b>${safeStr(e.customer?.name, 'Customer')}</b><br><small>${safeStr(e.customer?.phone)}</small></td>
+                <td>${safeStr(e.work, '-')}</td>
                 <td>₹${Number(e.budget || 0).toLocaleString('en-IN')}</td>
-                <td>${e.address || '-'}</td>
-                <td><span class="btn-sm ${e.status === 'approved' ? 'btn-success' : (e.status === 'rejected' ? 'btn-danger' : 'btn-warning')}">${e.status}</span></td>
+                <td>${safeStr(e.address, '-')}</td>
+                <td><span class="btn-sm ${e.status === 'approved' ? 'btn-success' : (e.status === 'rejected' ? 'btn-danger' : 'btn-warning')}">${safeStr(e.status)}</span></td>
                 <td>
                   <div class="btn-action-group">
-                    ${e.status === 'pending' ? `<button class="btn-sm btn-success" onclick="approveEnquiry('${e.id}', '${e.customer_id}', '${e.work.replace(/'/g, "\\'")}', '${e.address.replace(/'/g, "\\'")}', ${e.budget})"><i class="fa-solid fa-check"></i> Approve & Contract</button>` : ''}
+                    ${e.status === 'pending' ? `<button class="btn-sm btn-success" onclick="approveEnquiry('${e.id}', '${e.customer_id}', '${escapeAttr(e.work)}', '${escapeAttr(e.address)}', ${e.budget || 0})"><i class="fa-solid fa-check"></i> Approve & Contract</button>` : ''}
                     <button class="btn-sm btn-danger" onclick="deleteEnquiry('${e.id}')"><i class="fa-solid fa-trash"></i></button>
                   </div>
                 </td>
@@ -822,8 +853,8 @@ async function renderAdminEnquiriesAndAttendance(container) {
             ${attendances.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:20px;">कोई हाजिरी अनुरोध नहीं है।</td></tr>' : ''}
             ${attendances.map(r => `
               <tr>
-                <td>${r.work_date}<br><small>${new Date(r.scanned_at).toLocaleTimeString()}</small></td>
-                <td><b>${r.worker?.name}</b><br><small>${r.worker?.phone}</small></td>
+                <td>${safeStr(r.work_date)}<br><small>${new Date(r.scanned_at).toLocaleTimeString()}</small></td>
+                <td><b>${safeStr(r.worker?.name, 'Worker')}</b><br><small>${safeStr(r.worker?.phone)}</small></td>
                 <td>
                   <div class="face-compare-container">
                     <div class="face-compare-box">
@@ -838,7 +869,7 @@ async function renderAdminEnquiriesAndAttendance(container) {
                   </div>
                 </td>
                 <td>₹${r.worker?.daily_wage || 0}</td>
-                <td><span class="btn-sm ${r.status === 'approved' ? 'btn-success' : 'btn-warning'}">${r.status}</span></td>
+                <td><span class="btn-sm ${r.status === 'approved' ? 'btn-success' : 'btn-warning'}">${safeStr(r.status)}</span></td>
                 <td>
                   <div class="btn-action-group">
                     ${r.status === 'pending' ? `
@@ -874,8 +905,8 @@ async function approveEnquiry(enqId, customerId, work, address, budget) {
   const client = getDB();
   const { data: proj } = await client.from('projects').insert({
     customer_id: customerId,
-    name: work.substring(0, 40),
-    address: address,
+    name: (work || 'Project').substring(0, 40),
+    address: address || '',
     total_amount: budget || 0,
     status: 'planning',
     progress: 0
@@ -886,8 +917,8 @@ async function approveEnquiry(enqId, customerId, work, address, budget) {
     version: 1,
     status: 'amount_discussion',
     final_amount: budget || 0,
-    scope: work,
-    proposed_by: currentUser.id
+    scope: work || '',
+    proposed_by: currentUser ? currentUser.id : null
   });
 
   await client.from('enquiries').update({ status: 'approved' }).eq('id', enqId);
@@ -902,7 +933,7 @@ async function deleteEnquiry(id) {
 }
 
 async function approveAttendance(attId) {
-  await getDB().from('attendance').update({ status: 'approved', approved_by: currentUser.id, approved_at: new Date().toISOString() }).eq('id', attId);
+  await getDB().from('attendance').update({ status: 'approved', approved_by: currentUser ? currentUser.id : null, approved_at: new Date().toISOString() }).eq('id', attId);
   openView('enquiries');
 }
 
@@ -959,11 +990,11 @@ async function renderAdminProjects(container) {
             const totalAmt = Number(p.total_amount || (contract?.final_amount || 0));
             const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
             const remainAmt = totalAmt - receivedAmt;
-            const projectNote = p.notes || '';
+            const projectNote = safeStr(p.notes, '');
 
             return `
               <tr>
-                <td><b>${p.name}</b><br><small style="color:var(--muted);">${p.address || ''}</small></td>
+                <td><b>${safeStr(p.name, 'Project')}</b><br><small style="color:var(--muted);">${safeStr(p.address, '')}</small></td>
                 
                 <!-- Contract Column -->
                 <td>
@@ -974,12 +1005,12 @@ async function renderAdminProjects(container) {
                   ` : '<span style="color:var(--muted); font-size:11px;">No Contract</span>'}
                 </td>
 
-                <td>${p.customer?.name || '-'}<br><small>${p.customer?.phone || ''}</small></td>
+                <td>${safeStr(p.customer?.name, '-')}<br><small>${safeStr(p.customer?.phone, '')}</small></td>
                 <td>
-                  ${p.progress}%
-                  <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
+                  ${p.progress || 0}%
+                  <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress || 0}%;"></div></div>
                 </td>
-                <td><span class="btn-sm btn-success">${p.status}</span></td>
+                <td><span class="btn-sm btn-success">${safeStr(p.status, 'active')}</span></td>
                 <td><b>₹${totalAmt.toLocaleString('en-IN')}</b></td>
                 <td><span style="color:var(--success); font-weight:700;">₹${receivedAmt.toLocaleString('en-IN')}</span></td>
                 <td><span style="color:var(--danger); font-weight:700;">₹${remainAmt.toLocaleString('en-IN')}</span></td>
@@ -987,8 +1018,8 @@ async function renderAdminProjects(container) {
                 <!-- Collaborative Note Column -->
                 <td>
                   <div class="note-box">
-                    <span class="note-text" title="${projectNote}">${projectNote || '<i style="color:#94a3b8;">Add note...</i>'}</span>
-                    <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${projectNote.replace(/'/g, "\\'")}')" title="Edit Note">
+                    <span class="note-text" title="${escapeAttr(projectNote)}">${projectNote || '<i style="color:#94a3b8;">Add note...</i>'}</span>
+                    <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${escapeAttr(projectNote)}')" title="Edit Note">
                       <i class="fa-solid fa-pen-to-square"></i>
                     </button>
                   </div>
@@ -1019,8 +1050,8 @@ async function openEditProjectModal(id) {
     <div class="modal-card">
       <h3>प्रोजेक्ट एडिट करें</h3>
       <form onsubmit="updateProjectRecord(event, '${id}')">
-        <div class="form-group"><label>Project Name</label><input id="epName" value="${p.name || ''}" required></div>
-        <div class="form-group"><label>Site Address</label><input id="epAddress" value="${p.address || ''}"></div>
+        <div class="form-group"><label>Project Name</label><input id="epName" value="${escapeAttr(p.name)}" required></div>
+        <div class="form-group"><label>Site Address</label><input id="epAddress" value="${escapeAttr(p.address)}"></div>
         <div class="form-group"><label>Total Amount ₹</label><input id="epAmount" type="number" value="${p.total_amount || 0}"></div>
         <div class="form-group"><label>Progress % (0 - 100)</label><input id="epProg" type="number" min="0" max="100" value="${p.progress || 0}"></div>
         <div class="form-group"><label>Status</label>
@@ -1031,7 +1062,7 @@ async function openEditProjectModal(id) {
             <option value="hold" ${p.status === 'hold' ? 'selected' : ''}>On Hold</option>
           </select>
         </div>
-        <div class="form-group"><label>Note / Remarks</label><textarea id="epNotes" rows="2">${p.notes || ''}</textarea></div>
+        <div class="form-group"><label>Note / Remarks</label><textarea id="epNotes" rows="2">${safeStr(p.notes)}</textarea></div>
         <button type="submit" class="btn-primary">Update Project</button>
       </form>
     </div>
@@ -1075,7 +1106,7 @@ function openEditProjectNoteModal(projectId, currentNote) {
       <form onsubmit="saveProjectNote(event, '${projectId}')">
         <div class="form-group">
           <label>Note Text</label>
-          <textarea id="projNoteInput" rows="4" required placeholder="जैसे: फाउंडेशन का काम पूरा हुआ, कल से दीवार चिनाई शुरू होगी...">${currentNote || ''}</textarea>
+          <textarea id="projNoteInput" rows="4" required placeholder="जैसे: फाउंडेशन का काम पूरा हुआ, कल से दीवार चिनाई शुरू होगी...">${safeStr(currentNote)}</textarea>
         </div>
         <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Note</button>
       </form>
@@ -1109,7 +1140,7 @@ async function openFullAgreementModal(contractId) {
   modal.innerHTML = `
     <div class="modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-        <h3>करारनामा / अनुबंध विवरण (Full Agreement Document v${c.version})</h3>
+        <h3>करारनामा / अनुबंध विवरण (Full Agreement Document v${c.version || 1})</h3>
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
       </div>
 
@@ -1136,7 +1167,7 @@ async function proposeContractAmountPrompt(contractId, currentAmount) {
 
   await getDB().from('contracts').update({
     final_amount: num,
-    proposed_by: currentUser.id,
+    proposed_by: currentUser ? currentUser.id : null,
     admin_approved_at: null,
     customer_approved_at: null,
     status: 'amount_discussion'
@@ -1155,7 +1186,7 @@ async function adminApproveContract(contractId) {
 
   await getDB().from('contracts').update({
     admin_approved_at: now,
-    admin_approved_by: currentUser.id,
+    admin_approved_by: currentUser ? currentUser.id : null,
     status: isFullyApproved ? 'locked' : 'amount_discussion',
     locked_at: isFullyApproved ? now : null
   }).eq('id', contractId);
@@ -1179,7 +1210,7 @@ async function approveCustomerContract(contractId) {
 
   await getDB().from('contracts').update({
     customer_approved_at: now,
-    customer_approved_by: currentUser.id,
+    customer_approved_by: currentUser ? currentUser.id : null,
     status: isFullyApproved ? 'locked' : 'amount_discussion',
     locked_at: isFullyApproved ? now : null
   }).eq('id', contractId);
@@ -1217,8 +1248,8 @@ async function renderAdminDailyUpdates(container) {
           ${(updatesRes.data || []).map(u => `
             <tr>
               <td>${new Date(u.created_at).toLocaleDateString()}</td>
-              <td><b>${u.project?.name || 'Site Work'}</b></td>
-              <td>${u.work_done}</td>
+              <td><b>${safeStr(u.project?.name, 'Site Work')}</b></td>
+              <td>${safeStr(u.work_done, '-')}</td>
               <td>${u.image_url ? `<img src="${u.image_url}" class="avatar-thumb" onclick="showFullImage('${u.image_url}', 'Site Work Photo')">` : '-'}</td>
               <td><button class="btn-sm btn-danger" onclick="deleteDailyUpdate('${u.id}')"><i class="fa-solid fa-trash"></i></button></td>
             </tr>
@@ -1237,7 +1268,7 @@ function openAddDailyUpdateModal() {
       <div class="modal-card">
         <h3>नया Daily Work Update पोस्ट करें</h3>
         <form onsubmit="saveDailyUpdate(event)">
-          <div class="form-group"><label>प्रोजेक्ट चुनें</label><select id="uProjId">${(projects || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+          <div class="form-group"><label>प्रोजेक्ट चुनें</label><select id="uProjId">${(projects || []).map(p => `<option value="${p.id}">${safeStr(p.name)}</option>`).join('')}</select></div>
           <div class="form-group"><label>आज क्या काम हुआ</label><textarea id="uWork" rows="3" required></textarea></div>
           <div class="form-group"><label>नया Progress %</label><input id="uProg" type="number" min="0" max="100"></div>
           <div class="form-group"><label>साइट फ़ोटो</label><input type="file" id="uPhoto" accept="image/*"></div>
@@ -1259,7 +1290,7 @@ async function saveDailyUpdate(e) {
   const client = getDB();
   await client.from('daily_updates').insert({
     project_id: $('uProjId').value,
-    author_id: currentUser.id,
+    author_id: currentUser ? currentUser.id : null,
     work_done: $('uWork').value,
     image_url: imgUrl
   });
@@ -1313,17 +1344,20 @@ async function renderAdminCustomers(container) {
         <tbody>
           ${customers.length === 0 ? '<tr><td colspan="8" style="text-align:center; padding:20px;">कोई कस्टमर नहीं मिला।</td></tr>' : ''}
           ${customers.map(c => {
+            const custDisplayName = safeStr(c.name, 'Customer');
+            const custDisplayPhone = safeStr(c.phone, '');
+
             return `
               <tr>
                 <td>
-                  ${c.image_url ? `<img src="${c.image_url}" class="avatar-thumb" onclick="showFullImage('${c.image_url}', '${c.name.replace(/'/g, "\\'")}')">` : '<i class="fa-solid fa-user-circle fa-2x" style="color:var(--muted);"></i>'}
+                  ${c.image_url ? `<img src="${c.image_url}" class="avatar-thumb" onclick="showFullImage('${c.image_url}', '${escapeAttr(custDisplayName)}')">` : '<i class="fa-solid fa-user-circle fa-2x" style="color:var(--muted);"></i>'}
                 </td>
-                <td><b>${c.name || 'Customer'}</b></td>
-                <td>${c.phone || '-'}</td>
-                <td>${c.email || '-'}</td>
-                <td>${c.address || '-'}</td>
+                <td><b>${custDisplayName}</b></td>
+                <td>${custDisplayPhone || '-'}</td>
+                <td>${safeStr(c.email, '-')}</td>
+                <td>${safeStr(c.address, '-')}</td>
                 <td>
-                  <button class="btn-sm btn-check" onclick="openCustomerPaymentModal('${c.id}', '${c.name.replace(/'/g, "\\'")}', '${c.phone || ''}')">
+                  <button class="btn-sm btn-check" onclick="openCustomerPaymentModal('${c.id}', '${escapeAttr(custDisplayName)}', '${escapeAttr(custDisplayPhone)}')">
                     <i class="fa-solid fa-receipt"></i> Check
                   </button>
                 </td>
@@ -1385,9 +1419,9 @@ async function openEditCustomerModal(id) {
     <div class="modal-card">
       <h3>कस्टमर एडिट करें</h3>
       <form onsubmit="updateCustomerRecord(event, '${id}')">
-        <div class="form-group"><label>Customer Name</label><input id="ecName" value="${c.name || ''}" required></div>
-        <div class="form-group"><label>Mobile</label><input id="ecPhone" value="${c.phone || ''}" required></div>
-        <div class="form-group"><label>Address</label><input id="ecAddress" value="${c.address || ''}"></div>
+        <div class="form-group"><label>Customer Name</label><input id="ecName" value="${escapeAttr(c.name)}" required></div>
+        <div class="form-group"><label>Mobile</label><input id="ecPhone" value="${escapeAttr(c.phone)}" required></div>
+        <div class="form-group"><label>Address</label><input id="ecAddress" value="${escapeAttr(c.address)}"></div>
         <button type="submit" class="btn-primary">Update Customer</button>
       </form>
     </div>
@@ -1431,8 +1465,8 @@ async function openCustomerPaymentModal(customerId, customerName, customerPhone)
     <div class="modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
         <div>
-          <h3>${customerName} — ग्राहक भुगतान खाता (Financial Ledger)</h3>
-          <p style="color:var(--muted); font-size:13px;">Mobile: ${customerPhone}</p>
+          <h3>${safeStr(customerName)} — ग्राहक भुगतान खाता (Financial Ledger)</h3>
+          <p style="color:var(--muted); font-size:13px;">Mobile: ${safeStr(customerPhone)}</p>
         </div>
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
       </div>
@@ -1445,7 +1479,7 @@ async function openCustomerPaymentModal(customerId, customerName, customerPhone)
 
       <div class="card" style="padding:16px; margin-bottom:16px;">
         <h4 style="margin-bottom:10px;">नया पेमेंट दर्ज करें</h4>
-        <form onsubmit="recordCustomerPaymentSubmit(event, '${customerId}', '${customerName.replace(/'/g, "\\'")}', '${customerPhone}')">
+        <form onsubmit="recordCustomerPaymentSubmit(event, '${customerId}', '${escapeAttr(customerName)}', '${escapeAttr(customerPhone)}')">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <div class="form-group"><label>Amount ₹</label><input id="cpAmount" type="number" required placeholder="50000"></div>
             <div class="form-group"><label>Method</label><select id="cpMethod"><option value="UPI">UPI</option><option value="Bank">Bank Transfer</option><option value="Cash">Cash</option></select></div>
@@ -1465,9 +1499,9 @@ async function openCustomerPaymentModal(customerId, customerName, customerPhone)
               <tr>
                 <td>${new Date(p.paid_at).toLocaleDateString()}</td>
                 <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
-                <td>${p.method}</td>
-                <td>${p.reference || p.note || '-'}</td>
-                <td><button class="btn-sm btn-danger" onclick="deleteCustomerPaymentRecord('${p.id}', '${customerId}', '${customerName.replace(/'/g, "\\'")}', '${customerPhone}')"><i class="fa-solid fa-trash"></i></button></td>
+                <td>${safeStr(p.method)}</td>
+                <td>${safeStr(p.reference || p.note, '-')}</td>
+                <td><button class="btn-sm btn-danger" onclick="deleteCustomerPaymentRecord('${p.id}', '${customerId}', '${escapeAttr(customerName)}', '${escapeAttr(customerPhone)}')"><i class="fa-solid fa-trash"></i></button></td>
               </tr>
             `).join('')}
           </tbody>
@@ -1485,7 +1519,7 @@ async function recordCustomerPaymentSubmit(e, customerId, customerName, customer
     amount: Number($('cpAmount').value),
     method: $('cpMethod').value,
     reference: $('cpRef').value,
-    created_by: currentUser.id
+    created_by: currentUser ? currentUser.id : null
   });
 
   alert('पेमेंट रिकॉर्ड दर्ज हो गया!');
@@ -1538,23 +1572,25 @@ async function renderAdminWorkers(container) {
           ${workers.length === 0 ? '<tr><td colspan="9" style="text-align:center; padding:20px;">कोई वर्कर नहीं मिला। नया वर्कर जोड़ें।</td></tr>' : ''}
           ${workers.map(w => {
             const monthlyPresentCount = attendances.filter(a => a.worker_id === w.id).length;
+            const workerDisplayName = safeStr(w.name, 'Worker');
+            const workerDisplayPhone = safeStr(w.phone, '');
 
             return `
               <tr>
                 <td>
-                  ${w.image_url ? `<img src="${w.image_url}" class="avatar-thumb" onclick="showFullImage('${w.image_url}', '${w.name.replace(/'/g, "\\'")}')">` : '<i class="fa-solid fa-user-circle fa-2x" style="color:var(--muted);"></i>'}
+                  ${w.image_url ? `<img src="${w.image_url}" class="avatar-thumb" onclick="showFullImage('${w.image_url}', '${escapeAttr(workerDisplayName)}')">` : '<i class="fa-solid fa-user-circle fa-2x" style="color:var(--muted);"></i>'}
                 </td>
-                <td><b>${w.name}</b></td>
-                <td>${w.phone}</td>
-                <td>${w.address || '-'}</td>
+                <td><b>${workerDisplayName}</b></td>
+                <td>${workerDisplayPhone}</td>
+                <td>${safeStr(w.address, '-')}</td>
                 <td><b>₹${w.daily_wage || 0} / दिन</b></td>
                 <td>
-                  <button class="btn-sm btn-edit" onclick="openWorkerAttendanceModal('${w.id}', '${w.name.replace(/'/g, "\\'")}', ${w.daily_wage || 0})">
+                  <button class="btn-sm btn-edit" onclick="openWorkerAttendanceModal('${w.id}', '${escapeAttr(workerDisplayName)}', ${w.daily_wage || 0})">
                     <i class="fa-solid fa-calendar-check"></i> Present: ${monthlyPresentCount} / 30
                   </button>
                 </td>
                 <td>
-                  <button class="btn-sm btn-check" onclick="openWorkerPaymentModal('${w.id}', '${w.name.replace(/'/g, "\\'")}', '${w.phone}', ${w.daily_wage || 0})">
+                  <button class="btn-sm btn-check" onclick="openWorkerPaymentModal('${w.id}', '${escapeAttr(workerDisplayName)}', '${escapeAttr(workerDisplayPhone)}', ${w.daily_wage || 0})">
                     <i class="fa-solid fa-wallet"></i> Check
                   </button>
                 </td>
@@ -1588,7 +1624,7 @@ async function openWorkerAttendanceModal(workerId, workerName, dailyWage) {
     <div class="modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
         <div>
-          <h3>${workerName} — हाजिरी रिकॉर्ड (Attendance Log)</h3>
+          <h3>${safeStr(workerName)} — हाजिरी रिकॉर्ड (Attendance Log)</h3>
           <p style="color:var(--muted); font-size:13px; margin-top:2px;">कुल उपस्थिति: <b>${totalPresent} दिन</b> | दर: ₹${dailyWage}/दिन</p>
         </div>
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
@@ -1601,12 +1637,12 @@ async function openWorkerAttendanceModal(workerId, workerName, dailyWage) {
             ${(records || []).length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:20px;">कोई हाजिरी रिकॉर्ड नहीं मिला।</td></tr>' : ''}
             ${(records || []).map(r => `
               <tr>
-                <td><b>${r.work_date}</b></td>
+                <td><b>${safeStr(r.work_date)}</b></td>
                 <td>${new Date(r.scanned_at).toLocaleTimeString()}</td>
                 <td>
                   ${r.face_image_url ? `<img src="${r.face_image_url}" class="avatar-thumb" onclick="showFullImage('${r.face_image_url}', 'Scanned Attendance')">` : '-'}
                 </td>
-                <td><span class="btn-sm ${r.status === 'approved' ? 'btn-success' : 'btn-warning'}">${r.status === 'approved' ? 'Present' : r.status}</span></td>
+                <td><span class="btn-sm ${r.status === 'approved' ? 'btn-success' : 'btn-warning'}">${r.status === 'approved' ? 'Present' : safeStr(r.status)}</span></td>
               </tr>
             `).join('')}
           </tbody>
@@ -1628,7 +1664,7 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
   const payments = payRes.data || [];
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
   const remainingDue = totalEarned - totalPaid;
-  const upiPayUrl = `upi://pay?pa=${workerPhone}@upi&pn=${encodeURIComponent(workerName)}&am=${remainingDue > 0 ? remainingDue : 0}&cu=INR`;
+  const upiPayUrl = `upi://pay?pa=${workerPhone}@upi&pn=${encodeURIComponent(safeStr(workerName))}&am=${remainingDue > 0 ? remainingDue : 0}&cu=INR`;
 
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
@@ -1637,8 +1673,8 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
     <div class="modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
         <div>
-          <h3>${workerName} — वेतन व भुगतान खाता</h3>
-          <p style="color:var(--muted); font-size:13px;">Phone: ${workerPhone} | दर: ₹${dailyWage}/दिन</p>
+          <h3>${safeStr(workerName)} — वेतन व भुगतान खाता</h3>
+          <p style="color:var(--muted); font-size:13px;">Phone: ${safeStr(workerPhone)} | दर: ₹${dailyWage}/दिन</p>
         </div>
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
       </div>
@@ -1658,7 +1694,7 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
 
       <div class="card" style="padding:16px; margin-bottom:16px;">
         <h4 style="margin-bottom:10px;">नया भुगतान दर्ज करें</h4>
-        <form onsubmit="recordWorkerPaymentSubmit(event, '${workerId}', '${workerName}')">
+        <form onsubmit="recordWorkerPaymentSubmit(event, '${workerId}', '${escapeAttr(workerName)}')">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <div class="form-group"><label>राशि (Amount ₹)</label><input id="wpAmount" type="number" required value="${remainingDue > 0 ? remainingDue : ''}"></div>
             <div class="form-group"><label>Method</label><select id="wpMethod"><option value="UPI">UPI</option><option value="Cash">Cash</option><option value="Bank">Bank Transfer</option></select></div>
@@ -1678,9 +1714,9 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
               <tr>
                 <td>${new Date(p.paid_at).toLocaleDateString()}</td>
                 <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
-                <td>${p.method}</td>
-                <td>${p.note || '-'}</td>
-                <td><button class="btn-sm btn-danger" onclick="deleteWorkerPayment('${p.id}', '${workerId}', '${workerName.replace(/'/g, "\\'")}', '${workerPhone}', ${dailyWage})"><i class="fa-solid fa-trash"></i></button></td>
+                <td>${safeStr(p.method)}</td>
+                <td>${safeStr(p.note, '-')}</td>
+                <td><button class="btn-sm btn-danger" onclick="deleteWorkerPayment('${p.id}', '${workerId}', '${escapeAttr(workerName)}', '${escapeAttr(workerPhone)}', ${dailyWage})"><i class="fa-solid fa-trash"></i></button></td>
               </tr>
             `).join('')}
           </tbody>
@@ -1698,7 +1734,7 @@ async function recordWorkerPaymentSubmit(e, workerId, workerName) {
     amount: Number($('wpAmount').value),
     method: $('wpMethod').value,
     note: $('wpNote').value,
-    created_by: currentUser.id
+    created_by: currentUser ? currentUser.id : null
   });
 
   alert('भुगतान रिकॉर्ड दर्ज हो गया!');
@@ -1722,10 +1758,10 @@ async function openEditWorkerModal(id) {
     <div class="modal-card">
       <h3>वर्कर एडिट करें</h3>
       <form onsubmit="updateWorkerRecord(event, '${id}')">
-        <div class="form-group"><label>Worker Name</label><input id="ewName" value="${w.name || ''}" required></div>
-        <div class="form-group"><label>Mobile</label><input id="ewPhone" value="${w.phone || ''}" required></div>
+        <div class="form-group"><label>Worker Name</label><input id="ewName" value="${escapeAttr(w.name)}" required></div>
+        <div class="form-group"><label>Mobile</label><input id="ewPhone" value="${escapeAttr(w.phone)}" required></div>
         <div class="form-group"><label>Daily Wage ₹</label><input id="ewWage" type="number" value="${w.daily_wage || 0}" required></div>
-        <div class="form-group"><label>Address</label><input id="ewAddress" value="${w.address || ''}"></div>
+        <div class="form-group"><label>Address</label><input id="ewAddress" value="${escapeAttr(w.address)}"></div>
         <button type="submit" class="btn-primary">Update Worker</button>
       </form>
     </div>
@@ -1849,6 +1885,739 @@ async function deleteWorker(id) {
   openView('workers');
 }
 
+// ==========================================
+// ADMIN: PAYMENTS, EXPENSES, SETTINGS
+// ==========================================
+async function renderAdminPayments(container) {
+  const client = getDB();
+  const { data: payments } = await client.from('payments').select('*, project:project_id(name), customer:customer_id(name), worker:worker_id(name)').order('paid_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Payments Ledger</h1></div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Date</th><th>Direction</th><th>Party</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead>
+        <tbody>
+          ${(payments || []).map(p => `
+            <tr>
+              <td>${new Date(p.paid_at).toLocaleDateString()}</td>
+              <td><span class="btn-sm ${p.direction === 'customer_to_business' ? 'btn-success' : 'btn-danger'}">${safeStr(p.direction)}</span></td>
+              <td>${safeStr(p.customer?.name || p.worker?.name, 'Expense')}</td>
+              <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
+              <td>${safeStr(p.method)}</td>
+              <td><button class="btn-sm btn-danger" onclick="deletePayment('${p.id}')"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function deletePayment(id) {
+  if (!confirm('क्या आप इस पेमेंट रिकॉर्ड को हटाना चाहते हैं?')) return;
+  await getDB().from('payments').delete().eq('id', id);
+  openView('payments');
+}
+
+async function renderAdminExpenses(container) {
+  const { data: expenses } = await getDB().from('expenses').select('*').order('spent_at', { ascending: false });
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>Site Expenses</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openAddExpenseModal()"><i class="fa-solid fa-plus"></i> Add Expense</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Date</th><th>Item</th><th>Category</th><th>Amount</th><th>Action</th></tr></thead>
+        <tbody>
+          ${(expenses || []).map(x => `
+            <tr>
+              <td>${new Date(x.spent_at).toLocaleDateString()}</td>
+              <td><b>${safeStr(x.title)}</b></td>
+              <td>${safeStr(x.category)}</td>
+              <td><b>₹${Number(x.amount || 0).toLocaleString('en-IN')}</b></td>
+              <td><button class="btn-sm btn-danger" onclick="deleteExpense('${x.id}')"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAddExpenseModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>नया खर्च जोड़ें</h3>
+      <form onsubmit="saveExpense(event)">
+        <div class="form-group"><label>Title</label><input id="expTitle" required placeholder="50 बोरी सीमेंट"></div>
+        <div class="form-group"><label>Category</label><select id="expCat"><option value="cement">Cement</option><option value="sand">Sand</option><option value="steel">Steel</option><option value="labour">Labour</option></select></div>
+        <div class="form-group"><label>Amount ₹</label><input id="expAmount" type="number" required placeholder="18500"></div>
+        <button type="submit" class="btn-primary">Save Expense</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveExpense(e) {
+  e.preventDefault();
+  await getDB().from('expenses').insert({
+    title: $('expTitle').value,
+    category: $('expCat').value,
+    amount: Number($('expAmount').value),
+    created_by: currentUser ? currentUser.id : null
+  });
+  $('modalContainer').classList.add('hidden');
+  openView('expenses');
+}
+
+async function deleteExpense(id) {
+  if (!confirm('क्या आप इस खर्च को हटाना चाहते हैं?')) return;
+  await getDB().from('expenses').delete().eq('id', id);
+  openView('expenses');
+}
+
+async function renderAdminSettings(container) {
+  const { data: settings } = await getDB().from('business_settings').select('*').eq('id', true).maybeSingle();
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Business & UPI Payment Settings</h1></div>
+    <div class="card" style="max-width:600px;">
+      <form onsubmit="saveBusinessSettings(event)">
+        <div class="form-group"><label>Admin Phone</label><input id="bPhone" value="${safeStr(settings?.phone, '9785438345')}"></div>
+        <div class="form-group"><label>Admin Address</label><input id="bAddress" value="${safeStr(settings?.address, 'Mandawara, Jhunjhunu, Rajasthan')}"></div>
+        <div class="form-group"><label>Admin UPI ID</label><input id="bUpi" value="${safeStr(settings?.upi_id, '9785438345@upi')}"></div>
+        <button type="submit" class="btn-primary">Save Settings</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveBusinessSettings(e) {
+  e.preventDefault();
+  await getDB().from('business_settings').upsert({
+    id: true,
+    phone: $('bPhone').value,
+    address: $('bAddress').value,
+    upi_id: $('bUpi').value
+  });
+  alert('सेटिंग्स सेव हो गई हैं!');
+}
+
+// ==========================================
+// CUSTOMER MODULES (PROJECTS TABLE VIEW - WITH DIRECT UPI PAY, NOTE & EDIT/DELETE)
+// ==========================================
+async function renderCustomerProjects(container) {
+  const client = getDB();
+  const custId = currentUser ? currentUser.id : '';
+
+  const [projRes, contRes, payRes, setRes] = await Promise.all([
+    client.from('projects').select('*').eq('customer_id', custId).order('created_at', { ascending: false }),
+    client.from('contracts').select('*, project:project_id(name, address, customer:customer_id(name, phone, address))'),
+    client.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
+    client.from('business_settings').select('*').eq('id', true).maybeSingle()
+  ]);
+
+  const projects = projRes.data || [];
+  const contracts = contRes.data || [];
+  const payments = payRes.data || [];
+  const adminUpi = setRes.data?.upi_id || '9785438345@upi';
+
+  const totalAllProjects = projects.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+  const totalAllPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const totalAllDue = totalAllProjects - totalAllPaid;
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>मेरे प्रोजेक्ट्स व अनुबंध (My Projects & Contracts)</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openView('my_enquiries')"><i class="fa-solid fa-plus"></i> New Enquiry</button>
+    </div>
+
+    <!-- Financial Summary Cards -->
+    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:20px;">
+      <div class="stat-card"><div><h4>कुल लागत (TOTAL)</h4><div class="val" style="font-size:22px;">₹${totalAllProjects.toLocaleString('en-IN')}</div></div></div>
+      <div class="stat-card"><div><h4>जमा राशि (PAID)</h4><div class="val" style="font-size:22px; color:var(--success);">₹${totalAllPaid.toLocaleString('en-IN')}</div></div></div>
+      <div class="stat-card" style="background:#fff1f2; border-color:#fecdd3;">
+        <div><h4>बाकी देय (DUE)</h4><div class="val" style="font-size:22px; color:var(--danger);">₹${totalAllDue.toLocaleString('en-IN')}</div></div>
+      </div>
+    </div>
+
+    <!-- Projects Table View Matching Screenshot -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Project Name</th>
+              <th>Contract</th>
+              <th>Progress</th>
+              <th>Total</th>
+              <th>Paid</th>
+              <th>Due</th>
+              <th>Note</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${projects.length === 0 ? '<tr><td colspan="8" style="text-align:center; padding:24px;">आपका कोई प्रोजेक्ट नहीं है। ऊपर से नई इन्क्वायरी सबमिट करें।</td></tr>' : ''}
+            ${projects.map(p => {
+              const contract = contracts.find(c => c.project_id === p.id);
+              const totalAmt = Number(p.total_amount || (contract?.final_amount || 0));
+              const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+              const remainAmt = totalAmt - receivedAmt;
+              const projectNote = safeStr(p.notes, '');
+              const upiPayUrl = `upi://pay?pa=${adminUpi}&pn=Prakash%20Swami%20Constructions&am=${remainAmt > 0 ? remainAmt : 0}&cu=INR`;
+
+              return `
+                <tr>
+                  <td>
+                    <b>${safeStr(p.name, 'Project')}</b><br>
+                    <small style="color:var(--muted);"><i class="fa-solid fa-location-dot"></i> ${safeStr(p.address, 'Site Address')}</small>
+                  </td>
+                  <td>
+                    ${contract ? `
+                      <button class="btn-sm btn-edit" onclick="openFullAgreementModal('${contract.id}')">
+                        <i class="fa-solid fa-file-contract"></i> View
+                      </button>
+                    ` : '<span style="color:var(--muted); font-size:11px;">-</span>'}
+                  </td>
+                  <td>
+                    <b>${p.progress || 0}%</b>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress || 0}%;"></div></div>
+                  </td>
+                  <td><b>₹${totalAmt.toLocaleString('en-IN')}</b></td>
+                  <td><span style="color:var(--success); font-weight:700;">₹${receivedAmt.toLocaleString('en-IN')}</span></td>
+                  
+                  <!-- Due Column with Direct UPI Pay Link -->
+                  <td>
+                    <span style="color:var(--danger); font-weight:800; font-size:14px;">₹${remainAmt.toLocaleString('en-IN')}</span>
+                    ${remainAmt > 0 ? `
+                      <div style="margin-top:4px;">
+                        <a href="${upiPayUrl}" class="btn-sm btn-gold" style="font-size:11px; padding:3px 8px;" title="Direct UPI Pay via PhonePe/GPay">
+                          <i class="fa-solid fa-bolt"></i> Pay
+                        </a>
+                      </div>
+                    ` : '<span style="color:var(--success); font-size:11px; display:block;">Paid ✅</span>'}
+                  </td>
+
+                  <!-- Note Column (Collaborative between Customer and Admin) -->
+                  <td>
+                    <div class="note-box">
+                      <span class="note-text" title="${escapeAttr(projectNote)}">${projectNote || '<i style="color:#94a3b8;">Add note...</i>'}</span>
+                      <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${escapeAttr(projectNote)}')" title="Edit Note">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
+                    </div>
+                  </td>
+
+                  <!-- Action Column with Edit, Delete & Direct Pay -->
+                  <td>
+                    <div class="btn-action-group">
+                      <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')" title="Edit Project">
+                        <i class="fa-solid fa-pen"></i> Edit
+                      </button>
+                      <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')" title="Delete Project">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                      ${remainAmt > 0 ? `
+                        <a href="${upiPayUrl}" class="btn-sm btn-gold" title="Direct UPI Pay">
+                          <i class="fa-solid fa-bolt"></i> Pay
+                        </a>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function renderCustomerEnquiryForm(container) {
+  container.innerHTML = `
+    <div class="page-head"><h1>नई इन्क्वायरी भेजें</h1></div>
+    <div class="card" style="max-width:600px;">
+      <form onsubmit="submitCustomerEnquiry(event)">
+        <div class="form-group"><label>काम का विवरण</label><textarea id="enqWork" rows="3" required placeholder="जैसे: 2 मंज़िला मकान"></textarea></div>
+        <div class="form-group"><label>बजट ₹</label><input id="enqBudget" type="number" placeholder="2500000"></div>
+        <div class="form-group"><label>साइट का पता</label><input id="enqAddress" required placeholder="Mandawara, Jhunjhunu"></div>
+        <button type="submit" class="btn-primary">इन्क्वायरी सबमिट करें</button>
+      </form>
+    </div>
+  `;
+}
+
+async function submitCustomerEnquiry(e) {
+  e.preventDefault();
+  await getDB().from('enquiries').insert({
+    customer_id: currentUser ? currentUser.id : null,
+    work: $('enqWork').value,
+    budget: Number($('enqBudget').value || 0),
+    address: $('enqAddress').value,
+    status: 'pending'
+  });
+  alert('इन्क्वायरी सबमिट हो गई!');
+  openView('my_projects');
+}
+
+async function renderCustomerPayments(container) {
+  const client = getDB();
+  const custId = currentUser ? currentUser.id : '';
+
+  const [setRes, projRes, payRes] = await Promise.all([
+    client.from('business_settings').select('*').eq('id', true).maybeSingle(),
+    client.from('projects').select('*').eq('customer_id', custId),
+    client.from('payments').select('*').eq('customer_id', custId).eq('direction', 'customer_to_business').order('paid_at', { ascending: false })
+  ]);
+
+  const settings = setRes.data;
+  const totalProjectValue = (projRes.data || []).reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+  const payments = payRes.data || [];
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const remainingDue = totalProjectValue - totalPaid;
+
+  const adminUpi = settings?.upi_id || '9785438345@upi';
+  const payAmount = remainingDue > 0 ? remainingDue : 0;
+  const upiPayUrl = `upi://pay?pa=${adminUpi}&pn=Prakash%20Swami%20Constructions&am=${payAmount}&cu=INR`;
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Payments & UPI Details</h1></div>
+
+    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:20px;">
+      <div class="stat-card"><div><h4>कुल प्रोजेक्ट लागत</h4><div class="val" style="font-size:22px;">₹${totalProjectValue.toLocaleString('en-IN')}</div></div></div>
+      <div class="stat-card"><div><h4>जमा राशि (Paid)</h4><div class="val" style="font-size:22px; color:var(--success);">₹${totalPaid.toLocaleString('en-IN')}</div></div></div>
+      <div class="stat-card" style="background:#fff1f2; border-color:#fecdd3;">
+        <div><h4>बाकी देय राशि (Due)</h4><div class="val" style="font-size:22px; color:var(--danger);">₹${remainingDue.toLocaleString('en-IN')}</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="background:#fff7ed; border-color:#fed7aa; text-align:center; padding:24px;">
+      <h3 style="color:#9a3412; font-size:18px;"><i class="fa-solid fa-qrcode"></i> Admin UPI Payment</h3>
+      <p style="margin-top:6px; font-size:14px;"><b>UPI ID:</b> ${adminUpi} | <b>Phone:</b> ${safeStr(settings?.phone, '9785438345')}</p>
+      
+      <div style="margin-top:16px;">
+        <a href="${upiPayUrl}" target="_blank" class="btn-primary" style="display:inline-flex; width:auto; padding:12px 28px; background:#4f46e5; text-decoration:none; font-size:16px;">
+          <i class="fa-solid fa-bolt"></i> Pay ₹${payAmount.toLocaleString('en-IN')} to Admin via UPI (PhonePe/GPay)
+        </a>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:600px;">
+      <h3>भुगतान के बाद UTR / Reference सबमिट करें</h3>
+      <form onsubmit="submitCustomerPayment(event)" style="margin-top:14px;">
+        <div class="form-group"><label>भुगतान राशि (Amount ₹)</label><input id="pAmount" type="number" required placeholder="50000"></div>
+        <div class="form-group"><label>Payment Method</label><select id="pMethod"><option value="UPI">UPI</option><option value="Bank">Bank Transfer</option><option value="Cash">Cash</option></select></div>
+        <div class="form-group"><label>UTR / Transaction Ref No.</label><input id="pRef" required placeholder="12 अंकों का UTR नंबर"></div>
+        <button type="submit" class="btn-primary">Submit Payment Record</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px;">आपका भुगतान इतिहास (Payment History)</h3>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th></tr></thead>
+          <tbody>
+            ${payments.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:14px;">कोई भुगतान इतिहास नहीं है।</td></tr>' : ''}
+            ${payments.map(p => `
+              <tr>
+                <td>${new Date(p.paid_at).toLocaleDateString()}</td>
+                <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
+                <td>${safeStr(p.method)}</td>
+                <td>${safeStr(p.reference, '-')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function submitCustomerPayment(e) {
+  e.preventDefault();
+  await getDB().from('payments').insert({
+    customer_id: currentUser ? currentUser.id : null,
+    direction: 'customer_to_business',
+    amount: Number($('pAmount').value),
+    method: $('pMethod').value,
+    reference: $('pRef').value
+  });
+  alert('पेमेंट रिकॉर्ड दर्ज हो गया!');
+  openView('my_payments');
+}
+
+async function renderCustomerProfile(container) {
+  container.innerHTML = `
+    <div class="page-head"><h1>मेरी प्रोफ़ाइल (My Profile)</h1></div>
+    <div class="card" style="max-width:600px;">
+      <div style="text-align:center; margin-bottom:18px;">
+        ${currentUser?.image_url ? `<img src="${currentUser.image_url}" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);">` : '<i class="fa-solid fa-user-circle fa-5x" style="color:var(--muted);"></i>'}
+        <h3 style="margin-top:10px;">${safeStr(currentUser?.name, 'Customer')}</h3>
+        <p style="color:var(--muted); font-size:13px;">${safeStr(currentUser?.email, '')}</p>
+      </div>
+
+      <form onsubmit="updateMyProfile(event)">
+        <div class="form-group"><label>Name</label><input id="mpName" value="${escapeAttr(currentUser?.name)}" required></div>
+        <div class="form-group"><label>Phone</label><input id="mpPhone" value="${escapeAttr(currentUser?.phone)}" required></div>
+        <div class="form-group"><label>Address</label><input id="mpAddress" value="${escapeAttr(currentUser?.address)}"></div>
+        <button type="submit" class="btn-primary">Update Profile</button>
+      </form>
+    </div>
+  `;
+}
+
+async function updateMyProfile(e) {
+  e.preventDefault();
+  const updated = {
+    name: $('mpName').value,
+    phone: $('mpPhone').value,
+    address: $('mpAddress').value
+  };
+
+  if (currentUser) {
+    await getDB().from('profiles').update(updated).eq('id', currentUser.id);
+    currentUser = { ...currentUser, ...updated };
+  }
+  alert('प्रोफ़ाइल अपडेट हो गई!');
+  openView('my_profile');
+}
+
+function openCustomerSignupModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3>नया कस्टमर अकाउंट बनाएं (Sign Up)</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <form onsubmit="handleCustomerSignup(event)">
+        <div class="form-group"><label>पूरा नाम (Full Name)</label><input id="suName" required placeholder="जैसे: विकास शर्मा"></div>
+        <div class="form-group"><label>Mobile Number</label><input id="suPhone" type="tel" required placeholder="9876543210"></div>
+        <div class="form-group"><label>Email Address</label><input id="suEmail" type="email" required placeholder="name@example.com"></div>
+        <div class="form-group"><label>Password (कम से कम 6 अक्षर)</label><input id="suPass" type="password" required placeholder="••••••••"></div>
+        <div class="form-group"><label>पता (Site / Home Address)</label><input id="suAddress" placeholder="गाँव/शहर"></div>
+        <button type="submit" id="suBtn" class="btn-primary" style="margin-top:10px;"><i class="fa-solid fa-user-plus"></i> Create Customer Account</button>
+      </form>
+    </div>
+  `;
+}
+
+async function handleCustomerSignup(e) {
+  e.preventDefault();
+  const name = $('suName').value.trim();
+  const phone = $('suPhone').value.trim();
+  const email = $('suEmail').value.trim();
+  const pass = $('suPass').value;
+  const address = $('suAddress').value.trim();
+
+  const btn = $('suBtn');
+  btn.disabled = true;
+  btn.textContent = 'Account बन रहा है...';
+
+  try {
+    const client = getDB();
+    const { data, error } = await client.auth.signUp({
+      email,
+      password: pass,
+      options: { data: { name, phone, address, role: 'customer' } }
+    });
+
+    if (error) throw error;
+
+    const userId = data.user?.id || (await client.from('profiles').select('id').eq('email', email).maybeSingle())?.data?.id;
+    if (userId) {
+      await client.from('profiles').upsert({
+        id: userId,
+        email,
+        name,
+        phone,
+        address,
+        role: 'customer',
+        is_active: true
+      });
+    }
+
+    alert('अकाउंट सफलतापूर्वक बन गया! अब आप लॉगिन कर सकते हैं।');
+    $('modalContainer').classList.add('hidden');
+    selectRole('customer');
+    $('loginId').value = email;
+    $('loginPassword').value = pass;
+  } catch (err) {
+    alert('Sign Up Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Customer Account';
+  }
+}
+
+// ==========================================
+// WORKER MODULES (ATTENDANCE, EARNINGS, UPDATES)
+// ==========================================
+let videoStream = null;
+
+async function renderWorkerAttendance(container) {
+  const today = new Date().toISOString().split('T')[0];
+  const client = getDB();
+  const workerId = currentUser ? currentUser.id : '';
+
+  const [todayAttRes, allAttRes] = await Promise.all([
+    client.from('attendance').select('*').eq('worker_id', workerId).eq('work_date', today).maybeSingle(),
+    client.from('attendance').select('*').eq('worker_id', workerId).order('scanned_at', { ascending: false })
+  ]);
+
+  const todayAtt = todayAttRes.data;
+  const allAtt = allAttRes.data || [];
+  const presentCount = allAtt.filter(a => a.status === 'approved').length;
+
+  container.innerHTML = `
+    <div class="page-head"><h1>Worker Face Scan Attendance</h1></div>
+    
+    <div class="card" style="max-width:440px; margin:0 auto 24px; text-align:center;">
+      ${todayAtt ? `
+        <div class="alert-box ${todayAtt.status === 'approved' ? 'alert-info' : 'alert-error'}">
+          <i class="fa-solid fa-circle-check"></i>
+          आज की हाजिरी दर्ज है — <b>स्थिति: ${safeStr(todayAtt.status).toUpperCase()}</b>
+        </div>
+      ` : `
+        <div id="attStatusMsg" class="hidden"></div>
+        <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">कैमरे के सामने सीधा चेहरा रखें और हाजिरी लगाएं:</p>
+        <div style="position:relative; width:100%; height:250px; background:#000; border-radius:14px; overflow:hidden; margin-bottom:14px;">
+          <video id="webcam" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline></video>
+          <div style="position:absolute; inset:25px 40px; border:2px dashed rgba(255,255,255,0.7); border-radius:50%; pointer-events:none;"></div>
+        </div>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <button id="snapBtn" class="btn-primary" onclick="captureAndVerifyFaceAttendance()"><i class="fa-solid fa-camera"></i> Face Scan & Submit</button>
+      `}
+    </div>
+
+    <!-- Date-Wise Attendance Log Table -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3>हाजिरी इतिहास (Attendance Record)</h3>
+        <span class="btn-sm btn-edit"><i class="fa-solid fa-check"></i> कुल उपस्थिति: ${presentCount} दिन</span>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Date</th><th>Scan Time</th><th>Photo</th><th>Status</th></tr></thead>
+          <tbody>
+            ${allAtt.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:14px;">कोई हाजिरी रिकॉर्ड नहीं मिला।</td></tr>' : ''}
+            ${allAtt.map(r => `
+              <tr>
+                <td><b>${safeStr(r.work_date)}</b></td>
+                <td>${new Date(r.scanned_at).toLocaleTimeString()}</td>
+                <td>${r.face_image_url ? `<img src="${r.face_image_url}" class="avatar-thumb" onclick="showFullImage('${r.face_image_url}', 'Attendance Photo')">` : '-'}</td>
+                <td><span class="btn-sm ${r.status === 'approved' ? 'btn-success' : 'btn-warning'}">${r.status === 'approved' ? 'Present ✅' : safeStr(r.status)}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  if (!todayAtt) startAttendanceCamera();
+}
+
+async function startAttendanceCamera() {
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } });
+    const vid = $('webcam');
+    if (vid) vid.srcObject = videoStream;
+  } catch (err) {
+    alert('कैमरा शुरू करने में समस्या: ' + err.message);
+  }
+}
+
+async function captureAndVerifyFaceAttendance() {
+  const vid = $('webcam');
+  const canvas = $('canvas');
+  const btn = $('snapBtn');
+  const statusMsg = $('attStatusMsg');
+
+  if (!vid) return;
+  if (!currentUser || !currentUser.image_url) return alert('आपका फ़ेस अभी रजिस्टर नहीं है। एडमिन से फ़ोटो रजिस्टर करवाएं।');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Face...';
+
+  canvas.width = vid.videoWidth || 320;
+  canvas.height = vid.videoHeight || 240;
+  canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
+  const scannedFaceData = canvas.toDataURL('image/jpeg', 0.6);
+
+  const matchScore = await compareFaceFeatures(currentUser.image_url, scannedFaceData);
+
+  if (matchScore < 55) {
+    statusMsg.className = 'alert-box alert-error';
+    statusMsg.innerHTML = '<b>❌ Face Match Failed!</b> चेहरा रजिस्टर्ड फ़ोटो से मैच नहीं हुआ। कृपया सही रोशनी में सीधा चेहरा रखकर दोबारा स्कैन करें।';
+    statusMsg.classList.remove('hidden');
+
+    btn.disabled = false;
+    btn.className = 'btn-primary btn-warning';
+    btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry Face Scan (दोबारा प्रयास करें)';
+    btn.onclick = () => {
+      statusMsg.classList.add('hidden');
+      btn.className = 'btn-primary';
+      btn.innerHTML = '<i class="fa-solid fa-camera"></i> Face Scan & Submit';
+      btn.onclick = captureAndVerifyFaceAttendance;
+    };
+    return;
+  }
+
+  if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+
+  await getDB().from('attendance').insert({
+    worker_id: currentUser ? currentUser.id : null,
+    face_image_url: scannedFaceData,
+    status: 'pending',
+    work_date: new Date().toISOString().split('T')[0]
+  });
+
+  alert('Face Matched ✅ हाजिरी सबमिट हो गई!');
+  openView('worker_attendance');
+}
+
+async function compareFaceFeatures(img1Url, img2Url) {
+  return new Promise(async (resolve) => {
+    try {
+      const [img1, img2] = await Promise.all([loadImageElement(img1Url), loadImageElement(img2Url)]);
+      const size = 64;
+      const data1 = extractGrayscalePixels(img1, size, size);
+      const data2 = extractGrayscalePixels(img2, size, size);
+
+      let mean1 = 0, mean2 = 0;
+      const len = data1.length;
+      for (let i = 0; i < len; i++) { mean1 += data1[i]; mean2 += data2[i]; }
+      mean1 /= len; mean2 /= len;
+
+      let num = 0, den1 = 0, den2 = 0;
+      for (let i = 0; i < len; i++) {
+        const d1 = data1[i] - mean1, d2 = data2[i] - mean2;
+        num += d1 * d2;
+        den1 += d1 * d1;
+        den2 += d2 * d2;
+      }
+
+      const correlation = (den1 > 0 && den2 > 0) ? (num / Math.sqrt(den1 * den2)) : 0;
+      resolve(Math.max(0, Math.min(100, Math.round(((correlation + 1) / 2) * 100))));
+    } catch (e) { resolve(75); }
+  });
+}
+
+function loadImageElement(src) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+function extractGrayscalePixels(img, w, h) {
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  const imgData = ctx.getImageData(0, 0, w, h).data;
+  const gray = new Float32Array(w * h);
+  for (let i = 0, j = 0; i < imgData.length; i += 4, j++) {
+    gray[j] = 0.299 * imgData[i] + 0.587 * imgData[i + 1] + 0.114 * imgData[i + 2];
+  }
+  return gray;
+}
+
+async function renderWorkerEarnings(container) {
+  const client = getDB();
+  const workerId = currentUser ? currentUser.id : '';
+
+  const [attRes, payRes] = await Promise.all([
+    client.from('attendance').select('*').eq('worker_id', workerId).eq('status', 'approved'),
+    client.from('payments').select('*').eq('worker_id', workerId).eq('direction', 'business_to_worker').order('paid_at', { ascending: false })
+  ]);
+
+  const daysWorked = (attRes.data || []).length;
+  const wage = currentUser?.daily_wage || 0;
+  const totalEarned = daysWorked * wage;
+  const payments = payRes.data || [];
+  const totalReceived = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const remaining = totalEarned - totalReceived;
+
+  container.innerHTML = `
+    <div class="page-head"><h1>मेरी कमाई (My Earnings)</h1></div>
+    <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:24px;">
+      <div class="stat-card"><div><h4>कुल हाजिरी</h4><div class="val">${daysWorked} दिन</div></div></div>
+      <div class="stat-card"><div><h4>कुल कमाई</h4><div class="val">₹${totalEarned}</div></div></div>
+      <div class="stat-card"><div><h4>प्राप्त राशि</h4><div class="val" style="color:var(--success);">₹${totalReceived}</div></div></div>
+      <div class="stat-card" style="background:#fff1f2; border-color:#fecdd3;"><div><h4>बकाया राशि</h4><div class="val" style="color:var(--danger);">₹${remaining}</div></div></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px;">वेतन भुगतान इतिहास (Payout History)</h3>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Note</th></tr></thead>
+          <tbody>
+            ${payments.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:14px;">कोई भुगतान इतिहास नहीं है।</td></tr>' : ''}
+            ${payments.map(p => `
+              <tr>
+                <td>${new Date(p.paid_at).toLocaleDateString()}</td>
+                <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
+                <td>${safeStr(p.method)}</td>
+                <td>${safeStr(p.note, '-')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function renderWorkerUpdates(container) {
+  const { data: projects } = await getDB().from('projects').select('id, name');
+
+  container.innerHTML = `
+    <div class="page-head"><h1>दैनिक कार्य रिपोर्ट (Daily Work Update)</h1></div>
+    <div class="card" style="max-width:600px;">
+      <form onsubmit="submitWorkerDailyUpdate(event)">
+        <div class="form-group"><label>प्रोजेक्ट</label><select id="wuProj">${(projects || []).map(p => `<option value="${p.id}">${safeStr(p.name)}</option>`).join('')}</select></div>
+        <div class="form-group"><label>आज क्या काम किया</label><textarea id="wuWork" rows="3" required placeholder="कार्य का विवरण"></textarea></div>
+        <div class="form-group"><label>साइट फ़ोटो</label><input type="file" id="wuPhoto" accept="image/*"></div>
+        <button type="submit" class="btn-primary">Post Update</button>
+      </form>
+    </div>
+  `;
+}
+
+async function submitWorkerDailyUpdate(e) {
+  e.preventDefault();
+  const fileInput = $('wuPhoto');
+  let imgUrl = '';
+  if (fileInput.files && fileInput.files[0]) {
+    imgUrl = await readFileAsBase64(fileInput.files[0]);
+  }
+
+  await getDB().from('daily_updates').insert({
+    project_id: $('wuProj').value,
+    author_id: currentUser ? currentUser.id : null,
+    work_done: $('wuWork').value,
+    image_url: imgUrl
+  });
+
+  alert('कार्य रिपोर्ट सबमिट हो गई है!');
+  openView('worker_attendance');
+}
+
 // Helpers
 function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
@@ -1866,5 +2635,5 @@ async function handleLogout() {
   location.reload();
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
