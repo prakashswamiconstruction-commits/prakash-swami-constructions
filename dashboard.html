@@ -47,12 +47,12 @@
     
     /* Action Buttons */
     .btn-action-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 0; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 0; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
     .btn-success { background: #dcfce7; color: #15803d; }
     .btn-danger { background: #fee2e2; color: #b91c1c; }
     .btn-warning { background: #fef3c7; color: #b45309; }
     .btn-edit { background: #e0e7ff; color: #4338ca; }
-    .btn-gold { background: #fef08a; color: #854d0e; font-weight: 700; }
+    .btn-gold { background: #fef08a; color: #854d0e; font-weight: 700; border: 1px solid #fde047; }
     .btn-check { background: #0b1220; color: #fff; font-weight: 700; }
     
     .alert-box { padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; line-height: 1.5; }
@@ -107,6 +107,10 @@
     /* Progress Bar */
     .progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 6px; }
     .progress-bar-fill { height: 100%; background: var(--success); border-radius: 4px; }
+
+    /* Note display box */
+    .note-box { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px dashed #cbd5e1; max-width: 220px; font-size: 12px; line-height: 1.4; }
+    .note-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 
     /* Legal Contract Agreement Document Box (Matching PDF) */
     .contract-doc { background: #fff; border: 2px solid #334155; border-radius: 16px; padding: 28px; margin-top: 14px; position: relative; box-shadow: 0 6px 18px rgba(0,0,0,0.06); font-size: 13px; line-height: 1.6; color: #1e293b; }
@@ -860,7 +864,7 @@ async function deleteAttendance(id) {
 }
 
 // ==========================================
-// ADMIN: PROJECTS
+// ADMIN: PROJECTS (WITH SHARED NOTE COLUMN)
 // ==========================================
 async function renderAdminProjects(container) {
   const [projRes, payRes, contRes] = await Promise.all([
@@ -889,16 +893,18 @@ async function renderAdminProjects(container) {
             <th>Total Amount</th>
             <th>Received Amount</th>
             <th>Remaining Amount</th>
+            <th>Note (Customer & Admin)</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          ${projects.length === 0 ? '<tr><td colspan="9" style="text-align:center; padding:20px;">कोई प्रोजेक्ट नहीं मिला।</td></tr>' : ''}
+          ${projects.length === 0 ? '<tr><td colspan="10" style="text-align:center; padding:20px;">कोई प्रोजेक्ट नहीं मिला।</td></tr>' : ''}
           ${projects.map(p => {
             const contract = contracts.find(c => c.project_id === p.id);
             const totalAmt = Number(p.total_amount || (contract?.final_amount || 0));
             const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
             const remainAmt = totalAmt - receivedAmt;
+            const projectNote = p.notes || '';
 
             return `
               <tr>
@@ -922,6 +928,17 @@ async function renderAdminProjects(container) {
                 <td><b>₹${totalAmt.toLocaleString('en-IN')}</b></td>
                 <td><span style="color:var(--success); font-weight:700;">₹${receivedAmt.toLocaleString('en-IN')}</span></td>
                 <td><span style="color:var(--danger); font-weight:700;">₹${remainAmt.toLocaleString('en-IN')}</span></td>
+                
+                <!-- Collaborative Note Column -->
+                <td>
+                  <div class="note-box">
+                    <span class="note-text" title="${projectNote}">${projectNote || '<i style="color:#94a3b8;">Add note...</i>'}</span>
+                    <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${projectNote.replace(/'/g, "\\'")}')" title="Edit Note">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                  </div>
+                </td>
+
                 <td>
                   <div class="btn-action-group">
                     <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
@@ -959,6 +976,7 @@ async function openEditProjectModal(id) {
             <option value="hold" ${p.status === 'hold' ? 'selected' : ''}>On Hold</option>
           </select>
         </div>
+        <div class="form-group"><label>Note / Remarks</label><textarea id="epNotes" rows="2">${p.notes || ''}</textarea></div>
         <button type="submit" class="btn-primary">Update Project</button>
       </form>
     </div>
@@ -972,17 +990,51 @@ async function updateProjectRecord(e, id) {
     address: $('epAddress').value,
     total_amount: Number($('epAmount').value),
     progress: Number($('epProg').value),
-    status: $('epStatus').value
+    status: $('epStatus').value,
+    notes: $('epNotes').value
   }).eq('id', id);
 
   $('modalContainer').classList.add('hidden');
-  openView('projects');
+  openView(currentRole === 'admin' ? 'projects' : 'my_projects');
 }
 
 async function deleteProject(id) {
   if (!confirm('क्या आप इस प्रोजेक्ट को हटाना चाहते हैं?')) return;
   await db.from('projects').delete().eq('id', id);
-  openView('projects');
+  openView(currentRole === 'admin' ? 'projects' : 'my_projects');
+}
+
+// Quick Project Note Edit Modal (Used by both Admin and Customer)
+function openEditProjectNoteModal(projectId, currentNote) {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:480px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3><i class="fa-solid fa-comment-dots" style="color:var(--accent);"></i> प्रोजेक्ट नोट लिखें / बदलें</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">
+        यह नोट कस्टमर और एडमिन दोनों को एक-दूसरे के प्रोजेक्ट सेक्शन में दिखाई देगा।
+      </p>
+      <form onsubmit="saveProjectNote(event, '${projectId}')">
+        <div class="form-group">
+          <label>Note Text</label>
+          <textarea id="projNoteInput" rows="4" required placeholder="जैसे: फाउंडेशन का काम पूरा हुआ, कल से दीवार चिनाई शुरू होगी...">${currentNote || ''}</textarea>
+        </div>
+        <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Note</button>
+      </form>
+    </div>
+  `;
+}
+
+async function saveProjectNote(e, projectId) {
+  e.preventDefault();
+  const noteVal = $('projNoteInput').value.trim();
+  await db.from('projects').update({ notes: noteVal }).eq('id', projectId);
+
+  $('modalContainer').classList.add('hidden');
+  openView(currentRole === 'admin' ? 'projects' : 'my_projects');
 }
 
 // ==========================================
@@ -1862,18 +1914,20 @@ async function saveBusinessSettings(e) {
 }
 
 // ==========================================
-// CUSTOMER MODULES (PROJECTS TABLE VIEW - MATCHING USER SPEC)
+// CUSTOMER MODULES (PROJECTS TABLE VIEW - WITH DIRECT UPI PAY, NOTE & EDIT/DELETE)
 // ==========================================
 async function renderCustomerProjects(container) {
-  const [projRes, contRes, payRes] = await Promise.all([
+  const [projRes, contRes, payRes, setRes] = await Promise.all([
     db.from('projects').select('*').eq('customer_id', currentUser.id).order('created_at', { ascending: false }),
     db.from('contracts').select('*, project:project_id(name, address, customer:customer_id(name, phone, address))'),
-    db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business')
+    db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
+    db.from('business_settings').select('*').eq('id', true).maybeSingle()
   ]);
 
   const projects = projRes.data || [];
   const contracts = contRes.data || [];
   const payments = payRes.data || [];
+  const adminUpi = setRes.data?.upi_id || '9785438345@upi';
 
   const totalAllProjects = projects.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
   const totalAllPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -1894,7 +1948,7 @@ async function renderCustomerProjects(container) {
       </div>
     </div>
 
-    <!-- Projects Table View Matching User's Required Columns -->
+    <!-- Projects Table View Matching Screenshot -->
     <div class="card" style="padding:0; overflow:hidden;">
       <div class="table-container">
         <table>
@@ -1918,6 +1972,8 @@ async function renderCustomerProjects(container) {
               const totalAmt = Number(p.total_amount || (contract?.final_amount || 0));
               const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
               const remainAmt = totalAmt - receivedAmt;
+              const projectNote = p.notes || '';
+              const upiPayUrl = `upi://pay?pa=${adminUpi}&pn=Prakash%20Swami%20Constructions&am=${remainAmt > 0 ? remainAmt : 0}&cu=INR`;
 
               return `
                 <tr>
@@ -1938,19 +1994,42 @@ async function renderCustomerProjects(container) {
                   </td>
                   <td><b>₹${totalAmt.toLocaleString('en-IN')}</b></td>
                   <td><span style="color:var(--success); font-weight:700;">₹${receivedAmt.toLocaleString('en-IN')}</span></td>
-                  <td><span style="color:var(--danger); font-weight:700;">₹${remainAmt.toLocaleString('en-IN')}</span></td>
+                  
+                  <!-- Due Column with Direct UPI Pay Link -->
                   <td>
-                    <span style="font-size:12px; color:var(--muted);">${p.status === 'planning' ? 'Planning' : (p.status === 'active' ? 'Active Work' : p.status)}</span>
+                    <span style="color:var(--danger); font-weight:800; font-size:14px;">₹${remainAmt.toLocaleString('en-IN')}</span>
+                    ${remainAmt > 0 ? `
+                      <div style="margin-top:4px;">
+                        <a href="${upiPayUrl}" class="btn-sm btn-gold" style="font-size:11px; padding:3px 8px;" title="Direct UPI Pay via PhonePe/GPay">
+                          <i class="fa-solid fa-bolt"></i> Pay
+                        </a>
+                      </div>
+                    ` : '<span style="color:var(--success); font-size:11px; display:block;">Paid ✅</span>'}
                   </td>
+
+                  <!-- Note Column (Collaborative between Customer and Admin) -->
+                  <td>
+                    <div class="note-box">
+                      <span class="note-text" title="${projectNote}">${projectNote || '<i style="color:#94a3b8;">Add note...</i>'}</span>
+                      <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${projectNote.replace(/'/g, "\\'")}')" title="Edit Note">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
+                    </div>
+                  </td>
+
+                  <!-- Action Column with Edit, Delete & Direct Pay -->
                   <td>
                     <div class="btn-action-group">
-                      <span class="btn-sm ${isLocked ? 'btn-success' : 'btn-warning'}">
-                        ${isLocked ? '🔒 Active' : 'Negotiation'}
-                      </span>
+                      <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')" title="Edit Project">
+                        <i class="fa-solid fa-pen"></i> Edit
+                      </button>
+                      <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')" title="Delete Project">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
                       ${remainAmt > 0 ? `
-                        <button class="btn-sm btn-gold" onclick="openView('my_payments')">
+                        <a href="${upiPayUrl}" class="btn-sm btn-gold" title="Direct UPI Pay">
                           <i class="fa-solid fa-bolt"></i> Pay
-                        </button>
+                        </a>
                       ` : ''}
                     </div>
                   </td>
@@ -2382,6 +2461,8 @@ async function renderWorkerEarnings(container) {
             ${payments.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:14px;">कोई भुगतान इतिहास नहीं है।</td></tr>' : ''}
             ${payments.map(p => `
               <tr>
+                <td>${new Date(p.paid_at).${payments.map(p => `
+              <tr>
                 <td>${new Date(p.paid_at).toLocaleDateString()}</td>
                 <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
                 <td>${p.method}</td>
@@ -2446,5 +2527,5 @@ async function handleLogout() {
   location.reload();
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
