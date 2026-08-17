@@ -154,7 +154,7 @@
 </head>
 <body>
 
-<!-- 1. LOGIN SCREEN -->
+<!-- 1. LOGIN SCREEN (NO FORM SUBMISSION BUG) -->
 <div id="loginSection" class="login-wrapper">
   <div class="login-card">
     <div class="brand-header">
@@ -171,21 +171,21 @@
 
     <div id="loginAlert" class="alert-box alert-error hidden"></div>
 
-    <form id="authForm" onsubmit="handleAuthSubmit(event)">
+    <div id="authForm">
       <div class="form-group">
         <label id="inputLabel">Admin Email</label>
-        <input id="loginId" type="text" required value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com">
+        <input id="loginId" type="text" value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com" onkeydown="if(event.key==='Enter') handleLoginClick()">
       </div>
 
       <div class="form-group" id="pwGroup">
         <label>Password</label>
-        <input id="loginPassword" type="password" placeholder="••••••••">
+        <input id="loginPassword" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter') handleLoginClick()">
       </div>
 
-      <button id="loginSubmitBtn" type="submit" class="btn-primary">
+      <button id="loginSubmitBtn" type="button" class="btn-primary" onclick="handleLoginClick()">
         <i class="fa-solid fa-right-to-bracket"></i> Login
       </button>
-    </form>
+    </div>
 
     <div id="signupGroup" class="hidden" style="margin-top: 14px; text-align: center;">
       <p style="font-size: 13px; color: var(--muted);">नया खाता बनाना चाहते हैं? 
@@ -230,7 +230,14 @@
 // --- SUPABASE CONFIGURATION ---
 const SUPABASE_URL = 'https://aamstyeeewncmgqdxpoh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_fOzZvfiio6HSaEgplYUgOA_lWy1tbVe';
-const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+let db = (typeof window !== 'undefined' && window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+function getDB() {
+  if (!db && typeof window !== 'undefined' && window.supabase) {
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+  return db;
+}
 
 const ADMIN_EMAIL = 'satpalswami22742@gmail.com';
 let currentRole = 'admin';
@@ -254,9 +261,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  if (db) {
+  const client = getDB();
+  if (client) {
     try {
-      const { data: { session } } = await db.auth.getSession();
+      const { data: { session } } = await client.auth.getSession();
       if (session?.user) {
         await loadUserProfile(session.user);
       }
@@ -267,42 +275,61 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 function selectRole(role) {
-  currentRole = role;
-  $('loginAlert').classList.add('hidden');
-  
-  document.querySelectorAll('.role-tabs button').forEach(b => b.classList.remove('active'));
-  if (role === 'admin') $('tabAdmin').classList.add('active');
-  if (role === 'customer') $('tabCustomer').classList.add('active');
-  if (role === 'worker') $('tabWorker').classList.add('active');
+  try {
+    currentRole = role;
+    const alertEl = $('loginAlert');
+    if (alertEl) alertEl.classList.add('hidden');
+    
+    document.querySelectorAll('.role-tabs button').forEach(b => b.classList.remove('active'));
+    const tabBtn = $('tab' + role.charAt(0).toUpperCase() + role.slice(1));
+    if (tabBtn) tabBtn.classList.add('active');
 
-  const isWorker = (role === 'worker');
-  const isAdmin = (role === 'admin');
+    const isWorker = (role === 'worker');
+    const isAdmin = (role === 'admin');
 
-  $('inputLabel').textContent = isWorker ? 'Registered Mobile Number' : (isAdmin ? 'Admin Email' : 'Customer Email');
-  $('loginId').type = isWorker ? 'tel' : 'email';
-  $('loginId').value = isAdmin ? ADMIN_EMAIL : '';
-  $('loginId').placeholder = isWorker ? '9876543210' : (isAdmin ? ADMIN_EMAIL : 'customer@example.com');
+    const lbl = $('inputLabel');
+    const lId = $('loginId');
+    const pwG = $('pwGroup');
+    const sG = $('signupGroup');
 
-  $('pwGroup').classList.toggle('hidden', isWorker);
-  $('signupGroup').classList.toggle('hidden', role !== 'customer');
+    if (lbl) lbl.textContent = isWorker ? 'Registered Mobile Number' : (isAdmin ? 'Admin Email' : 'Customer Email');
+    if (lId) {
+      lId.value = isAdmin ? ADMIN_EMAIL : '';
+      lId.placeholder = isWorker ? '9876543210' : (isAdmin ? ADMIN_EMAIL : 'customer@example.com');
+      lId.setAttribute('inputmode', isWorker ? 'tel' : 'email');
+    }
+
+    if (pwG) pwG.classList.toggle('hidden', isWorker);
+    if (sG) sG.classList.toggle('hidden', role !== 'customer');
+  } catch (err) {
+    console.error('selectRole error:', err);
+  }
 }
 
-async function handleAuthSubmit(e) {
-  e.preventDefault();
-  $('loginAlert').classList.add('hidden');
-  const idVal = $('loginId').value.trim();
-  const passVal = $('loginPassword').value;
+async function handleLoginClick() {
+  const alertEl = $('loginAlert');
+  if (alertEl) alertEl.classList.add('hidden');
 
-  if (!db) return showLoginError('Supabase Database से कनेक्शन नहीं बन सका।');
-  if (!idVal) return showLoginError('कृपया आवश्यक जानकारी दर्ज करें।');
+  const idVal = $('loginId') ? $('loginId').value.trim() : '';
+  const passVal = $('loginPassword') ? $('loginPassword').value : '';
+
+  const client = getDB();
+  if (!client) {
+    return showLoginError('Supabase Database से कनेक्शन नहीं बन सका। कृपया पेज रीफ़्रेश करें।');
+  }
+  if (!idVal) {
+    return showLoginError('कृपया आवश्यक जानकारी दर्ज करें।');
+  }
 
   const btn = $('loginSubmitBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+  }
 
   try {
     if (currentRole === 'worker') {
-      const { data: worker, error } = await db.from('profiles')
+      const { data: worker, error } = await client.from('profiles')
         .select('*')
         .eq('phone', idVal)
         .eq('role', 'worker')
@@ -310,7 +337,9 @@ async function handleAuthSubmit(e) {
         .maybeSingle();
 
       if (error) throw error;
-      if (!worker) return showLoginError('यह मोबाइल नंबर किसी सक्रिय वर्कर के रूप में रजिस्टर्ड नहीं है।');
+      if (!worker) {
+        return showLoginError('यह मोबाइल नंबर किसी सक्रिय वर्कर के रूप में रजिस्टर्ड नहीं है।');
+      }
 
       currentUser = worker;
       sessionStorage.setItem('ps_worker_session', JSON.stringify(worker));
@@ -318,9 +347,11 @@ async function handleAuthSubmit(e) {
       return;
     }
 
-    if (!passVal) return showLoginError('कृपया पासवर्ड दर्ज करें।');
+    if (!passVal) {
+      return showLoginError('कृपया पासवर्ड दर्ज करें।');
+    }
 
-    const { data, error } = await db.auth.signInWithPassword({
+    const { data, error } = await client.auth.signInWithPassword({
       email: idVal,
       password: passVal
     });
@@ -332,23 +363,35 @@ async function handleAuthSubmit(e) {
       throw error;
     }
 
-    await loadUserProfile(data.user);
+    if (data && data.user) {
+      await loadUserProfile(data.user);
+    } else {
+      showLoginError('लॉगिन नहीं हो सका। कृपया पुनः प्रयास करें।');
+    }
   } catch (err) {
     showLoginError(err.message || 'Login में समस्या हुई।');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
+    }
   }
 }
 
+// Alias for backwards compatibility
+const handleAuthSubmit = handleLoginClick;
+
 function showLoginError(msg) {
   const el = $('loginAlert');
-  el.textContent = msg;
-  el.classList.remove('hidden');
+  if (el) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
 }
 
 async function loadUserProfile(authUser) {
-  let { data: profile } = await db.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
+  const client = getDB();
+  let { data: profile } = await client.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
   
   if (!profile) {
     const roleToSet = authUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'customer';
@@ -360,7 +403,7 @@ async function loadUserProfile(authUser) {
       phone: authUser.user_metadata?.phone || '',
       is_active: true
     };
-    await db.from('profiles').insert(newProfile);
+    await client.from('profiles').insert(newProfile);
     profile = newProfile;
   }
 
@@ -476,17 +519,18 @@ function showFullImage(url, title = 'Photo Preview') {
 // NOTIFICATIONS SYSTEM
 // ==========================================
 async function loadNotificationsBadge() {
-  if (!db || !currentUser) return;
+  const client = getDB();
+  if (!client || !currentUser) return;
   let count = 0;
 
   if (currentRole === 'admin') {
     const [enqRes, attRes] = await Promise.all([
-      db.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
-      db.from('attendance').select('id', { count: 'exact' }).eq('status', 'pending')
+      client.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
+      client.from('attendance').select('id', { count: 'exact' }).eq('status', 'pending')
     ]);
     count = (enqRes.count || 0) + (attRes.count || 0);
   } else if (currentRole === 'customer') {
-    const { count: cCount } = await db.from('daily_updates').select('id', { count: 'exact' });
+    const { count: cCount } = await client.from('daily_updates').select('id', { count: 'exact' });
     count = cCount || 0;
   }
 
@@ -502,13 +546,14 @@ async function loadNotificationsBadge() {
 async function openNotificationsModal() {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
+  const client = getDB();
 
   let notifs = [];
-  if (currentRole === 'admin') {
+  if (currentRole === 'admin' && client) {
     const [enqRes, attRes, payRes] = await Promise.all([
-      db.from('enquiries').select('id, work, created_at').eq('status', 'pending').limit(5),
-      db.from('attendance').select('id, worker:worker_id(name), scanned_at').eq('status', 'pending').limit(5),
-      db.from('payments').select('id, amount, customer:customer_id(name), paid_at').eq('direction', 'customer_to_business').limit(5)
+      client.from('enquiries').select('id, work, created_at').eq('status', 'pending').limit(5),
+      client.from('attendance').select('id, worker:worker_id(name), scanned_at').eq('status', 'pending').limit(5),
+      client.from('payments').select('id, amount, customer:customer_id(name), paid_at').eq('direction', 'customer_to_business').limit(5)
     ]);
 
     (enqRes.data || []).forEach(e => notifs.push({
@@ -646,12 +691,13 @@ function generateLegalAgreementHtml(c, isLocked) {
 // ADMIN: OVERVIEW & SEARCH
 // ==========================================
 async function renderAdminOverview(container) {
+  const client = getDB();
   const [custRes, projRes, enqRes, workRes, payRes] = await Promise.all([
-    db.from('profiles').select('id', { count: 'exact' }).eq('role', 'customer'),
-    db.from('projects').select('id', { count: 'exact' }).eq('status', 'active'),
-    db.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
-    db.from('profiles').select('id', { count: 'exact' }).eq('role', 'worker'),
-    db.from('payments').select('amount').eq('direction', 'customer_to_business')
+    client.from('profiles').select('id', { count: 'exact' }).eq('role', 'customer'),
+    client.from('projects').select('id', { count: 'exact' }).eq('status', 'active'),
+    client.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
+    client.from('profiles').select('id', { count: 'exact' }).eq('role', 'worker'),
+    client.from('payments').select('amount').eq('direction', 'customer_to_business')
   ]);
 
   const totalRevenue = (payRes.data || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -691,10 +737,11 @@ async function handleUniversalSearch(query) {
   resCard.style.display = 'block';
   resList.innerHTML = 'Searching...';
 
+  const client = getDB();
   const [cRes, pRes, wRes] = await Promise.all([
-    db.from('profiles').select('id, name, phone, email, role').ilike('name', `%${query}%`),
-    db.from('projects').select('id, name, address, status').ilike('name', `%${query}%`),
-    db.from('profiles').select('id, name, phone').eq('role', 'worker').ilike('name', `%${query}%`)
+    client.from('profiles').select('id, name, phone, email, role').ilike('name', `%${query}%`),
+    client.from('projects').select('id, name, address, status').ilike('name', `%${query}%`),
+    client.from('profiles').select('id, name, phone').eq('role', 'worker').ilike('name', `%${query}%`)
   ]);
 
   let html = '<ul style="list-style:none;">';
@@ -709,9 +756,10 @@ async function handleUniversalSearch(query) {
 // ADMIN: ENQUIRIES & ATTENDANCE
 // ==========================================
 async function renderAdminEnquiriesAndAttendance(container) {
+  const client = getDB();
   const [enqRes, attRes] = await Promise.all([
-    db.from('enquiries').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
-    db.from('attendance').select('*, worker:worker_id(name, phone, daily_wage, image_url)').order('scanned_at', { ascending: false })
+    client.from('enquiries').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
+    client.from('attendance').select('*, worker:worker_id(name, phone, daily_wage, image_url)').order('scanned_at', { ascending: false })
   ]);
 
   const enquiries = enqRes.data || [];
@@ -818,7 +866,8 @@ function switchEnquirySubTab(tab) {
 
 async function approveEnquiry(enqId, customerId, work, address, budget) {
   if (!confirm('इस इन्क्वायरी को अप्रूव करके नया प्रोजेक्ट और कॉन्ट्रैक्ट बनाएँ?')) return;
-  const { data: proj } = await db.from('projects').insert({
+  const client = getDB();
+  const { data: proj } = await client.from('projects').insert({
     customer_id: customerId,
     name: work.substring(0, 40),
     address: address,
@@ -827,7 +876,7 @@ async function approveEnquiry(enqId, customerId, work, address, budget) {
     progress: 0
   }).select().single();
 
-  await db.from('contracts').insert({
+  await client.from('contracts').insert({
     project_id: proj.id,
     version: 1,
     status: 'amount_discussion',
@@ -836,30 +885,30 @@ async function approveEnquiry(enqId, customerId, work, address, budget) {
     proposed_by: currentUser.id
   });
 
-  await db.from('enquiries').update({ status: 'approved' }).eq('id', enqId);
+  await client.from('enquiries').update({ status: 'approved' }).eq('id', enqId);
   alert('इन्क्वायरी स्वीकृत! प्रोजेक्ट और कॉन्ट्रैक्ट तैयार हो गया है।');
   openView('projects');
 }
 
 async function deleteEnquiry(id) {
   if (!confirm('क्या आप इस इन्क्वायरी को हटाना चाहते हैं?')) return;
-  await db.from('enquiries').delete().eq('id', id);
+  await getDB().from('enquiries').delete().eq('id', id);
   openView('enquiries');
 }
 
 async function approveAttendance(attId) {
-  await db.from('attendance').update({ status: 'approved', approved_by: currentUser.id, approved_at: new Date().toISOString() }).eq('id', attId);
+  await getDB().from('attendance').update({ status: 'approved', approved_by: currentUser.id, approved_at: new Date().toISOString() }).eq('id', attId);
   openView('enquiries');
 }
 
 async function rejectAttendance(attId) {
-  await db.from('attendance').update({ status: 'rejected' }).eq('id', attId);
+  await getDB().from('attendance').update({ status: 'rejected' }).eq('id', attId);
   openView('enquiries');
 }
 
 async function deleteAttendance(id) {
   if (!confirm('क्या आप इस हाजिरी रिकॉर्ड को हटाना चाहते हैं?')) return;
-  await db.from('attendance').delete().eq('id', id);
+  await getDB().from('attendance').delete().eq('id', id);
   openView('enquiries');
 }
 
@@ -867,10 +916,11 @@ async function deleteAttendance(id) {
 // ADMIN: PROJECTS (WITH SHARED NOTE COLUMN)
 // ==========================================
 async function renderAdminProjects(container) {
+  const client = getDB();
   const [projRes, payRes, contRes] = await Promise.all([
-    db.from('projects').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
-    db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
-    db.from('contracts').select('id, project_id, version, final_amount, status, admin_approved_at, customer_approved_at')
+    client.from('projects').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
+    client.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
+    client.from('contracts').select('id, project_id, version, final_amount, status, admin_approved_at, customer_approved_at')
   ]);
 
   const projects = projRes.data || [];
@@ -955,7 +1005,7 @@ async function renderAdminProjects(container) {
 }
 
 async function openEditProjectModal(id) {
-  const { data: p } = await db.from('projects').select('*').eq('id', id).single();
+  const { data: p } = await getDB().from('projects').select('*').eq('id', id).single();
   if (!p) return;
 
   const modal = $('modalContainer');
@@ -985,7 +1035,7 @@ async function openEditProjectModal(id) {
 
 async function updateProjectRecord(e, id) {
   e.preventDefault();
-  await db.from('projects').update({
+  await getDB().from('projects').update({
     name: $('epName').value,
     address: $('epAddress').value,
     total_amount: Number($('epAmount').value),
@@ -1000,7 +1050,7 @@ async function updateProjectRecord(e, id) {
 
 async function deleteProject(id) {
   if (!confirm('क्या आप इस प्रोजेक्ट को हटाना चाहते हैं?')) return;
-  await db.from('projects').delete().eq('id', id);
+  await getDB().from('projects').delete().eq('id', id);
   openView(currentRole === 'admin' ? 'projects' : 'my_projects');
 }
 
@@ -1031,7 +1081,7 @@ function openEditProjectNoteModal(projectId, currentNote) {
 async function saveProjectNote(e, projectId) {
   e.preventDefault();
   const noteVal = $('projNoteInput').value.trim();
-  await db.from('projects').update({ notes: noteVal }).eq('id', projectId);
+  await getDB().from('projects').update({ notes: noteVal }).eq('id', projectId);
 
   $('modalContainer').classList.add('hidden');
   openView(currentRole === 'admin' ? 'projects' : 'my_projects');
@@ -1041,7 +1091,7 @@ async function saveProjectNote(e, projectId) {
 // ADMIN & CUSTOMER: FULL AGREEMENT MODAL & APPROVAL
 // ==========================================
 async function openFullAgreementModal(contractId) {
-  const { data: c } = await db.from('contracts')
+  const { data: c } = await getDB().from('contracts')
     .select('*, project:project_id(name, address, customer:customer_id(name, phone, address))')
     .eq('id', contractId)
     .single();
@@ -1079,7 +1129,7 @@ async function proposeContractAmountPrompt(contractId, currentAmount) {
   const num = Number(newAmt);
   if (isNaN(num) || num <= 0) return alert('कृपया सही अमाउंट दर्ज करें।');
 
-  await db.from('contracts').update({
+  await getDB().from('contracts').update({
     final_amount: num,
     proposed_by: currentUser.id,
     admin_approved_at: null,
@@ -1095,10 +1145,10 @@ async function proposeContractAmountPrompt(contractId, currentAmount) {
 async function adminApproveContract(contractId) {
   if (!confirm('क्या आप इस अनुबंध को अपनी स्वीकृति (Admin Approval) देना चाहते हैं?')) return;
   const now = new Date().toISOString();
-  const { data: c } = await db.from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
+  const { data: c } = await getDB().from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
   const isFullyApproved = Boolean(c.customer_approved_at);
 
-  await db.from('contracts').update({
+  await getDB().from('contracts').update({
     admin_approved_at: now,
     admin_approved_by: currentUser.id,
     status: isFullyApproved ? 'locked' : 'amount_discussion',
@@ -1106,7 +1156,7 @@ async function adminApproveContract(contractId) {
   }).eq('id', contractId);
 
   if (isFullyApproved && c.project_id) {
-    await db.from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
+    await getDB().from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
     alert('अनुबंध पूरी तरह लॉक हो गया है और प्रोजेक्ट शुरू हो चुका है! 🔒');
   } else {
     alert('एडमिन स्वीकृति दर्ज हो गई!');
@@ -1119,10 +1169,10 @@ async function adminApproveContract(contractId) {
 async function approveCustomerContract(contractId) {
   if (!confirm('क्या आप इस अनुबंध को अपनी डिजिटल स्वीकृति देना चाहते हैं?')) return;
   const now = new Date().toISOString();
-  const { data: c } = await db.from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
+  const { data: c } = await getDB().from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
   const isFullyApproved = Boolean(c.admin_approved_at);
 
-  await db.from('contracts').update({
+  await getDB().from('contracts').update({
     customer_approved_at: now,
     customer_approved_by: currentUser.id,
     status: isFullyApproved ? 'locked' : 'amount_discussion',
@@ -1130,7 +1180,7 @@ async function approveCustomerContract(contractId) {
   }).eq('id', contractId);
 
   if (isFullyApproved && c.project_id) {
-    await db.from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
+    await getDB().from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
     alert('अनुबंध पूरी तरह स्वीकृत व लॉक हो गया है और प्रोजेक्ट शुरू हो चुका है! 🔒');
   } else {
     alert('आपकी डिजिटल स्वीकृति दर्ज हो गई है!');
@@ -1144,9 +1194,10 @@ async function approveCustomerContract(contractId) {
 // ADMIN: DAILY UPDATES
 // ==========================================
 async function renderAdminDailyUpdates(container) {
+  const client = getDB();
   const [projRes, updatesRes] = await Promise.all([
-    db.from('projects').select('id, name, address, progress'),
-    db.from('daily_updates').select('*, project:project_id(name)').order('created_at', { ascending: false })
+    client.from('projects').select('id, name, address, progress'),
+    client.from('daily_updates').select('*, project:project_id(name)').order('created_at', { ascending: false })
   ]);
 
   container.innerHTML = `
@@ -1174,7 +1225,7 @@ async function renderAdminDailyUpdates(container) {
 }
 
 function openAddDailyUpdateModal() {
-  db.from('projects').select('id, name').then(({ data: projects }) => {
+  getDB().from('projects').select('id, name').then(({ data: projects }) => {
     const modal = $('modalContainer');
     modal.classList.remove('hidden');
     modal.innerHTML = `
@@ -1200,7 +1251,8 @@ async function saveDailyUpdate(e) {
     imgUrl = await readFileAsBase64(fileInput.files[0]);
   }
 
-  await db.from('daily_updates').insert({
+  const client = getDB();
+  await client.from('daily_updates').insert({
     project_id: $('uProjId').value,
     author_id: currentUser.id,
     work_done: $('uWork').value,
@@ -1208,7 +1260,7 @@ async function saveDailyUpdate(e) {
   });
 
   if ($('uProg').value !== '') {
-    await db.from('projects').update({ progress: Number($('uProg').value) }).eq('id', $('uProjId').value);
+    await client.from('projects').update({ progress: Number($('uProg').value) }).eq('id', $('uProjId').value);
   }
 
   $('modalContainer').classList.add('hidden');
@@ -1217,7 +1269,7 @@ async function saveDailyUpdate(e) {
 
 async function deleteDailyUpdate(id) {
   if (!confirm('क्या आप इस अपडेट को हटाना चाहते हैं?')) return;
-  await db.from('daily_updates').delete().eq('id', id);
+  await getDB().from('daily_updates').delete().eq('id', id);
   openView('daily_updates');
 }
 
@@ -1225,15 +1277,14 @@ async function deleteDailyUpdate(id) {
 // ADMIN: CUSTOMERS
 // ==========================================
 async function renderAdminCustomers(container) {
+  const client = getDB();
   const [custRes, projRes, payRes] = await Promise.all([
-    db.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
-    db.from('projects').select('customer_id, total_amount'),
-    db.from('payments').select('customer_id, amount').eq('direction', 'customer_to_business')
+    client.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
+    client.from('projects').select('customer_id, total_amount'),
+    client.from('payments').select('customer_id, amount').eq('direction', 'customer_to_business')
   ]);
 
   const customers = custRes.data || [];
-  const projects = projRes.data || [];
-  const payments = payRes.data || [];
 
   container.innerHTML = `
     <div class="page-head">
@@ -1306,7 +1357,7 @@ function openAddCustomerModal() {
 
 async function saveCustomerByAdmin(e) {
   e.preventDefault();
-  await db.from('profiles').insert({
+  await getDB().from('profiles').insert({
     name: $('acName').value.trim(),
     phone: $('acPhone').value.trim(),
     email: $('acEmail').value.trim() || `${$('acPhone').value.trim()}@customer.local`,
@@ -1320,7 +1371,7 @@ async function saveCustomerByAdmin(e) {
 }
 
 async function openEditCustomerModal(id) {
-  const { data: c } = await db.from('profiles').select('*').eq('id', id).single();
+  const { data: c } = await getDB().from('profiles').select('*').eq('id', id).single();
   if (!c) return;
 
   const modal = $('modalContainer');
@@ -1340,7 +1391,7 @@ async function openEditCustomerModal(id) {
 
 async function updateCustomerRecord(e, id) {
   e.preventDefault();
-  await db.from('profiles').update({
+  await getDB().from('profiles').update({
     name: $('ecName').value,
     phone: $('ecPhone').value,
     address: $('ecAddress').value
@@ -1352,14 +1403,15 @@ async function updateCustomerRecord(e, id) {
 
 async function deleteCustomer(id) {
   if (!confirm('क्या आप इस कस्टमर को हटाना चाहते हैं?')) return;
-  await db.from('profiles').delete().eq('id', id);
+  await getDB().from('profiles').delete().eq('id', id);
   openView('customers');
 }
 
 async function openCustomerPaymentModal(customerId, customerName, customerPhone) {
+  const client = getDB();
   const [projRes, payRes] = await Promise.all([
-    db.from('projects').select('*').eq('customer_id', customerId),
-    db.from('payments').select('*').eq('customer_id', customerId).eq('direction', 'customer_to_business').order('paid_at', { ascending: false })
+    client.from('projects').select('*').eq('customer_id', customerId),
+    client.from('payments').select('*').eq('customer_id', customerId).eq('direction', 'customer_to_business').order('paid_at', { ascending: false })
   ]);
 
   const projects = projRes.data || [];
@@ -1422,7 +1474,7 @@ async function openCustomerPaymentModal(customerId, customerName, customerPhone)
 
 async function recordCustomerPaymentSubmit(e, customerId, customerName, customerPhone) {
   e.preventDefault();
-  await db.from('payments').insert({
+  await getDB().from('payments').insert({
     customer_id: customerId,
     direction: 'customer_to_business',
     amount: Number($('cpAmount').value),
@@ -1437,7 +1489,7 @@ async function recordCustomerPaymentSubmit(e, customerId, customerName, customer
 
 async function deleteCustomerPaymentRecord(payId, customerId, customerName, customerPhone) {
   if (!confirm('क्या आप इस पेमेंट रिकॉर्ड को हटाना चाहते हैं?')) return;
-  await db.from('payments').delete().eq('id', payId);
+  await getDB().from('payments').delete().eq('id', payId);
   openCustomerPaymentModal(customerId, customerName, customerPhone);
 }
 
@@ -1446,16 +1498,16 @@ async function deleteCustomerPaymentRecord(payId, customerId, customerName, cust
 // ==========================================
 async function renderAdminWorkers(container) {
   const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+  const client = getDB();
 
   const [workRes, attRes, payRes] = await Promise.all([
-    db.from('profiles').select('*').eq('role', 'worker').order('created_at', { ascending: false }),
-    db.from('attendance').select('worker_id, work_date, status').eq('status', 'approved').gte('work_date', `${currentMonthPrefix}-01`),
-    db.from('payments').select('worker_id, amount').eq('direction', 'business_to_worker')
+    client.from('profiles').select('*').eq('role', 'worker').order('created_at', { ascending: false }),
+    client.from('attendance').select('worker_id, work_date, status').eq('status', 'approved').gte('work_date', `${currentMonthPrefix}-01`),
+    client.from('payments').select('worker_id, amount').eq('direction', 'business_to_worker')
   ]);
 
   const workers = workRes.data || [];
   const attendances = attRes.data || [];
-  const payments = payRes.data || [];
 
   container.innerHTML = `
     <div class="page-head">
@@ -1518,7 +1570,7 @@ async function renderAdminWorkers(container) {
 }
 
 async function openWorkerAttendanceModal(workerId, workerName, dailyWage) {
-  const { data: records } = await db.from('attendance')
+  const { data: records } = await getDB().from('attendance')
     .select('*')
     .eq('worker_id', workerId)
     .order('scanned_at', { ascending: false });
@@ -1560,9 +1612,10 @@ async function openWorkerAttendanceModal(workerId, workerName, dailyWage) {
 }
 
 async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWage) {
+  const client = getDB();
   const [attRes, payRes] = await Promise.all([
-    db.from('attendance').select('*').eq('worker_id', workerId).eq('status', 'approved'),
-    db.from('payments').select('*').eq('worker_id', workerId).eq('direction', 'business_to_worker').order('paid_at', { ascending: false })
+    client.from('attendance').select('*').eq('worker_id', workerId).eq('status', 'approved'),
+    client.from('payments').select('*').eq('worker_id', workerId).eq('direction', 'business_to_worker').order('paid_at', { ascending: false })
   ]);
 
   const daysWorked = (attRes.data || []).length;
@@ -1634,7 +1687,7 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
 
 async function recordWorkerPaymentSubmit(e, workerId, workerName) {
   e.preventDefault();
-  await db.from('payments').insert({
+  await getDB().from('payments').insert({
     worker_id: workerId,
     direction: 'business_to_worker',
     amount: Number($('wpAmount').value),
@@ -1650,12 +1703,12 @@ async function recordWorkerPaymentSubmit(e, workerId, workerName) {
 
 async function deleteWorkerPayment(paymentId, workerId, workerName, workerPhone, dailyWage) {
   if (!confirm('क्या आप इस भुगतान रिकॉर्ड को हटाना चाहते हैं?')) return;
-  await db.from('payments').delete().eq('id', paymentId);
+  await getDB().from('payments').delete().eq('id', paymentId);
   openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWage);
 }
 
 async function openEditWorkerModal(id) {
-  const { data: w } = await db.from('profiles').select('*').eq('id', id).single();
+  const { data: w } = await getDB().from('profiles').select('*').eq('id', id).single();
   if (!w) return;
 
   const modal = $('modalContainer');
@@ -1676,7 +1729,7 @@ async function openEditWorkerModal(id) {
 
 async function updateWorkerRecord(e, id) {
   e.preventDefault();
-  await db.from('profiles').update({
+  await getDB().from('profiles').update({
     name: $('ewName').value,
     phone: $('ewPhone').value,
     daily_wage: Number($('ewWage').value),
@@ -1771,7 +1824,7 @@ async function handleWorkerFaceFile(input) {
 
 async function saveNewWorker(e) {
   e.preventDefault();
-  await db.from('profiles').insert({
+  await getDB().from('profiles').insert({
     name: $('wName').value.trim(),
     phone: $('wPhone').value.trim(),
     daily_wage: Number($('wWage').value),
@@ -1787,7 +1840,7 @@ async function saveNewWorker(e) {
 
 async function deleteWorker(id) {
   if (!confirm('क्या आप इस वर्कर को हटाना चाहते हैं?')) return;
-  await db.from('profiles').delete().eq('id', id);
+  await getDB().from('profiles').delete().eq('id', id);
   openView('workers');
 }
 
@@ -1795,7 +1848,8 @@ async function deleteWorker(id) {
 // ADMIN: PAYMENTS, EXPENSES, SETTINGS
 // ==========================================
 async function renderAdminPayments(container) {
-  const { data: payments } = await db.from('payments').select('*, project:project_id(name), customer:customer_id(name), worker:worker_id(name)').order('paid_at', { ascending: false });
+  const client = getDB();
+  const { data: payments } = await client.from('payments').select('*, project:project_id(name), customer:customer_id(name), worker:worker_id(name)').order('paid_at', { ascending: false });
 
   container.innerHTML = `
     <div class="page-head"><h1>Payments Ledger</h1></div>
@@ -1821,12 +1875,12 @@ async function renderAdminPayments(container) {
 
 async function deletePayment(id) {
   if (!confirm('क्या आप इस पेमेंट रिकॉर्ड को हटाना चाहते हैं?')) return;
-  await db.from('payments').delete().eq('id', id);
+  await getDB().from('payments').delete().eq('id', id);
   openView('payments');
 }
 
 async function renderAdminExpenses(container) {
-  const { data: expenses } = await db.from('expenses').select('*').order('spent_at', { ascending: false });
+  const { data: expenses } = await getDB().from('expenses').select('*').order('spent_at', { ascending: false });
 
   container.innerHTML = `
     <div class="page-head">
@@ -1870,7 +1924,7 @@ function openAddExpenseModal() {
 
 async function saveExpense(e) {
   e.preventDefault();
-  await db.from('expenses').insert({
+  await getDB().from('expenses').insert({
     title: $('expTitle').value,
     category: $('expCat').value,
     amount: Number($('expAmount').value),
@@ -1882,12 +1936,12 @@ async function saveExpense(e) {
 
 async function deleteExpense(id) {
   if (!confirm('क्या आप इस खर्च को हटाना चाहते हैं?')) return;
-  await db.from('expenses').delete().eq('id', id);
+  await getDB().from('expenses').delete().eq('id', id);
   openView('expenses');
 }
 
 async function renderAdminSettings(container) {
-  const { data: settings } = await db.from('business_settings').select('*').eq('id', true).maybeSingle();
+  const { data: settings } = await getDB().from('business_settings').select('*').eq('id', true).maybeSingle();
 
   container.innerHTML = `
     <div class="page-head"><h1>Business & UPI Payment Settings</h1></div>
@@ -1904,7 +1958,7 @@ async function renderAdminSettings(container) {
 
 async function saveBusinessSettings(e) {
   e.preventDefault();
-  await db.from('business_settings').upsert({
+  await getDB().from('business_settings').upsert({
     id: true,
     phone: $('bPhone').value,
     address: $('bAddress').value,
@@ -1917,11 +1971,12 @@ async function saveBusinessSettings(e) {
 // CUSTOMER MODULES (PROJECTS TABLE VIEW - WITH DIRECT UPI PAY, NOTE & EDIT/DELETE)
 // ==========================================
 async function renderCustomerProjects(container) {
+  const client = getDB();
   const [projRes, contRes, payRes, setRes] = await Promise.all([
-    db.from('projects').select('*').eq('customer_id', currentUser.id).order('created_at', { ascending: false }),
-    db.from('contracts').select('*, project:project_id(name, address, customer:customer_id(name, phone, address))'),
-    db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
-    db.from('business_settings').select('*').eq('id', true).maybeSingle()
+    client.from('projects').select('*').eq('customer_id', currentUser.id).order('created_at', { ascending: false }),
+    client.from('contracts').select('*, project:project_id(name, address, customer:customer_id(name, phone, address))'),
+    client.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
+    client.from('business_settings').select('*').eq('id', true).maybeSingle()
   ]);
 
   const projects = projRes.data || [];
@@ -1968,7 +2023,6 @@ async function renderCustomerProjects(container) {
             ${projects.length === 0 ? '<tr><td colspan="8" style="text-align:center; padding:24px;">आपका कोई प्रोजेक्ट नहीं है। ऊपर से नई इन्क्वायरी सबमिट करें।</td></tr>' : ''}
             ${projects.map(p => {
               const contract = contracts.find(c => c.project_id === p.id);
-              const isLocked = contract ? (contract.status === 'locked' || (contract.admin_approved_at && contract.customer_approved_at)) : false;
               const totalAmt = Number(p.total_amount || (contract?.final_amount || 0));
               const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
               const remainAmt = totalAmt - receivedAmt;
@@ -2059,7 +2113,7 @@ async function renderCustomerEnquiryForm(container) {
 
 async function submitCustomerEnquiry(e) {
   e.preventDefault();
-  await db.from('enquiries').insert({
+  await getDB().from('enquiries').insert({
     customer_id: currentUser.id,
     work: $('enqWork').value,
     budget: Number($('enqBudget').value || 0),
@@ -2071,10 +2125,11 @@ async function submitCustomerEnquiry(e) {
 }
 
 async function renderCustomerPayments(container) {
+  const client = getDB();
   const [setRes, projRes, payRes] = await Promise.all([
-    db.from('business_settings').select('*').eq('id', true).maybeSingle(),
-    db.from('projects').select('*').eq('customer_id', currentUser.id),
-    db.from('payments').select('*').eq('customer_id', currentUser.id).eq('direction', 'customer_to_business').order('paid_at', { ascending: false })
+    client.from('business_settings').select('*').eq('id', true).maybeSingle(),
+    client.from('projects').select('*').eq('customer_id', currentUser.id),
+    client.from('payments').select('*').eq('customer_id', currentUser.id).eq('direction', 'customer_to_business').order('paid_at', { ascending: false })
   ]);
 
   const settings = setRes.data;
@@ -2143,7 +2198,7 @@ async function renderCustomerPayments(container) {
 
 async function submitCustomerPayment(e) {
   e.preventDefault();
-  await db.from('payments').insert({
+  await getDB().from('payments').insert({
     customer_id: currentUser.id,
     direction: 'customer_to_business',
     amount: Number($('pAmount').value),
@@ -2182,7 +2237,7 @@ async function updateMyProfile(e) {
     address: $('mpAddress').value
   };
 
-  await db.from('profiles').update(updated).eq('id', currentUser.id);
+  await getDB().from('profiles').update(updated).eq('id', currentUser.id);
   currentUser = { ...currentUser, ...updated };
   alert('प्रोफ़ाइल अपडेट हो गई!');
   openView('my_profile');
@@ -2222,7 +2277,8 @@ async function handleCustomerSignup(e) {
   btn.textContent = 'Account बन रहा है...';
 
   try {
-    const { data, error } = await db.auth.signUp({
+    const client = getDB();
+    const { data, error } = await client.auth.signUp({
       email,
       password: pass,
       options: { data: { name, phone, address, role: 'customer' } }
@@ -2230,9 +2286,9 @@ async function handleCustomerSignup(e) {
 
     if (error) throw error;
 
-    const userId = data.user?.id || (await db.from('profiles').select('id').eq('email', email).maybeSingle())?.data?.id;
+    const userId = data.user?.id || (await client.from('profiles').select('id').eq('email', email).maybeSingle())?.data?.id;
     if (userId) {
-      await db.from('profiles').upsert({
+      await client.from('profiles').upsert({
         id: userId,
         email,
         name,
@@ -2263,9 +2319,10 @@ let videoStream = null;
 
 async function renderWorkerAttendance(container) {
   const today = new Date().toISOString().split('T')[0];
+  const client = getDB();
   const [todayAttRes, allAttRes] = await Promise.all([
-    db.from('attendance').select('*').eq('worker_id', currentUser.id).eq('work_date', today).maybeSingle(),
-    db.from('attendance').select('*').eq('worker_id', currentUser.id).order('scanned_at', { ascending: false })
+    client.from('attendance').select('*').eq('worker_id', currentUser.id).eq('work_date', today).maybeSingle(),
+    client.from('attendance').select('*').eq('worker_id', currentUser.id).order('scanned_at', { ascending: false })
   ]);
 
   const todayAtt = todayAttRes.data;
@@ -2369,7 +2426,7 @@ async function captureAndVerifyFaceAttendance() {
 
   if (videoStream) videoStream.getTracks().forEach(t => t.stop());
 
-  await db.from('attendance').insert({
+  await getDB().from('attendance').insert({
     worker_id: currentUser.id,
     face_image_url: scannedFaceData,
     status: 'pending',
@@ -2431,9 +2488,10 @@ function extractGrayscalePixels(img, w, h) {
 }
 
 async function renderWorkerEarnings(container) {
+  const client = getDB();
   const [attRes, payRes] = await Promise.all([
-    db.from('attendance').select('*').eq('worker_id', currentUser.id).eq('status', 'approved'),
-    db.from('payments').select('*').eq('worker_id', currentUser.id).eq('direction', 'business_to_worker').order('paid_at', { ascending: false })
+    client.from('attendance').select('*').eq('worker_id', currentUser.id).eq('status', 'approved'),
+    client.from('payments').select('*').eq('worker_id', currentUser.id).eq('direction', 'business_to_worker').order('paid_at', { ascending: false })
   ]);
 
   const daysWorked = (attRes.data || []).length;
@@ -2461,8 +2519,6 @@ async function renderWorkerEarnings(container) {
             ${payments.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:14px;">कोई भुगतान इतिहास नहीं है।</td></tr>' : ''}
             ${payments.map(p => `
               <tr>
-                <td>${new Date(p.paid_at).${payments.map(p => `
-              <tr>
                 <td>${new Date(p.paid_at).toLocaleDateString()}</td>
                 <td><b>₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
                 <td>${p.method}</td>
@@ -2477,7 +2533,7 @@ async function renderWorkerEarnings(container) {
 }
 
 async function renderWorkerUpdates(container) {
-  const { data: projects } = await db.from('projects').select('id, name');
+  const { data: projects } = await getDB().from('projects').select('id, name');
 
   container.innerHTML = `
     <div class="page-head"><h1>दैनिक कार्य रिपोर्ट (Daily Work Update)</h1></div>
@@ -2500,8 +2556,11 @@ async function submitWorkerDailyUpdate(e) {
     imgUrl = await readFileAsBase64(fileInput.files[0]);
   }
 
-  await db.from('daily_updates').insert({
+  await getDB().from('daily_updates').insert({
     project_id: $('wuProj').value,
+    author_id: currentUser.id,
+    work_done: $('wuWork').value,
+    image_url:').value,
     author_id: currentUser.id,
     work_done: $('wuWork').value,
     image_url: imgUrl
@@ -2522,10 +2581,11 @@ function readFileAsBase64(file) {
 }
 
 async function handleLogout() {
-  if (db) await db.auth.signOut();
+  const client = getDB();
+  if (client) await client.auth.signOut();
   sessionStorage.clear();
   location.reload();
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
