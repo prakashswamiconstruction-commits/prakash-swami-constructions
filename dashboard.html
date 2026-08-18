@@ -1638,13 +1638,29 @@ async function handleUniversalSearch(query) {
 // ADMIN: ENQUIRIES & ATTENDANCE (WITH NORMAL ROW IMAGE SIZE)
 // ==========================================
 async function renderAdminEnquiriesAndAttendance(container) {
-  const [enqRes, attRes] = await Promise.all([
-    db.from('enquiries').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
-    db.from('attendance').select('*, worker:worker_id(name, phone, daily_wage, image_url)').order('work_date', { ascending: false })
+  const [enqRes, attRes, profRes] = await Promise.all([
+    db.from('enquiries').select('*').order('created_at', { ascending: false }),
+    db.from('attendance').select('*').order('work_date', { ascending: false }),
+    db.from('profiles').select('id, name, phone, daily_wage, image_url')
   ]);
 
-  const enquiries = enqRes.data || [];
-  const attendances = attRes.data || [];
+  const allProfiles = profRes.data || [];
+  const profileMap = {};
+  allProfiles.forEach(p => profileMap[p.id] = p);
+
+  const rawEnquiries = enqRes.data || [];
+  const rawAttendances = attRes.data || [];
+
+  const enquiries = rawEnquiries.map(e => ({
+    ...e,
+    customer: profileMap[e.customer_id] || { name: 'Customer', phone: '-' }
+  }));
+
+  const attendances = rawAttendances.map(r => ({
+    ...r,
+    worker: profileMap[r.worker_id] || { name: 'Worker', phone: '-', daily_wage: 0, image_url: null }
+  }));
+
   const pendingAttCount = attendances.filter(a => a.status === 'pending').length;
   const pendingEnqCount = enquiries.filter(e => e.status === 'pending').length;
 
@@ -1732,7 +1748,6 @@ async function renderAdminEnquiriesAndAttendance(container) {
     </div>
   `;
 }
-
 function switchEnquirySubTab(tab) {
   activeEnqTab = tab;
   document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
