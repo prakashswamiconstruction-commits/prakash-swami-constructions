@@ -332,6 +332,14 @@ function escapeAttr(val) {
     .replace(/\n/g, ' ');
 }
 
+// UPI ID Generator Helper (@axl format)
+function getUpiIdFromPhone(phone) {
+  if (!phone) return '9785438345@axl';
+  const clean = String(phone).replace(/[^0-9]/g, '');
+  if (clean.length >= 10) return `${clean.slice(-10)}@axl`;
+  return `${phone}@axl`;
+}
+
 // Global modal background click to close
 window.addEventListener('DOMContentLoaded', () => {
   const mc = document.getElementById('modalContainer');
@@ -674,8 +682,7 @@ function generateLegalAgreementHtml(c, isLocked) {
       <div class="contract-section">
         <h4>३. तय दर एवं माप की शर्तें (RATE & MEASUREMENT)</h4>
         <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:14px; margin-bottom:10px;">
-          <p style="margin-bottom:6px;"><b>दर का प्रकार (Rate / Billing Basis):</b> <span style="color:#0284c7; font-weight:800; font-size:14px;">${parsed.rateTypeLabel}</span></p>
-          ${parsed.rateDetail ? `<p style="margin-bottom:6px;"><b>तय दर / मजदूरी (Agreed Rate / Wage):</b> <span style="font-weight:800; color:#0f172a; font-size:14px; background:#fef08a; padding:2px 8px; border-radius:4px;">${escapeAttr(parsed.rateDetail)}</span></p>` : ''}
+          <p style="margin-bottom:6px;"><b>दर का प्रकार (Rate / Billing Basis):</b> <span style="color:#0284c7; font-weight:800; font-size:14px;">${parsed.rateTypeLabel}</span></p>${parsed.rateDetail ? `<p style="margin-bottom:6px;"><b>तय दर / मजदूरी (Agreed Rate / Wage):</b> <span style="font-weight:800; color:#0f172a; font-size:14px; background:#fef08a; padding:2px 8px; border-radius:4px;">${escapeAttr(parsed.rateDetail)}</span></p>` : ''}
           <p style="margin-bottom:0;"><b>तय कुल अनुबंध राशि (Agreed Final Amount):</b> <span style="font-size:18px; font-weight:900; color:var(--primary);">${amountStr !== '0' ? '₹' + amountStr : 'दर अनुसार देय'}</span></p>
         </div>
         <p><b>माप का नियम:</b> कुल नाप छत की बाहरी सीमा (Slab Projection Area) के अनुसार वर्ग फीट में मान्य होगी अथवा प्रतिदिन के कार्य/मजदूरी अनुसार हिसाब किया जाएगा। तय स्कोप से अलग कोई भी अतिरिक्त कार्य कराने पर उसका शुल्क दोनों पक्षों की पूर्व सहमति से अलग से देय होगा।</p>
@@ -2080,7 +2087,8 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
   const payments = payRes.data || [];
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
   const remainingDue = totalEarned - totalPaid;
-  const upiPayUrl = `upi://pay?pa=${workerPhone}@upi&pn=${encodeURIComponent(workerName)}&am=${remainingDue > 0 ? remainingDue : 0}&cu=INR`;
+  const workerUpi = getUpiIdFromPhone(workerPhone);
+  const upiPayUrl = `upi://pay?pa=${workerUpi}&pn=${encodeURIComponent(workerName)}&cu=INR`;
 
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
@@ -2090,7 +2098,7 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
         <div>
           <h3><i class="fa-solid fa-wallet" style="color:var(--accent);"></i> ${workerName} — वेतन व मजदूरी भुगतान खाता</h3>
-          <p style="color:var(--muted); font-size:13px;">Phone: ${workerPhone} | दर: <b>₹${dailyWage}/दिन</b></p>
+          <p style="color:var(--muted); font-size:13px;">UPI: <b>${workerUpi}</b> | दर: <b>₹${dailyWage}/दिन</b></p>
         </div>
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
       </div>
@@ -2104,12 +2112,12 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
       <!-- Direct UPI Payment Deep-Link Button for Admin -->
       <div style="background:#f0fdf4; border:2px dashed var(--success); padding:16px; border-radius:12px; margin-bottom:18px; text-align:center;">
         <p style="font-size:13px; font-weight:700; color:#166534; margin-bottom:8px;">
-          <i class="fa-solid fa-bolt" style="color:#eab308;"></i> Direct PhonePe / GPay / Paytm UPI Payment:
+          <i class="fa-solid fa-bolt" style="color:#eab308;"></i> Direct PhonePe / GPay / Paytm UPI Payment (${workerUpi}):
         </p>
         <a href="${upiPayUrl}" target="_blank" class="btn-primary" style="display:inline-flex; width:auto; padding:12px 28px; background:#16a34a; font-size:15px; font-weight:800; text-decoration:none;">
-          <i class="fa-solid fa-bolt"></i> ⚡ Pay ₹${remainingDue > 0 ? remainingDue.toLocaleString('en-IN') : 0} to ${workerName} via UPI
+          <i class="fa-solid fa-bolt"></i> ⚡ Pay to ${workerName} via UPI (${workerUpi})
         </a>
-        <p style="font-size:11px; color:#64748b; margin-top:6px;">(फ़ोन पर इस बटन को दबाते ही आपका UPI Payment App खुल जाएगा)</p>
+        <p style="font-size:11px; color:#64748b; margin-top:6px;">(फ़ोन पर इस बटन को दबाते ही आपका UPI App खुलेगा और आप मनचाही राशि दर्ज करके भुगतान कर सकेंगे)</p>
       </div>
 
       <div class="card" style="padding:16px; margin-bottom:16px;">
@@ -2186,50 +2194,302 @@ function showFullImage(imgUrl, title) {
 }
 
 // ==========================================
-// ADMIN: PAYMENTS & EXPENSES
+// ADMIN: PAYMENTS & EXPENSES (WITH ACTION EDIT/DELETE)
 // ==========================================
 async function renderAdminPayments(container) {
   const { data: payments } = await getDB().from('payments')
-    .select('*, customer:customer_id(name, phone), worker:worker_id(name), project:project_id(name)')
+    .select('*, customer:customer_id(name, phone), worker:worker_id(name, phone), project:project_id(name)')
     .order('paid_at', { ascending: false });
+
+  let totalReceived = 0;
+  let totalPaidOut = 0;
+  (payments || []).forEach(p => {
+    if (p.direction === 'customer_to_business') totalReceived += Number(p.amount || 0);
+    else totalPaidOut += Number(p.amount || 0);
+  });
 
   container.innerHTML = `
     <div class="page-head">
-      <h1>पेमेंट एवं लेनदेन रिकॉर्ड (Payments)</h1>
-      <div style="display:flex; gap:10px;">
-        <button class="btn-primary" style="width:auto;" onclick="openCustomerPaymentModal()"><i class="fa-solid fa-hand-holding-dollar"></i> ग्राहक से प्राप्त पेमेंट</button>
-        <button class="btn-secondary" onclick="openWorkerPaymentModal()"><i class="fa-solid fa-money-bill-wave"></i> कारीगर को भुगतान</button>
+      <h1>पेमेंट एवं लेनदेन रिकॉर्ड (Payments & Ledger)</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openRecordDirectPaymentModal()"><i class="fa-solid fa-plus-circle"></i> नया लेनदेन दर्ज करें</button>
+    </div>
+
+    <!-- Quick Ledger Stats -->
+    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom:20px;">
+      <div class="stat-card" style="padding:16px;">
+        <div>
+          <h4>कुल प्राप्त राशि (Inflow - Customers)</h4>
+          <div class="val" style="color:var(--success); font-size:22px;">₹${totalReceived.toLocaleString('en-IN')}</div>
+        </div>
+        <div class="icon-box" style="background:#dcfce7; color:#16a34a;"><i class="fa-solid fa-arrow-down"></i></div>
+      </div>
+      <div class="stat-card" style="padding:16px;">
+        <div>
+          <h4>कुल दिया गया भुगतान (Outflow - Workers/Expenses)</h4>
+          <div class="val" style="color:var(--danger); font-size:22px;">₹${totalPaidOut.toLocaleString('en-IN')}</div>
+        </div>
+        <div class="icon-box" style="background:#fee2e2; color:#dc2626;"><i class="fa-solid fa-arrow-up"></i></div>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" style="padding:0; overflow:hidden;">
       <div class="table-container">
         <table>
           <thead>
-            <tr><th>दिनांक</th><th>पार्टी / नाम</th><th>प्रोजेक्ट</th><th>प्रकार</th><th>माध्यम</th><th>राशि (₹)</th><th>Note</th></tr>
+            <tr>
+              <th>दिनांक</th>
+              <th>पार्टी / नाम</th>
+              <th>प्रोजेक्ट</th>
+              <th>प्रकार</th>
+              <th>माध्यम</th>
+              <th>राशि (₹)</th>
+              <th>Ref / UTR</th>
+              <th>Note / विवरण</th>
+              <th>Action</th>
+            </tr>
           </thead>
           <tbody>
-            ${(payments || []).length === 0 ? '<tr><td colspan="7" style="text-align:center; padding:20px;">कोई पेमेंट रिकॉर्ड नहीं है।</td></tr>' : ''}
-            ${(payments || []).map(p => `
-              <tr>
-                <td>${new Date(p.paid_at).toLocaleDateString('en-IN')}</td>
-                <td><b>${safeStr(p.customer?.name || p.worker?.name, 'Payment')}</b></td>
-                <td>${safeStr(p.project?.name, '-')}</td>
-                <td>
-                  <span class="btn-sm ${p.direction === 'customer_to_business' ? 'btn-success' : 'btn-gold'}">
-                    ${p.direction === 'customer_to_business' ? 'प्राप्त (In)' : 'भुगतान (Out)'}
-                  </span>
-                </td>
-                <td><b>${p.method}</b><br><small style="color:var(--muted);">${safeStr(p.reference, '')}</small></td>
-                <td><b style="font-size:14px; color:${p.direction === 'customer_to_business' ? 'var(--success)' : 'var(--danger)'};">₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
-                <td>${safeStr(p.note, '-')}</td>
-              </tr>
-            `).join('')}
+            ${(payments || []).length === 0 ? '<tr><td colspan="9" style="text-align:center; padding:24px;">कोई पेमेंट रिकॉर्ड नहीं है।</td></tr>' : ''}
+            ${(payments || []).map(p => {
+              const partyName = safeStr(p.customer?.name || p.worker?.name, 'Direct Party');
+              const partyPhone = p.customer?.phone || p.worker?.phone || '';
+              const isInflow = p.direction === 'customer_to_business';
+
+              return `
+                <tr>
+                  <td>${new Date(p.paid_at || p.created_at).toLocaleDateString('en-IN')}</td>
+                  <td>
+                    <b>${partyName}</b>
+                    ${partyPhone ? `<br><small style="color:var(--muted);">${partyPhone}</small>` : ''}
+                  </td>
+                  <td>${safeStr(p.project?.name, '-')}</td>
+                  <td>
+                    <span class="btn-sm ${isInflow ? 'btn-success' : 'btn-danger'}">
+                      ${isInflow ? 'प्राप्त (In)' : 'भुगतान (Out)'}
+                    </span>
+                  </td>
+                  <td><span class="btn-sm btn-edit">${safeStr(p.method, 'UPI')}</span></td>
+                  <td>
+                    <b style="font-size:15px; color:${isInflow ? 'var(--success)' : 'var(--danger)'};">
+                      ₹${Number(p.amount || 0).toLocaleString('en-IN')}
+                    </b>
+                  </td>
+                  <td>${safeStr(p.reference, '-')}</td>
+                  <td>${safeStr(p.note, '-')}</td>
+                  <td>
+                    <div class="btn-action-group">
+                      <button class="btn-sm btn-edit" onclick="openEditPaymentModal('${p.id}')" title="पेमेंट एडिट करें">
+                        <i class="fa-solid fa-pen"></i> Edit
+                      </button>
+                      <button class="btn-sm btn-danger" onclick="deletePayment('${p.id}')" title="पेमेंट रिकॉर्ड हटाएं">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
     </div>
   `;
+}
+
+// Modal to Edit an Existing Payment Record
+async function openEditPaymentModal(paymentId) {
+  const { data: p } = await getDB().from('payments').select('*, project:project_id(name), customer:customer_id(name), worker:worker_id(name)').eq('id', paymentId).single();
+  if (!p) return;
+
+  const partyName = safeStr(p.customer?.name || p.worker?.name, 'Party');
+
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:520px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-pen-to-square" style="color:var(--accent);"></i> पेमेंट रिकॉर्ड एडिट करें</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+      </div>
+
+      <div style="background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid var(--border); margin-bottom:14px;">
+        <span style="font-size:13px; color:var(--muted);">पार्टी / ग्राहक / कारीगर:</span>
+        <div style="font-size:15px; font-weight:800; color:var(--primary);">${partyName}</div>
+      </div>
+
+      <form onsubmit="updatePaymentRecordSubmit(event, '${paymentId}')">
+        <div class="form-group">
+          <label>राशि (Amount ₹)</label>
+          <input id="epayAmount" type="number" value="${p.amount || 0}" required placeholder="50000">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label>माध्यम (Payment Method)</label>
+            <select id="epayMethod">
+              <option value="UPI" ${p.method === 'UPI' ? 'selected' : ''}>UPI (GPay / PhonePe)</option>
+              <option value="Bank" ${p.method === 'Bank' ? 'selected' : ''}>Bank Transfer (NEFT/IMPS)</option>
+              <option value="Cash" ${p.method === 'Cash' ? 'selected' : ''}>Cash (नकद)</option>
+              <option value="Cheque" ${p.method === 'Cheque' ? 'selected' : ''}>Cheque</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>लेनदेन प्रकार (Direction)</label>
+            <select id="epayDir">
+              <option value="customer_to_business" ${p.direction === 'customer_to_business' ? 'selected' : ''}>प्राप्त राशि (Inflow - Customer)</option>
+              <option value="business_to_worker" ${p.direction === 'business_to_worker' ? 'selected' : ''}>भुगतान (Outflow - Worker)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>UTR / Transaction Reference</label>
+          <input id="epayRef" value="${escapeAttr(p.reference || '')}" placeholder="12 अंकों का UTR या रसीद नंबर">
+        </div>
+
+        <div class="form-group">
+          <label>Note / विवरण</label>
+          <input id="epayNote" value="${escapeAttr(p.note || '')}" placeholder="उदा. दूसरी किश्त / लेंटेल स्तर का भुगतान">
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">
+          <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+          <button type="submit" class="btn-primary" style="width:auto;"><i class="fa-solid fa-check"></i> अपडेट सेव करें</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+async function updatePaymentRecordSubmit(e, paymentId) {
+  e.preventDefault();
+  await getDB().from('payments').update({
+    amount: Number($('epayAmount').value),
+    method: $('epayMethod').value,
+    direction: $('epayDir').value,
+    reference: $('epayRef').value.trim() || null,
+    note: $('epayNote').value.trim() || null
+  }).eq('id', paymentId);
+
+  alert('पेमेंट रिकॉर्ड सफलतापूर्वक अपडेट हो गया!');
+  $('modalContainer').classList.add('hidden');
+  openView('payments');
+}
+
+async function deletePayment(id) {
+  if (!confirm('क्या आप इस पेमेंट रिकॉर्ड को हटाना चाहते हैं?')) return;
+  await getDB().from('payments').delete().eq('id', id);
+  alert('पेमेंट रिकॉर्ड हटा दिया गया!');
+  openView('payments');
+}
+
+// Modal to Record a Direct Payment
+function openRecordDirectPaymentModal() {
+  getDB().from('profiles').select('id, name, phone, role').order('name').then(({ data: users }) => {
+    const customers = (users || []).filter(u => u.role === 'customer');
+    const workers = (users || []).filter(u => u.role === 'worker');
+
+    const modal = $('modalContainer');
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:520px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-plus-circle" style="color:var(--accent);"></i> नया लेनदेन रिकॉर्ड दर्ज करें</h3>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+        </div>
+
+        <form onsubmit="saveDirectPaymentRecordSubmit(event)">
+          <div class="form-group">
+            <label>लेनदेन प्रकार</label>
+            <select id="rdpDir" onchange="togglePartySelect(this.value)">
+              <option value="customer_to_business">ग्राहक से प्राप्त राशि (Inflow from Customer)</option>
+              <option value="business_to_worker">कारीगर/लेबर को भुगतान (Outflow to Worker)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="custSelectGroup">
+            <label>ग्राहक चुनें</label>
+            <select id="rdpCustId">
+              <option value="">-- ग्राहक चुनें --</option>
+              ${customers.map(c => `<option value="${c.id}">${c.name} (${c.phone || '-'})</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="form-group hidden" id="workerSelectGroup">
+            <label>कारीगर/लेबर चुनें</label>
+            <select id="rdpWorkerId">
+              <option value="">-- कारीगर चुनें --</option>
+              ${workers.map(w => `<option value="${w.id}">${w.name} (${w.phone || '-'})</option>`).join('')}
+            </select>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="form-group">
+              <label>राशि (Amount ₹)</label>
+              <input id="rdpAmount" type="number" required placeholder="50000">
+            </div>
+            <div class="form-group">
+              <label>माध्यम (Method)</label>
+              <select id="rdpMethod">
+                <option value="UPI">UPI (GPay / PhonePe)</option>
+                <option value="Bank">Bank Transfer</option>
+                <option value="Cash">Cash (नकद)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>UTR / Transaction Ref</label>
+            <input id="rdpRef" placeholder="12 अंकों का UTR या रसीद नंबर">
+          </div>
+
+          <div class="form-group">
+            <label>Note / विवरण</label>
+            <input id="rdpNote" placeholder="उदा. छत ढलाई किश्त">
+          </div>
+
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">
+            <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+            <button type="submit" class="btn-primary" style="width:auto;"><i class="fa-solid fa-check"></i> रिकॉर्ड सेव करें</button>
+          </div>
+        </form>
+      </div>
+    `;
+  });
+}
+
+function togglePartySelect(dir) {
+  if (dir === 'customer_to_business') {
+    $('custSelectGroup')?.classList.remove('hidden');
+    $('workerSelectGroup')?.classList.add('hidden');
+  } else {
+    $('custSelectGroup')?.classList.add('hidden');
+    $('workerSelectGroup')?.classList.remove('hidden');
+  }
+}
+
+async function saveDirectPaymentRecordSubmit(e) {
+  e.preventDefault();
+  const dir = $('rdpDir').value;
+  const custId = dir === 'customer_to_business' ? $('rdpCustId').value : null;
+  const workerId = dir === 'business_to_worker' ? $('rdpWorkerId').value : null;
+
+  await getDB().from('payments').insert({
+    customer_id: custId || null,
+    worker_id: workerId || null,
+    direction: dir,
+    amount: Number($('rdpAmount').value),
+    method: $('rdpMethod').value,
+    reference: $('rdpRef').value.trim() || null,
+    note: $('rdpNote').value.trim() || null,
+    created_by: currentUser.id,
+    paid_at: new Date().toISOString()
+  });
+
+  alert('नया लेनदेन रिकॉर्ड दर्ज हो गया!');
+  $('modalContainer').classList.add('hidden');
+  openView('payments');
 }
 
 async function renderAdminExpenses(container) {
@@ -2325,7 +2585,7 @@ async function renderAdminSettings(container) {
       <form onsubmit="saveBusinessSettings(event)">
         <div class="form-group"><label>व्यवसाय का नाम</label><input value="BALAJI Construction Services (प्रकाश स्वामी कंस्ट्रक्शंस)" disabled></div>
         <div class="form-group"><label>हेल्पलाइन फोन / WhatsApp</label><input id="bsPhone" value="${settings?.phone || '9785438345'}"></div>
-        <div class="form-group"><label>UPI ID (भुगतान हेतु)</label><input id="bsUpi" value="${settings?.upi_id || '9785438345@upi'}"></div>
+        <div class="form-group"><label>Admin UPI ID</label><input id="bsUpi" value="${settings?.upi_id || '9785438345@axl'}"></div>
         <div class="form-group"><label>कार्यालय पता</label><input id="bsAddr" value="${settings?.address || 'मंडावरा, झुंझुनूं, राजस्थान'}"></div>
         <button type="submit" class="btn-primary" style="width:auto;">सेटिंग्स सेव करें</button>
       </form>
@@ -2468,23 +2728,39 @@ async function updateMyProfile(e) {
 }
 
 async function renderCustomerProjects(container) {
-  const [projRes, contRes, payRes] = await Promise.all([
+  const [projRes, contRes, payRes, setRes] = await Promise.all([
     getDB().from('projects').select('*').eq('customer_id', currentUser ? currentUser.id : '').order('created_at', { ascending: false }),
-    getDB().from('contracts').select('*'),
-    getDB().from('payments').select('*').eq('customer_id', currentUser ? currentUser.id : '')
+    getDB().from('contracts').select('*, project:project_id(name, address, customer:customer_id(name, phone, address))'),
+    getDB().from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
+    getDB().from('business_settings').select('*').eq('id', true).maybeSingle()
   ]);
 
   const projects = projRes.data || [];
   const contracts = contRes.data || [];
   const payments = payRes.data || [];
+  const adminUpi = setRes.data?.upi_id || '9785438345@axl';
+
+  const totalAllProjects = projects.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+  const totalAllPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const totalAllDue = totalAllProjects - totalAllPaid;
 
   container.innerHTML = `
     <div class="page-head">
-      <h1>मेरे प्रोजेक्ट्स एवं अनुबंध (My Projects)</h1>
+      <h1>मेरे प्रोजेक्ट्स व अनुबंध (My Projects & Contracts)</h1>
       <button class="btn-primary" style="width:auto;" onclick="openView('my_enquiries')"><i class="fa-solid fa-plus"></i> नया काम / इन्क्वायरी भेजें</button>
     </div>
 
-    <div class="card">
+    <!-- Financial Summary Cards -->
+    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:20px;">
+      <div class="stat-card"><div><h4>कुल लागत (TOTAL)</h4><div class="val" style="font-size:22px;">₹${totalAllProjects.toLocaleString('en-IN')}</div></div></div>
+      <div class="stat-card"><div><h4>जमा राशि (PAID)</h4><div class="val" style="font-size:22px; color:var(--success);">₹${totalAllPaid.toLocaleString('en-IN')}</div></div></div>
+      <div class="stat-card" style="background:#fff1f2; border-color:#fecdd3;">
+        <div><h4>बाकी देय (DUE)</h4><div class="val" style="font-size:22px; color:var(--danger);">₹${totalAllDue.toLocaleString('en-IN')}</div></div>
+      </div>
+    </div>
+
+    <!-- Projects Table View -->
+    <div class="card" style="padding:0; overflow:hidden;">
       <div class="table-container">
         <table>
           <thead>
@@ -2501,69 +2777,64 @@ async function renderCustomerProjects(container) {
             </tr>
           </thead>
           <tbody>
-            ${projects.length === 0 ? '<tr><td colspan="9" style="text-align:center; padding:20px;">अभी आपका कोई प्रोजेक्ट नहीं बना है। नीचे बटन से नया आवेदन करें।</td></tr>' : ''}
+            ${projects.length === 0 ? '<tr><td colspan="9" style="text-align:center; padding:24px;">आपका कोई प्रोजेक्ट नहीं है। ऊपर से नया काम / इन्क्वायरी भेजें।</td></tr>' : ''}
             ${projects.map(p => {
               const contract = contracts.find(c => c.project_id === p.id);
               const totalAmt = Number(p.total_amount || (contract?.final_amount || 0));
-              let paidAmt = 0;
-              payments.filter(pay => pay.project_id === p.id).forEach(pay => paidAmt += Number(pay.amount || 0));
-              const remainAmt = totalAmt - paidAmt;
-              const projectNote = safeStr(p.notes, '');
-
-              const upiLink = `upi://pay?pa=9785438345@upi&pn=Prakash%20Swami%20Constructions&am=${remainAmt}&cu=INR`;
+              const receivedAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+              const remainAmt = totalAmt - receivedAmt;
+              const projectNote = p.notes || '';
 
               return `
                 <tr>
-                  <td><b>${p.name}</b><br><small style="color:var(--muted);">${safeStr(p.address, '')}</small></td>
-                  
+                  <td>
+                    <b>${p.name}</b><br>
+                    <small style="color:var(--muted);"><i class="fa-solid fa-location-dot"></i> ${safeStr(p.address, 'साइट का पता')}</small>
+                  </td>
                   <td>
                     ${contract ? `
                       <button class="btn-sm btn-gold" onclick="openFullAgreementModal('${contract.id}')">
                         <i class="fa-solid fa-file-signature"></i> अनुबंध देखें / साइन करें
                       </button>
-                    ` : '<span style="color:var(--muted); font-size:12px;">तैयार हो रहा है...</span>'}
+                    ` : '<span style="color:var(--muted); font-size:11px;">तैयार हो रहा है...</span>'}
                   </td>
-
                   <td>
-                    ${p.progress}%
+                    <b>${p.progress}%</b>
                     <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
                   </td>
                   <td><span class="btn-sm btn-success">${p.status}</span></td>
                   <td><b>₹${totalAmt.toLocaleString('en-IN')}</b></td>
-                  <td><span style="color:var(--success); font-weight:700;">₹${paidAmt.toLocaleString('en-IN')}</span></td>
+                  <td><span style="color:var(--success); font-weight:700;">₹${receivedAmt.toLocaleString('en-IN')}</span></td>
                   
-                  <!-- Due Amount with Direct UPI Pay Button -->
+                  <!-- Due Column -->
                   <td>
-                    <b style="color:var(--danger);">₹${remainAmt.toLocaleString('en-IN')}</b>
-                    ${remainAmt > 0 ? `
-                      <div style="margin-top:4px;">
-                        <a href="${upiLink}" class="btn-sm btn-gold" style="padding:4px 8px; font-size:11px;">
-                          <i class="fa-solid fa-bolt"></i> ⚡ Pay ₹${remainAmt.toLocaleString('en-IN')}
-                        </a>
-                      </div>
-                    ` : ''}
+                    <b style="color:var(--danger); font-size:14px;">₹${remainAmt.toLocaleString('en-IN')}</b>
                   </td>
 
-                  <!-- Collaborative Note Column -->
+                  <!-- Note Column -->
                   <td>
                     <div class="note-box">
                       <span class="note-text" title="${projectNote}">${projectNote || '<i style="color:#94a3b8;">Add note...</i>'}</span>
-                      <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${escapeAttr(projectNote)}')" title="Edit Note">
+                      <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${escapeAttr(projectNote || '')}')" title="Edit Note">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </button>
                     </div>
                   </td>
 
-                  <!-- Action Column with Pay & Edit/Delete -->
+                  <!-- Action Column with Flexible Custom Amount UPI Pay -->
                   <td>
                     <div class="btn-action-group">
                       ${remainAmt > 0 ? `
-                        <a href="${upiLink}" class="btn-sm btn-gold">
-                          <i class="fa-solid fa-bolt"></i> Pay
-                        </a>
-                      ` : ''}
-                      <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
-                      <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn-sm btn-gold" onclick="openCustomerCustomPayModal('${p.id}', '${escapeAttr(p.name)}', ${remainAmt}, '${adminUpi}')" title="अपनी इच्छानुसार राशि UPI से भुगतान करें">
+                          <i class="fa-solid fa-bolt"></i> Pay (UPI)
+                        </button>
+                      ` : '<span class="btn-sm btn-success">Paid ✅</span>'}
+                      <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')" title="Edit Project">
+                        <i class="fa-solid fa-pen"></i> Edit
+                      </button>
+                      <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')" title="Delete Project">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -2574,6 +2845,80 @@ async function renderCustomerProjects(container) {
       </div>
     </div>
   `;
+}
+
+// Flexible Custom Amount UPI Payment Modal for Customer
+function openCustomerCustomPayModal(projectId, projectName, remainAmt, upiId) {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:500px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <h3 style="font-size:18px; color:var(--primary);">
+          <i class="fa-solid fa-bolt" style="color:var(--accent);"></i> ऑनलाइन भुगतान (Online UPI Pay)
+        </h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+      </div>
+
+      <div style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--border); margin-bottom:16px;">
+        <div style="font-size:14px; font-weight:700; color:var(--primary);">${projectName}</div>
+        <div style="font-size:13px; color:var(--muted); margin-top:2px;">
+          UPI ID: <b>${upiId}</b> | कुल बकाया (Due): <b style="color:var(--danger); font-size:15px;">₹${remainAmt.toLocaleString('en-IN')}</b>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label style="font-size:13px; font-weight:700; color:#334155;">
+          <i class="fa-solid fa-indian-rupee-sign" style="color:var(--accent);"></i> आप अभी कितना भुगतान करना चाहते हैं? (Enter Amount ₹)
+        </label>
+        <input id="custCustomPayAmt" type="number" placeholder="अपनी मर्जी से राशि डालें (उदा. 10000, 25000, 50000)" style="font-size:16px; font-weight:700; padding:12px; border:2px solid var(--accent); border-radius:10px;" oninput="updateCustomUpiPayLinks('${upiId}')">
+        <p style="font-size:11px; color:var(--muted); margin-top:4px;">(खाली छोड़ने पर आप पेमेंट ऐप में खुद मनचाही राशि दर्ज कर सकेंगे)</p>
+      </div>
+
+      <!-- Quick Preset Amount Buttons -->
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px;">
+        <button type="button" class="btn-sm btn-edit" onclick="setPresetPayAmount(10000, '${upiId}')">₹10,000</button>
+        <button type="button" class="btn-sm btn-edit" onclick="setPresetPayAmount(25000, '${upiId}')">₹25,000</button>
+        <button type="button" class="btn-sm btn-edit" onclick="setPresetPayAmount(50000, '${upiId}')">₹50,000</button>
+        <button type="button" class="btn-sm btn-gold" onclick="setPresetPayAmount(${remainAmt}, '${upiId}')">पूरा ₹${remainAmt.toLocaleString('en-IN')}</button>
+      </div>
+
+      <!-- UPI Deep-Link Action Button -->
+      <div style="text-align:center;">
+        <a id="btnCustUpiPay" href="upi://pay?pa=${upiId}&pn=Prakash%20Swami%20Constructions&cu=INR" class="btn-primary" style="display:inline-flex; width:100%; justify-content:center; padding:14px; font-size:16px; font-weight:800; text-decoration:none; background:#16a34a; border-radius:10px;">
+          <i class="fa-solid fa-bolt"></i> ⚡ PhonePe / GPay / Paytm से Pay करें
+        </a>
+        <p style="font-size:11px; color:#64748b; margin-top:8px;">
+          (फ़ोन में इस बटन पर टैप करते ही आपका UPI ऐप खुलेगा और आप सुविधानुसार भुगतान कर सकेंगे)
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+function setPresetPayAmount(amt, upiId) {
+  const input = $('custCustomPayAmt');
+  if (input) {
+    input.value = amt;
+    updateCustomUpiPayLinks(upiId);
+  }
+}
+
+function updateCustomUpiPayLinks(upiId) {
+  const input = $('custCustomPayAmt');
+  const btn = $('btnCustUpiPay');
+  if (!btn) return;
+  const val = input ? input.value.trim() : '';
+
+  if (val && Number(val) > 0) {
+    btn.href = `upi://pay?pa=${upiId}&pn=Prakash%20Swami%20Constructions&am=${val}&cu=INR`;
+    btn.innerHTML = `<i class="fa-solid fa-bolt"></i> ⚡ Pay ₹${Number(val).toLocaleString('en-IN')} via UPI`;
+  } else {
+    // Open amount link so user can enter any amount inside their UPI app
+    btn.href = `upi://pay?pa=${upiId}&pn=Prakash%20Swami%20Constructions&cu=INR`;
+    btn.innerHTML = `<i class="fa-solid fa-bolt"></i> ⚡ PhonePe / GPay / Paytm से Pay करें (मनचाही राशि)`;
+  }
 }
 
 async function renderCustomerEnquiryForm(container) {
@@ -2948,5 +3293,5 @@ async function saveWorkerSiteUpdate(e) {
   $('wuPhotoPreview').innerHTML = '';
 }
 </script>
-<script src="auth-fix.js"><\/script><script src="auth-fix.js"><\/script></body>
+</body>
 </html>
