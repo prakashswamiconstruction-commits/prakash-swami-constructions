@@ -1,94 +1,183 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Prakash Swami Constructions — भारतीय साधारण मकानों के 2D व 3D नक्शे एवं भवन निर्माण</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="Prakash Swami Constructions - Mandawara, Jhunjhunu, Rajasthan. 25+ वर्षों का अनुभव, भारतीय साधारण मकानों के 2D व 3D नक्शे, RCC छत ढलाई एवं मजबूत भवन निर्माण। संपर्क: 9785438345">
+  <title>Prakash Swami Constructions — Mandawara, Jhunjhunu (2D व 3D नक्शे एवं भवन निर्माण)</title>
   
-  <meta name="description" content="राजस्थान, शेखावाटी और भारत के गांव व कस्बों के लिए वास्तविक 2D व 3D मकानों के नक्शे, कमरों का नाप, वास्तु सम्मत ड्राइंग्स एवं मजबूत भवन निर्माण। संपर्क: 9785438345">
-  <link rel="canonical" href="https://prakashswamiconstruction-commits.github.io/prakash-swami-constructions/">
-  
-  <!-- FontAwesome Icons CDN -->
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+  
   <style>
     :root {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #0f172a;
-      --muted: #475569;
+      --dark: #101827;
+      --dark2: #172235;
+      --gold: #d7a43b;
+      --gold-hover: #b88628;
+      --cream: #f8f6f0;
+      --muted: #64748b;
       --line: #e2e8f0;
-      --primary: #0b1220;
-      --accent: #d97706;
-      --accent-hover: #b45309;
-      --gold: #e65100;
+      --white: #ffffff;
+      --accent: #e65100;
       --success: #16a34a;
-      --danger: #dc2626;
       --shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-
-    /* Layout */
-    .wrap { width: min(1200px, 92%); margin: 0 auto; }
+    body { font-family: Arial, "Noto Sans Devanagari", system-ui, -apple-system, sans-serif; color: #1e293b; line-height: 1.6; background: #fff; }
+    img { display: block; max-width: 100%; }
+    a { text-decoration: none; color: inherit; }
+    button, input, textarea, select { font: inherit; }
     
-    /* Header & Navigation */
-    header.nav { position: sticky; top: 0; z-index: 100; background: rgba(11, 18, 32, 0.95); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .navin { display: flex; justify-content: space-between; align-items: center; min-height: 70px; }
-    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #fff; font-weight: 800; font-size: 18px; }
-    .logo .mark { width: 38px; height: 38px; background: var(--gold); border-radius: 8px; display: grid; place-items: center; font-size: 18px; color: #fff; font-weight: 900; }
-    .logo small { display: block; font-size: 10px; color: #94a3b8; font-weight: 600; letter-spacing: 1px; }
-
-    nav.menu { display: flex; align-items: center; gap: 20px; }
-    nav.menu a { color: #cbd5e1; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.2s; }
-    nav.menu a:hover { color: #fff; }
-
-    /* Direct Login Button */
-    .btn-login-direct { background: var(--gold); color: #fff !important; font-weight: 700; padding: 8px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; transition: 0.2s; }
-    .btn-login-direct:hover { opacity: 0.9; }
-
-    /* Hero Section */
-    .hero { background: radial-gradient(circle at top right, #1e293b, #0b1220); color: #fff; padding: 70px 0 60px; }
-    .hero h1 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.25; margin-bottom: 16px; }
-    .hero h1 em { color: var(--gold); font-style: normal; }
-    .hero p { color: #94a3b8; font-size: 16px; max-width: 700px; margin-bottom: 28px; line-height: 1.7; }
-    .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(230, 81, 0, 0.15); color: #ffb74d; border: 1px solid rgba(230, 81, 0, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 16px; }
-
+    .wrap { width: min(1180px, calc(100% - 36px)); margin: auto; }
+    
+    /* Topbar */
+    .top { background: #0a111d; color: #cbd5e1; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .top .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .top a { color: #cbd5e1; transition: color 0.2s; }
+    .top a:hover { color: var(--gold); }
+    
+    /* Navbar */
+    .nav { position: sticky; top: 0; z-index: 90; background: rgba(16,24,39,0.96); color: #fff; border-bottom: 1px solid #2d394c; backdrop-filter: blur(10px); }
+    .navin { min-height: 72px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 900; font-size: 20px; display: flex; gap: 10px; align-items: center; color: #fff; }
+    .mark { background: var(--gold); color: #111827; padding: 6px 10px; border-radius: 8px; font-weight: 900; }
+    .logo small { display: block; color: #94a3b8; font-size: 9px; letter-spacing: 2px; }
+    
+    .menu { display: flex; gap: 20px; font-size: 14px; align-items: center; }
+    .menu a { transition: color 0.2s; font-weight: 600; color: #e2e8f0; }
+    .menu a:hover { color: var(--gold); }
+    
+    .btn-login { background: var(--gold); color: #111827 !important; font-weight: 800; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
+    .btn-login:hover { background: #fff; }
+    
     /* Buttons */
-    .btn-primary { background: var(--gold); color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; transition: 0.2s; }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--line); padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-sm { padding: 4px 8px; font-size: 11px; border-radius: 6px; font-weight: 800; border: 0; display: inline-flex; align-items: center; gap: 4px; }
-    .btn-success { background: #dcfce7; color: #166534; }
-    .btn-edit { background: #e0e7ff; color: #4338ca; }
-    .btn-gold { background: #fef08a; color: #854d0e; }
-
-    /* Section Styles */
-    section { padding: 60px 0; }
-    .section-title { text-align: center; margin-bottom: 40px; }
-    .section-title h2 { font-size: 28px; font-weight: 900; color: var(--primary); margin-bottom: 8px; }
-    .section-title p { color: var(--muted); font-size: 15px; max-width: 650px; margin: 0 auto; }
-
-    /* Plans Grid */
-    .plan-filter-btn { background: #fff; border: 1px solid var(--line); padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--muted); transition: 0.2s; }
-    .plan-filter-btn.active, .plan-filter-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; margin-top: 24px; }
-
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 24px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; border: 0; text-decoration: none; }
+    .btn-gold { background: var(--gold); color: #111827; }
+    .btn-gold:hover { background: var(--gold-hover); color: #fff; }
+    .btn-dark { background: var(--dark); color: #fff; }
+    .btn-dark:hover { background: var(--dark2); }
+    .btn-outline { background: transparent; border: 1.5px solid #cbd5e1; color: #fff; }
+    .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+    .btn-whatsapp { background: #25d366; color: #fff; }
+    .btn-whatsapp:hover { background: #1eb954; }
+    
+    /* Hero Section */
+    .hero { background: radial-gradient(circle at 80% 20%, #1e293b 0%, #0b1220 100%); color: #fff; padding: 75px 0 60px; position: relative; overflow: hidden; }
+    .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(215, 164, 59, 0.15); color: var(--gold); border: 1px solid rgba(215, 164, 59, 0.3); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 16px; }
+    .hero h1 { font-size: clamp(28px, 4.2vw, 46px); font-weight: 900; line-height: 1.25; margin-bottom: 18px; }
+    .hero h1 em { color: var(--gold); font-style: normal; }
+    .hero p { font-size: 16px; color: #94a3b8; margin-bottom: 26px; line-height: 1.7; max-width: 600px; }
+    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 34px; }
+    
+    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 24px; }
+    .stat-item h3 { font-size: 24px; font-weight: 900; color: var(--gold); }
+    .stat-item p { font-size: 12px; color: #94a3b8; font-weight: 600; }
+    
+    /* Hero Visual Card */
+    .hero-visual-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 20px; backdrop-filter: blur(12px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+    .hero-visual-card img { border-radius: 12px; height: 260px; width: 100%; object-fit: cover; margin-bottom: 14px; }
+    
+    /* Sections */
+    section { padding: 75px 0; }
+    .section-alt { background: var(--cream); }
+    .sec-head { text-align: center; max-width: 700px; margin: 0 auto 46px; }
+    .sec-head h2 { font-size: 30px; font-weight: 900; color: var(--dark); margin-bottom: 10px; }
+    .sec-head p { font-size: 15px; color: var(--muted); }
+    
+    /* Services Grid */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+    .card { background: #fff; border-radius: 16px; border: 1px solid var(--line); overflow: hidden; box-shadow: var(--shadow); transition: transform 0.25s, box-shadow 0.25s; display: flex; flex-direction: column; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 20px 35px rgba(0,0,0,0.1); }
+    .card img { height: 210px; width: 100%; object-fit: cover; }
+    .card-body { padding: 22px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-body h3 { font-size: 19px; font-weight: 800; color: var(--dark); margin-bottom: 8px; }
+    .card-body p { font-size: 13.5px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    
+    /* House Plans Catalog Feature */
+    .plan-trigger-banner { background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%); color: #fff; border-radius: 20px; padding: 40px; border: 2px solid var(--gold); margin-bottom: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
+    .plan-filter-btn { background: #fff; border: 1px solid var(--line); padding: 9px 18px; border-radius: 24px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--muted); transition: 0.2s; }
+    .plan-filter-btn.active, .plan-filter-btn:hover { background: var(--dark); color: #fff; border-color: var(--dark); }
+    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 24px; margin-top: 24px; }
+    
+    /* Plan Card */
+    .plan-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: 0.25s; display: flex; flex-direction: column; }
+    .plan-card:hover { transform: translateY(-5px); box-shadow: 0 18px 32px rgba(0,0,0,0.12); border-color: var(--gold); }
+    
+    /* About & Founder */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; align-items: center; }
+    .about-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .about-imgs img { border-radius: 14px; height: 240px; width: 100%; object-fit: cover; box-shadow: var(--shadow); }
+    .about-points { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+    .about-pt { background: #fff; padding: 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 8px; }
+    
+    /* Projects Gallery */
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+    .gallery-item { position: relative; border-radius: 14px; overflow: hidden; height: 230px; box-shadow: var(--shadow); }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+    .gallery-item:hover img { transform: scale(1.06); }
+    .gallery-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(16,24,39,0.9) 0%, transparent 60%); display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; color: #fff; }
+    .gallery-overlay h4 { font-size: 15px; font-weight: 800; }
+    .gallery-overlay p { font-size: 12px; color: #cbd5e1; }
+    
+    /* Work Process */
+    .process-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .process-card { background: #fff; padding: 24px 20px; border-radius: 14px; border: 1px solid var(--line); position: relative; }
+    .process-num { width: 36px; height: 36px; background: var(--gold); color: #111827; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 15px; margin-bottom: 14px; }
+    
+    /* Cost Calculator */
+    .calc-card { background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%); color: #fff; border-radius: 20px; padding: 36px; border: 2px solid var(--gold); box-shadow: var(--shadow); }
+    
+    /* Contact & Form */
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+    .contact-box { background: #fff; padding: 30px; border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--gold); }
+    
+    /* Footer */
+    footer { background: #070d18; color: #94a3b8; padding: 50px 0 24px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 36px; margin-bottom: 36px; }
+    .footer-col h4 { color: #fff; font-size: 15px; font-weight: 800; margin-bottom: 16px; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col a { color: #94a3b8; transition: 0.2s; }
+    .footer-col a:hover { color: var(--gold); }
+    
     /* Modal */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 16px; }
-    .modal-card { background: #fff; width: 100%; max-width: 800px; border-radius: 16px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
+    .modal-card { background: #fff; width: 100%; max-width: 800px; border-radius: 16px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
 
+    @media(max-width: 900px) {
+      .hero-grid, .about-grid, .contact-grid, .footer-grid { grid-template-columns: 1fr; }
+      .process-grid { grid-template-columns: 1fr 1fr; }
+      .hero-stats { grid-template-columns: 1fr 1fr; }
+    }
     @media(max-width: 768px) {
-      .navin { min-height: 60px; }
       .menu a:not([href="dashboard.html"]) { display: none; }
       .plans-grid { grid-template-columns: 1fr; }
+      .process-grid { grid-template-columns: 1fr; }
+      .about-imgs { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-<!-- Header -->
+<!-- 1. Top Bar -->
+<div class="top">
+  <div class="wrap">
+    <div><i class="fa-solid fa-location-dot" style="color:var(--gold);"></i> <b>कार्यालय:</b> मंडावरा, तहसील: उदयपुरवाटी, जिला: झुंझुनूं (राजि.)</div>
+    <div style="display:flex; gap:16px;">
+      <a href="tel:9785438345"><i class="fa-solid fa-phone" style="color:var(--gold);"></i> 9785438345</a>
+      <a href="https://wa.me/919785438345" target="_blank"><i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> WhatsApp Help</a>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Header & Nav -->
 <header class="nav">
   <div class="wrap navin">
     <a class="logo" href="#home">
@@ -97,13 +186,15 @@
     </a>
     <nav class="menu">
       <a href="#home">होम</a>
-      <a href="#plans" style="color:var(--gold);"><i class="fa-solid fa-compass-drafting"></i> मकानों के नक्शे</a>
+      <a href="#services">सेवाएँ</a>
+      <a href="#plans" style="color:var(--gold);"><i class="fa-solid fa-compass-drafting"></i> 25+ मकानों के नक्शे</a>
       <a href="#about">हमारे बारे में</a>
       <a href="#projects">प्रोजेक्ट्स</a>
+      <a href="#calculator">लागत कैलकुलेटर</a>
       <a href="#contact">संपर्क</a>
       
-      <!-- Direct Login Button -->
-      <a href="dashboard.html" class="btn-login-direct">
+      <!-- Direct Portal Login -->
+      <a href="dashboard.html" class="btn-login" title="Admin, Customer & Worker Portal Login">
         <i class="fa-solid fa-right-to-bracket"></i> Login
       </a>
     </nav>
@@ -111,28 +202,111 @@
 </header>
 
 <main id="home">
-  <!-- Hero Section -->
+
+  <!-- 3. Hero Section -->
   <section class="hero">
     <div class="wrap">
-      <div class="eyebrow"><i class="fa-solid fa-shield-halved"></i> 25+ वर्षों का भरोसा • Mandawara, Jhunjhunu</div>
-      <h1>भारतीय साधारण मकानों के <em>2D व 3D नक्शे</em> एवं मजबूत निर्माण।</h1>
-      <p>गांव व कस्बे के लिए वास्तविक, मजबूत और 100% वास्तु सम्मत नक्शे। नीचे 20 एक-मंज़िला और 5 दो-मंज़िला नक्शों की पूरी सूची कमरों के सटीक नाप (Feet & Inches) के साथ उपलब्ध है।</p>
-      <div style="display:flex; gap:12px; flex-wrap:wrap;">
-        <a href="#plans" class="btn-primary"><i class="fa-solid fa-compass-drafting"></i> सभी 25 नक्शे देखें</a>
-        <a href="https://wa.me/919785438345?text=नमस्ते%20मुझे%20मकान%20का%20नक्शा%20चाहिए" target="_blank" class="btn-secondary" style="background:transparent; color:#fff; border-color:rgba(255,255,255,0.3);">
-          <i class="fa-brands fa-whatsapp"></i> WhatsApp पर बात करें
-        </a>
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow"><i class="fa-solid fa-shield-halved"></i> 25+ वर्षों का अटूट भरोसा • Mandawara, Jhunjhunu</div>
+          <h1>भारतीय साधारण मकानों के <em>2D व 3D नक्शे</em> एवं मजबूत निर्माण।</h1>
+          <p>गांव व कस्बे के लिए वास्तविक, मजबूत और 100% वास्तु सम्मत नक्शे (कमरों के नाप सहित)। नींव खुदाई से लेकर RCC छत ढलाई, प्लास्टर और चाबी सौंपने तक का पूरा कार्य उचित दर व लिखित अनुबंध के साथ।</p>
+          
+          <div class="hero-cta">
+            <a href="#plans" class="btn btn-gold"><i class="fa-solid fa-compass-drafting"></i> 25+ मकानों के नक्शे देखें</a>
+            <a href="https://wa.me/919785438345?text=नमस्ते%20प्रकाश%20स्वामी%20जी%20मुझे%20मकान%20का%20नक्शा%20व%20निर्माण%20कोटेशन%20चाहिए" target="_blank" class="btn btn-whatsapp">
+              <i class="fa-brands fa-whatsapp fa-lg"></i> WhatsApp पर बात करें
+            </a>
+            <a href="tel:9785438345" class="btn btn-outline"><i class="fa-solid fa-phone"></i> 9785438345</a>
+          </div>
+
+          <div class="hero-stats">
+            <div class="stat-item"><h3>25+</h3><p>वर्षों का अनुभव</p></div>
+            <div class="stat-item"><h3>100+</h3><p>सफल प्रोजेक्ट्स</p></div>
+            <div class="stat-item"><h3>25+</h3><p>2D/3D नक्शे</p></div>
+            <div class="stat-item"><h3>100%</h3><p>वास्तु व मजबूती</p></div>
+          </div>
+        </div>
+
+        <!-- Hero Visual Showcase -->
+        <div class="hero-visual-card">
+          <img src="Gemini_Generated_Image_vltrqevltrqevltr.png" alt="Prakash Swami Constructions - Completed House Project">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h4 style="font-size:16px; font-weight:800; color:#fff;">मजबूत निर्माण • आधुनिक डिजाइन</h4>
+              <p style="font-size:12px; color:var(--gold);">मंडावरा, झुंझुनूं व शेखावाटी क्षेत्र</p>
+            </div>
+            <a href="#contact" class="btn-sm btn-gold" style="padding:6px 12px; font-size:12px; font-weight:800; border-radius:6px;">Enquiry करें</a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- 25 House Plans Catalog Section -->
-  <section id="plans" style="border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+  <!-- 4. Services Section -->
+  <section id="services">
     <div class="wrap">
-      <div class="section-title">
-        <div class="eyebrow" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;"><i class="fa-solid fa-house-chimney"></i> Indian House Plans Catalog</div>
-        <h2>भारतीय साधारण मकानों के 2D व 3D नक्शे (25+ प्लान्स)</h2>
-        <p>गांव और कस्बों में बनने वाले 20 एक-मंज़िला (1 Floor) और 5 दो-मंज़िला (2 Floor) के वास्तविक नक्शे। किसी भी नक्शे पर क्लिक करके कमरों का पूरा नाप, आँगन, रसोई व बरामदा देखें।</p>
+      <div class="sec-head">
+        <div class="eyebrow" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;"><i class="fa-solid fa-trowel-bricks"></i> हमारी मुख्य सेवाएँ</div>
+        <h2>निर्माण का काम, सही तरीके से।</h2>
+        <p>मकान की नींव से लेकर फिनिशिंग तक हर काम अनुभवी मिस्त्रियों और उच्च गुणवत्ता वाले मटेरियल से किया जाता है।</p>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <img src="Gemini_Generated_Image_vltrqevltrqevltr.png" alt="घर का संपूर्ण निर्माण">
+          <div class="card-body">
+            <div>
+              <h3>१. घर का निर्माण (With Material & Labour)</h3>
+              <p>नींव खुदाई, प्लिंथ बीम, दीवार चिनाई, RCC छत ढलाई और प्लास्टर का पूरा कार्य। अल्ट्राटेक सीमेंट व बेस्ट क्वालिटी सरिया के साथ।</p>
+            </div>
+            <a href="#contact" class="btn btn-dark" style="width:100%;"><i class="fa-solid fa-arrow-right"></i> निर्माण कोटेशन मंगाएं</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <img src="Gemini_Generated_Image_2h9x962h9x962h9x.png" alt="2D व 3D नक्शा डिजाइन">
+          <div class="card-body">
+            <div>
+              <h3>२. 2D व 3D नक्शा व एलिवेशन (वास्तु अनुरूप)</h3>
+              <p>कमरों का सही नाप, खुला आँगन, रसोई, पूजा घर और आगे का आकर्षक फ्रंट एलिवेशन। सभी 25 नक्शे नीचे लाइव देखें।</p>
+            </div>
+            <a href="#plans" class="btn btn-gold" style="width:100%;"><i class="fa-solid fa-compass-drafting"></i> 25+ नक्शे देखें</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <img src="20210723_122237.jpg" alt="रेनोवेशन और छत ढलाई">
+          <div class="card-body">
+            <div>
+              <h3>३. रेनोवेशन, प्लास्टर व RCC छत ढलाई</h3>
+              <p>पुरानी छत बदलना, नई मंजिल का निर्माण, वॉटरप्रूफिंग, बाउंड्री वॉल और टाइल्स/फ्लोरिंग का मजबूत कार्य।</p>
+            </div>
+            <a href="tel:9785438345" class="btn btn-dark" style="width:100%;"><i class="fa-solid fa-phone"></i> सीधे बात करें</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Interactive 25 House Plans Section -->
+  <section id="plans" class="section-alt" style="border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+    <div class="wrap">
+      
+      <!-- Plans Feature Trigger Banner -->
+      <div class="plan-trigger-banner">
+        <div>
+          <div class="eyebrow" style="background:rgba(215,164,59,0.2); color:var(--gold); border-color:var(--gold); margin-bottom:8px;">
+            <i class="fa-solid fa-house-chimney"></i> 100% वास्तविक भारतीय गांव व कस्बों के नक्शे
+          </div>
+          <h2 style="font-size:28px; font-weight:900; color:#fff;">भारतीय साधारण मकानों के 2D व 3D नक्शे (25+ प्लान्स)</h2>
+          <p style="color:#cbd5e1; font-size:14px; max-width:650px; margin-top:4px;">
+            गांव और कस्बों में बनने वाले 20 एक-मंज़िला (1 Floor) और 5 दो-मंज़िला (2 Floor) के वास्तविक नक्शे। किसी भी नक्शे पर क्लिक करके कमरों का पूरा नाप, आँगन, रसोई व बरामदा देखें।
+          </p>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <a href="#plans" class="btn btn-gold"><i class="fa-solid fa-eye"></i> नीचे सभी नक्शे देखें</a>
+        </div>
       </div>
 
       <!-- Filters & Search -->
@@ -146,9 +320,9 @@
           <button class="plan-filter-btn" onclick="filterHousePlans('large', this)">बड़ा (&gt;1400 Sq.Ft)</button>
         </div>
 
-        <div style="position: relative; min-width: 240px;">
-          <input type="text" id="planSearchInput" onkeyup="searchHousePlans(this.value)" placeholder="नक्शा साइज सर्च करें (उदा. 29x35)..." style="width: 100%; padding: 8px 14px 8px 34px; border: 1px solid var(--line); border-radius: 20px; font-size: 13px; outline: none;">
-          <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px;"></i>
+        <div style="position: relative; min-width: 260px;">
+          <input type="text" id="planSearchInput" onkeyup="searchHousePlans(this.value)" placeholder="नक्शा साइज सर्च करें (उदा. 29x35, 25x50)..." style="width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--line); border-radius: 24px; font-size: 13px; outline: none; background:#fff;">
+          <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px;"></i>
         </div>
       </div>
 
@@ -157,27 +331,271 @@
     </div>
   </section>
 
-  <!-- About Section -->
-  <section id="about" style="background:#fff;">
-    <div class="wrap" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:40px; align-items:center;">
-      <div>
-        <div class="eyebrow">हमारे बारे में</div>
-        <h2 style="font-size:26px; font-weight:900; color:var(--primary); margin-bottom:14px;">प्रकाश स्वामी कंस्ट्रक्शंस (Balaji Construction Services)</h2>
-        <p style="color:var(--muted); margin-bottom:14px;">मंडावरा, झुंझुनूं (राजस्थान) में पिछले 25+ वर्षों से भवन निर्माण, RCC छत ढलाई, और 100% वास्तु सम्मत 2D/3D नक्शे तैयार करने का विश्वसनीय नाम।</p>
-        <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-weight:600; font-size:14px;">
-          <li><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> मजबूत नींव, सरिया बांधना एवं RCC स्लैब ढलाई</li>
-          <li><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> आधुनिक 2D CAD फ्लोर प्लान एवं वास्तु कंसल्टेशन</li>
-          <li><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> समय पर कार्य पूर्ण करने की लिखित गारंटी (अनुबंध सहित)</li>
-        </ul>
-      </div>
-      <div style="background:#0b1220; color:#fff; padding:32px; border-radius:16px; border:2px solid var(--gold);">
-        <h3 style="color:var(--gold); font-size:18px; margin-bottom:12px;"><i class="fa-solid fa-phone-volume"></i> मुफ्त परामर्श एवं नक्शा कोटेशन</h3>
-        <p style="color:#94a3b8; font-size:14px; margin-bottom:20px;">अपने प्लॉट का साइज बताएं और 24 घंटे में पूरा नक्शा व लागत एस्टीमेट पाएं।</p>
-        <a href="tel:9785438345" class="btn-primary" style="width:100%; justify-content:center;"><i class="fa-solid fa-phone"></i> कॉल करें: 9785438345</a>
+  <!-- 6. About Founder & Team -->
+  <section id="about">
+    <div class="wrap">
+      <div class="about-grid">
+        <div class="about-imgs">
+          <img src="prakash-chand-swami-construction-site.jpg" alt="Prakash Chand Swami at construction site">
+          <img src="prakash-chand-swami-project-planning.jpg" alt="Prakash Chand Swami project planning">
+        </div>
+
+        <div>
+          <div class="eyebrow"><i class="fa-solid fa-user-check"></i> हमारे संस्थापक व टीम</div>
+          <h2 style="font-size:28px; font-weight:900; color:var(--dark); margin-bottom:14px;">भरोसा ही हमारी सबसे बड़ी पहचान है।</h2>
+          <p style="font-size:15px; color:var(--muted); margin-bottom:12px; line-height:1.7;">
+            <b>प्रकाश चन्द स्वामी (BALAJI Construction Services)</b> ने पिछले 25 वर्षों में मंडावरा, झुंझुनूं और शेखावाटी में सैकड़ों परिवारों के सपनों के आशियाने बनाए हैं।
+          </p>
+          <p style="font-size:14px; color:var(--muted); margin-bottom:20px; line-height:1.7;">
+            हमारा नियम साफ है: <b>कोई छुपा हुआ खर्च नहीं, सिर्फ उच्च दर्जे का मटेरियल, मजबूत कारीगरी और समय पर काम पूरा करने का लिखित अनुबंध।</b>
+          </p>
+
+          <div class="about-points">
+            <div class="about-pt"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> 100% मजबूत मटेरियल</div>
+            <div class="about-pt"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> अनुभवी कारीगर व लेबर</div>
+            <div class="about-pt"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> वास्तु अनुसार 2D/3D नक्शा</div>
+            <div class="about-pt"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> कानूनी लिखित अनुबंध</div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
+
+  <!-- 7. Real Projects Gallery -->
+  <section id="projects" class="section-alt">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;"><i class="fa-solid fa-images"></i> कार्य स्थल गैलरी</div>
+        <h2>Real construction. Real experience.</h2>
+        <p>हमारे द्वारा पूर्ण किए गए और वर्तमान में चल रहे निर्माण कार्यों की वास्तविक तस्वीरें।</p>
+      </div>
+
+      <div class="gallery">
+        <div class="gallery-item">
+          <img src="20210723_122237.jpg" alt="RCC छत ढलाई कार्य">
+          <div class="gallery-overlay">
+            <h4>RCC छत ढलाई व शटरिंग</h4>
+            <p>मंडावरा, झुंझुनूं (Completed)</p>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="prakash-chand-swami-construction-site.jpg" alt="दीवार चिनाई व सुपरस्ट्रक्चर">
+          <div class="gallery-overlay">
+            <h4>सुपरस्ट्रक्चर व दीवार चिनाई</h4>
+            <p>उदयपुरवाटी साइट</p>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="prakash-chand-swami-project-planning.jpg" alt="साइट सुपरविजन">
+          <div class="gallery-overlay">
+            <h4>नक्शा अनुसार निर्माण सुपरविजन</h4>
+            <p>झुंझुनूं क्षेत्र</p>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="Gemini_Generated_Image_vltrqevltrqevltr.png" alt="स्वतंत्र आवास">
+          <div class="gallery-overlay">
+            <h4>3 BHK विलेज रेजिडेंस</h4>
+            <p>हस्तगत प्रोजेक्ट</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Work Process (4 Steps) -->
+  <section id="process">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow"><i class="fa-solid fa-list-check"></i> पारदर्शी प्रक्रिया</div>
+        <h2>बात से काम तक, 4 आसान कदम।</h2>
+        <p>हम हर प्रोजेक्ट को एक सुव्यवस्थित और पारदर्शी तरीके से पूरा करते हैं।</p>
+      </div>
+
+      <div class="process-grid">
+        <div class="process-card">
+          <div class="process-num">१</div>
+          <h3 style="font-size:16px; font-weight:800; color:var(--dark); margin-bottom:6px;">बात करें व साइट विजिट</h3>
+          <p style="font-size:13px; color:var(--muted);">फोन पर चर्चा करें और अपने प्लॉट पर साइट विजिट तय करें।</p>
+        </div>
+
+        <div class="process-card">
+          <div class="process-num">२</div>
+          <h3 style="font-size:16px; font-weight:800; color:var(--dark); margin-bottom:6px;">2D नक्शा व अनुबंध</h3>
+          <p style="font-size:13px; color:var(--muted);">वास्तु सम्मत 2D/3D नक्शा तैयार कर दर व किस्तों का अनुबंध पत्र बनता है।</p>
+        </div>
+
+        <div class="process-card">
+          <div class="process-num">३</div>
+          <h3 style="font-size:16px; font-weight:800; color:var(--dark); margin-bottom:6px;">मजबूत निर्माण कार्य</h3>
+          <p style="font-size:13px; color:var(--muted);">अनुभवी कारीगरों द्वारा नींव से लेकर छत ढलाई तक मजबूत निर्माण।</p>
+        </div>
+
+        <div class="process-card">
+          <div class="process-num">४</div>
+          <h3 style="font-size:16px; font-weight:800; color:var(--dark); margin-bottom:6px;">फिनिशिंग व हैंडओवर</h3>
+          <p style="font-size:13px; color:var(--muted);">प्लास्टर, फ्लोरिंग व पूरी जांच के बाद समय पर मकान की चाबी सौंपना।</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Interactive Cost Calculator -->
+  <section id="calculator" class="section-alt">
+    <div class="wrap">
+      <div class="calc-card">
+        <div style="text-align:center; margin-bottom:28px;">
+          <div class="eyebrow" style="background:rgba(215,164,59,0.2); color:var(--gold); border-color:var(--gold);"><i class="fa-solid fa-calculator"></i> अनुमानित निर्माण लागत कैलकुलेटर</div>
+          <h2 style="font-size:28px; font-weight:900; color:#fff;">अपने प्लॉट का साइज डालें और लागत जानें</h2>
+          <p style="color:#94a3b8; font-size:14px;">प्लॉट का क्षेत्रफल (Sq.Ft) दर्ज करें और मटेरियल सहित निर्माण का अनुमानित बजट देखें।</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:center; max-width:800px; margin:0 auto;">
+          <div>
+            <div class="form-group">
+              <label style="color:#fff;">प्लॉट एरिया (वर्ग फीट / Sq.Ft):</label>
+              <input type="number" id="calcSqft" value="1000" oninput="calculateEstimate()" style="background:#fff; font-size:18px; font-weight:800; border:0; border-radius:10px;">
+            </div>
+            <div class="form-group">
+              <label style="color:#fff;">निर्माण प्रकार:</label>
+              <select id="calcType" onchange="calculateEstimate()" style="background:#fff; font-size:15px; font-weight:700; border:0; border-radius:10px;">
+                <option value="with_mat">विद मटेरियल (With Material - ₹1300/Sq.Ft)</option>
+                <option value="labour">सिर्फ लेबर रेट (Labour Rate - ₹210/Sq.Ft)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:24px; text-align:center;">
+            <div style="font-size:13px; color:#94a3b8; font-weight:700;">अनुमानित कुल लागत:</div>
+            <div id="calcResult" style="font-size:32px; font-weight:900; color:var(--gold); margin:8px 0;">₹13,00,000</div>
+            <small style="color:#cbd5e1; font-size:11px;">(वास्तविक लागत नक्शा व स्पेसिफिकेशन अनुसार तय होगी)</small>
+            <div style="margin-top:14px;">
+              <a href="#contact" class="btn btn-gold" style="padding:8px 16px; font-size:12px;"><i class="fa-solid fa-paper-plane"></i> यह कोटेशन मंगाएं</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. Contact Section -->
+  <section id="contact">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow"><i class="fa-solid fa-envelope-open-text"></i> संपर्क करें</div>
+        <h2>अपने प्रोजेक्ट की बात आज ही करें।</h2>
+        <p>हमसे फोन या व्हाट्सएप पर बात करें या नीचे दिए गए फॉर्म में अपनी जानकारी भेजें।</p>
+      </div>
+
+      <div class="contact-grid">
+        <div class="contact-box">
+          <h3 style="font-size:20px; font-weight:800; color:var(--dark); margin-bottom:18px;">मुफ्त परामर्श फॉर्म (Free Enquiry)</h3>
+          <form onsubmit="handleContactSubmit(event)">
+            <div class="form-group">
+              <label>आपका नाम (Full Name)</label>
+              <input id="cfName" required placeholder="अपना पूरा नाम लिखें">
+            </div>
+            <div class="form-group">
+              <label>मोबाइल नंबर</label>
+              <input id="cfPhone" type="tel" required placeholder="१० अंकों का मोबाइल नंबर">
+            </div>
+            <div class="form-group">
+              <label>साइट का पता / गाँव</label>
+              <input id="cfAddress" required placeholder="गाँव, तहसील, जिला">
+            </div>
+            <div class="form-group">
+              <label>कार्य का प्रकार</label>
+              <select id="cfType">
+                <option value="New House">नया मकान निर्माण (New House)</option>
+                <option value="2D 3D Map">2D/3D नक्शा व डिजाइन</option>
+                <option value="RCC Slab">RCC छत ढलाई व शटरिंग</option>
+                <option value="Renovation">रेनोवेशन व प्लास्टर</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>संदेश / विवरण (वैकल्पिक)</label>
+              <textarea id="cfMsg" rows="3" placeholder="प्लॉट साइज या कोई विशेष बात..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fa-solid fa-paper-plane"></i> इन्क्वायरी भेजें</button>
+          </form>
+        </div>
+
+        <div style="display:flex; flex-direction:column; justify-content:space-between; gap:20px;">
+          <div style="background:var(--cream); padding:30px; border-radius:16px; border:1px solid var(--line);">
+            <h3 style="font-size:20px; font-weight:800; color:var(--dark); margin-bottom:16px;">सीधे संपर्क सूत्र</h3>
+            <p style="margin-bottom:12px; font-size:14px;"><b><i class="fa-solid fa-user-tie" style="color:var(--gold);"></i> संचालक:</b> प्रकाश चन्द स्वामी</p>
+            <p style="margin-bottom:12px; font-size:14px;"><b><i class="fa-solid fa-phone" style="color:var(--gold);"></i> फोन / हेल्पलाइन:</b> <a href="tel:9785438345" style="color:var(--dark); font-weight:700;">9785438345</a></p>
+            <p style="margin-bottom:12px; font-size:14px;"><b><i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> WhatsApp:</b> <a href="https://wa.me/919785438345" target="_blank" style="color:#15803d; font-weight:700;">9785438345</a></p>
+            <p style="margin-bottom:12px; font-size:14px;"><b><i class="fa-solid fa-qrcode" style="color:var(--gold);"></i> UPI ID:</b> 9785438345@upi</p>
+            <p style="font-size:14px;"><b><i class="fa-solid fa-location-dot" style="color:var(--gold);"></i> पता:</b> ग्राम व पोस्ट: मंडावरा, तहसील: उदयपुरवाटी, जिला: झुंझुनूं (राजि.)</p>
+          </div>
+
+          <div style="background:#0b1220; color:#fff; padding:24px; border-radius:16px; text-align:center; border:2px solid var(--gold);">
+            <h4 style="color:var(--gold); font-size:16px; margin-bottom:8px;">पोर्टल लॉगिन (Admin / Customer / Worker)</h4>
+            <p style="font-size:13px; color:#94a3b8; margin-bottom:14px;">अपने प्रोजेक्ट्स, डिजिटल अनुबंध, हाजिरी और भुगतान देखने के लिए डैशबोर्ड में लॉगिन करें।</p>
+            <a href="dashboard.html" class="btn btn-gold" style="width:100%;"><i class="fa-solid fa-right-to-bracket"></i> Dashboard Login</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main>
+
+<!-- 11. Footer -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="logo" style="margin-bottom:14px;">
+          <span class="mark">PS</span>
+          <span>Prakash Swami<small>CONSTRUCTIONS</small></span>
+        </div>
+        <p style="color:#94a3b8; font-size:13px; line-height:1.6; max-width:320px;">
+          25+ वर्षों के अनुभव के साथ मंडावरा, झुंझुनूं व संपूर्ण राजस्थान में भारतीय मकानों के 2D/3D नक्शे एवं मजबूत निर्माण का विश्वसनीय नाम।
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h4>मुख्य लिंक्स</h4>
+        <ul>
+          <li><a href="#home">होम</a></li>
+          <li><a href="#services">सेवाएँ</a></li>
+          <li><a href="#plans">मकानों के नक्शे</a></li>
+          <li><a href="#about">हमारे बारे में</a></li>
+          <li><a href="#projects">प्रोजेक्ट्स</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>पोर्टल व सेवाएँ</h4>
+        <ul>
+          <li><a href="dashboard.html#admin">Admin Login</a></li>
+          <li><a href="dashboard.html#customer">Customer Portal</a></li>
+          <li><a href="dashboard.html#worker">Worker Portal</a></li>
+          <li><a href="#calculator">लागत कैलकुलेटर</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>संपर्क जानकारी</h4>
+        <p style="margin-bottom:8px;">📍 मंडावरा, झुंझुनूं (राजि.)</p>
+        <p style="margin-bottom:8px;">📞 9785438345</p>
+        <p style="margin-bottom:14px;">✉️ satpalswami22742@gmail.com</p>
+        <a href="https://wa.me/919785438345" target="_blank" class="btn-sm btn-whatsapp" style="padding:6px 12px; font-size:12px; font-weight:700;">
+          <i class="fa-brands fa-whatsapp"></i> Chat on WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <div style="text-align:center; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); font-size:12px; color:#64748b;">
+      © 2026 Prakash Swami Constructions (Balaji Construction Services). सर्वाधिकार सुरक्षित।
+    </div>
+  </div>
+</footer>
 
 <!-- House Plan Detail Modal -->
 <div id="planDetailModal" class="modal-backdrop" onclick="if(event.target===this) closeHousePlanModal()">
@@ -186,133 +604,7 @@
 
 <script>
 // 25 Authentic Indian House Plans Metadata
-const ALL_HOUSE_PLANS = [
-  {
-    "id": "ind_2f_1", "floors": 2, "floor_label": "2 मंज़िला (Duplex Kothi)", "size_ft": "25 × 45 Ft", "plot_area_sqft": 1125, "built_area_sqft": 2100, "facing": "उत्तर मुखी (North)", "config": "4 बेडरूम + बड़ा हॉल + बैठक/बरामदा + कार पार्किंग", "est_cost": "₹28 - ₹34 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "13' × 12'", "vastu": "नैऋत्य कोण"}, {"room": "शयनकक्ष-2", "size": "12' × 11'", "vastu": "पश्चिम दिशा"}, {"room": "शयनकक्ष-3 व 4 (ऊपर)", "size": "13' × 14'", "vastu": "बालकनी सहित"}, {"room": "रसोई (Kitchen)", "size": "8' × 10'", "vastu": "आग्नेय कोण"}, {"room": "केंद्रीय हॉल", "size": "15' × 16'", "vastu": "ब्रह्मस्थान"}, {"room": "पूजा कक्ष", "size": "5' × 6'", "vastu": "ईशान कोण"}, {"room": "कार पोर्च", "size": "11' × 16'", "vastu": "वायव्य कोण"}],
-    "highlights": "राजस्थान व शेखावाटी के लिए 25x45 का सबसे लोकप्रिय 2 मंज़िला नक्शा।"
-  },
-  {
-    "id": "ind_2f_2", "floors": 2, "floor_label": "2 मंज़िला (Duplex Kothi)", "size_ft": "30 × 50 Ft", "plot_area_sqft": 1500, "built_area_sqft": 2800, "facing": "पूर्व मुखी (East)", "config": "5 बेडरूम + 2 हॉल + पूजा घर + बड़ी बालकनी + 2 कार पार्किंग", "est_cost": "₹38 - ₹45 लाख", "tag": "Large",
-    "layout": [{"room": "शयनकक्ष-1", "size": "14' × 13'", "vastu": "नैऋत्य कोण"}, {"room": "शयनकक्ष-2", "size": "13' × 12'", "vastu": "उत्तर दिशा"}, {"room": "ऊपर 3 बेडरूम", "size": "14' × 14'", "vastu": "ओपन टेरेस"}, {"room": "रसोई", "size": "10' × 12'", "vastu": "आग्नेय कोण"}, {"room": "बड़ा हॉल", "size": "18' × 18'", "vastu": "ब्रह्मस्थान"}, {"room": "पूजा कक्ष", "size": "6' × 8'", "vastu": "ईशान कोण"}],
-    "highlights": "बड़े परिवारों के लिए 30x50 का भव्य डुप्लेक्स नक्शा।"
-  },
-  {
-    "id": "ind_2f_3", "floors": 2, "floor_label": "2 मंज़िला (Town Duplex)", "size_ft": "20 × 40 Ft", "plot_area_sqft": 800, "built_area_sqft": 1500, "facing": "उत्तर मुखी (North)", "config": "3 बेडरूम + 2 हॉल + 2 बाथरूम + बालकनी", "est_cost": "₹20 - ₹25 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "11' × 12'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2 व 3", "size": "11' × 13'", "vastu": "प्रथम तल"}, {"room": "रसोई", "size": "7' × 9'", "vastu": "आग्नेय"}, {"room": "हॉल", "size": "12' × 14'", "vastu": "मध्य भाग"}],
-    "highlights": "कम चौड़ाई (20 Ft) वाले प्लॉट पर 2 मंज़िला बेहतरीन मकान।"
-  },
-  {
-    "id": "ind_2f_4", "floors": 2, "floor_label": "2 मंज़िला (Family Kothi)", "size_ft": "35 × 60 Ft", "plot_area_sqft": 2100, "built_area_sqft": 3800, "facing": "पूर्व मुखी (East)", "config": "6 बेडरूम + 2 हॉल + खुला आँगन + गैलरी + 2 कार पार्किंग", "est_cost": "₹50 - ₹60 लाख", "tag": "Large",
-    "layout": [{"room": "मास्टर बेडरूम", "size": "16' × 14'", "vastu": "नैऋत्य"}, {"room": "अन्य 5 कमरे", "size": "14' × 13'", "vastu": "वास्तु अनुसार"}, {"room": "रसोई", "size": "12' × 12'", "vastu": "आग्नेय"}, {"room": "बड़ा हॉल", "size": "20' × 22'", "vastu": "ब्रह्मस्थान"}],
-    "highlights": "संयुक्त परिवारों के लिए 35x60 का राजस्थानी हवेली स्टाइल 2 मंज़िला मकान।"
-  },
-  {
-    "id": "ind_2f_5", "floors": 2, "floor_label": "2 मंज़िला (Modern Village)", "size_ft": "22 × 50 Ft", "plot_area_sqft": 1100, "built_area_sqft": 2000, "facing": "पश्चिम मुखी (West)", "config": "4 कमरे + 2 हॉल + आगे खुला बरामदा + बड़ी छत", "est_cost": "₹26 - ₹32 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "12' × 14'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2 व 3", "size": "12' × 13'", "vastu": "ऊपर"}, {"room": "रसोई", "size": "8' × 10'", "vastu": "आग्नेय"}, {"room": "हॉल", "size": "14' × 16'", "vastu": "मध्य"}],
-    "highlights": "लंबाई वाले प्लॉट (22x50) के लिए शानदार डुप्लेक्स नक्शा।"
-  },
-  {
-    "id": "ind_1f_1", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "29 × 35 Ft", "plot_area_sqft": 1015, "built_area_sqft": 1015, "facing": "उत्तर मुखी (North)", "config": "3 कमरे (2 बेडरूम + 1 बैठक) + रसोई + हॉल + खुला आँगन + बरामदा", "est_cost": "₹13 - ₹16 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "12' × 14'", "vastu": "नैऋत्य कोण"}, {"room": "शयनकक्ष-2", "size": "11' × 12'", "vastu": "पश्चिम दिशा"}, {"room": "बैठक (Guest Room)", "size": "12' × 11'", "vastu": "वायव्य कोण"}, {"room": "रसोई (Kitchen)", "size": "8' × 10'", "vastu": "आग्नेय कोण"}, {"room": "हॉल व खुला आँगन", "size": "14' × 15'", "vastu": "ब्रह्मस्थान"}, {"room": "पूजा घर", "size": "5' × 5'", "vastu": "ईशान कोण"}, {"room": "आगे बरामदा", "size": "10' × 7'", "vastu": "प्रवेश द्वार"}],
-    "highlights": "राजस्थान के गांवों में सबसे ज्यादा बनने वाला 29x35 का 3 कमरों का सामान्य घर।"
-  },
-  {
-    "id": "ind_1f_2", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "24 × 40 Ft", "plot_area_sqft": 960, "built_area_sqft": 960, "facing": "पूर्व मुखी (East)", "config": "2 बेडरूम + 1 बैठक + बड़ा आँगन/हॉल + रसोई + बरामदा", "est_cost": "₹12 - ₹15 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "12' × 13'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "11' × 12'", "vastu": "पश्चिम"}, {"room": "बैठक", "size": "11' × 12'", "vastu": "ईशान"}, {"room": "रसोई", "size": "8' × 9'", "vastu": "आग्नेय"}, {"room": "आँगन/हॉल", "size": "13' × 16'", "vastu": "मध्य"}],
-    "highlights": "24x40 में 3 कमरों का हवादार और खुला नक्शा।"
-  },
-  {
-    "id": "ind_1f_3", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "20 × 40 Ft", "plot_area_sqft": 800, "built_area_sqft": 800, "facing": "उत्तर मुखी (North)", "config": "2 बेडरूम + हॉल + रसोई + लैट-बाथ + छोटा बरामदा", "est_cost": "₹10 - ₹13 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "11' × 13'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "10' × 12'", "vastu": "पश्चिम"}, {"room": "रसोई", "size": "7' × 9'", "vastu": "आग्नेय"}, {"room": "हॉल", "size": "12' × 14'", "vastu": "मध्य"}],
-    "highlights": "कम बजट में 20x40 का मजबूत 2 बेडरूम का घर।"
-  },
-  {
-    "id": "ind_1f_4", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "25 × 50 Ft", "plot_area_sqft": 1250, "built_area_sqft": 1250, "facing": "पूर्व मुखी (East)", "config": "3 बड़े कमरे + खुला आँगन + बैठक + कार पार्किंग/बरामदा + स्टोर", "est_cost": "₹16 - ₹20 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "13' × 14'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "12' × 13'", "vastu": "पश्चिम"}, {"room": "बैठक", "size": "12' × 13'", "vastu": "ईशान"}, {"room": "रसोई", "size": "9' × 10'", "vastu": "आग्नेय"}, {"room": "बड़ा आँगन", "size": "14' × 18'", "vastu": "मध्य"}],
-    "highlights": "25x50 का सबसे हवादार गांव का खुला मकान।"
-  },
-  {
-    "id": "ind_1f_5", "floors": 1, "floor_label": "1 मंज़िला छोटा मकान", "size_ft": "15 × 30 Ft", "plot_area_sqft": 450, "built_area_sqft": 450, "facing": "उत्तर मुखी (North)", "config": "1 बेडरूम + हॉल + रसोई + बाथरूम + सीढ़ियां", "est_cost": "₹6 - ₹8 लाख", "tag": "Small",
-    "layout": [{"room": "शयनकक्ष", "size": "10' × 12'", "vastu": "नैऋत्य"}, {"room": "रसोई", "size": "6' × 7'", "vastu": "आग्नेय"}, {"room": "हॉल/बैठक", "size": "10' × 11'", "vastu": "मध्य"}],
-    "highlights": "छोटे प्लॉट (15x30) के लिए किफायती 1 BHK नक्शा।"
-  },
-  {
-    "id": "ind_1f_6", "floors": 1, "floor_label": "1 मंज़िला छोटा मकान", "size_ft": "18 × 35 Ft", "plot_area_sqft": 630, "built_area_sqft": 630, "facing": "पूर्व मुखी (East)", "config": "2 कमरे + रसोई + हॉल + लैट-बाथ", "est_cost": "₹8 - ₹10 लाख", "tag": "Small",
-    "layout": [{"room": "शयनकक्ष-1", "size": "10' × 12'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "10' × 11'", "vastu": "पश्चिम"}, {"room": "रसोई", "size": "6' × 8'", "vastu": "आग्नेय"}],
-    "highlights": "18x35 में 2 कमरों का सुंदर व मजबूत घर।"
-  },
-  {
-    "id": "ind_1f_7", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "20 × 45 Ft", "plot_area_sqft": 900, "built_area_sqft": 900, "facing": "दक्षिण मुखी (South)", "config": "2 बेडरूम + बैठक + खुला आँगन + रसोई + पूजा", "est_cost": "₹11 - ₹14 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "11' × 13'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "11' × 12'", "vastu": "उत्तर"}, {"room": "रसोई", "size": "8' × 9'", "vastu": "आग्नेय"}],
-    "highlights": "दक्षिण मुखी प्लॉट के लिए 100% वास्तु सम्मत 20x45 नक्शा।"
-  },
-  {
-    "id": "ind_1f_8", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "22 × 40 Ft", "plot_area_sqft": 880, "built_area_sqft": 880, "facing": "उत्तर मुखी (North)", "config": "2 बेडरूम + 1 बैठक + हॉल + रसोई + बरामदा", "est_cost": "₹11 - ₹14 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "11' × 13'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "10' × 12'", "vastu": "पश्चिम"}, {"room": "रसोई", "size": "7' × 9'", "vastu": "आग्नेय"}],
-    "highlights": "22x40 का 3 कमरों वाला सुविधाजनक नक्शा।"
-  },
-  {
-    "id": "ind_1f_9", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "25 × 40 Ft", "plot_area_sqft": 1000, "built_area_sqft": 1000, "facing": "पूर्व मुखी (East)", "config": "3 कमरे + बड़ा हॉल + रसोई + पूजा घर + बरामदा", "est_cost": "₹13 - ₹16 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "12' × 13'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "11' × 12'", "vastu": "पश्चिम"}, {"room": "बैठक", "size": "11' × 12'", "vastu": "ईशान"}, {"room": "रसोई", "size": "8' × 9'", "vastu": "आग्नेय"}],
-    "highlights": "1000 वर्ग फीट (25x40) का सबसे लोकप्रिय स्टैंडर्ड नक्शा।"
-  },
-  {
-    "id": "ind_1f_10", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "28 × 45 Ft", "plot_area_sqft": 1260, "built_area_sqft": 1260, "facing": "उत्तर मुखी (North)", "config": "3 बड़े बेडरूम + बड़ा आँगन + बैठक + रसोई + स्टोर", "est_cost": "₹16 - ₹19 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "13' × 14'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "12' × 13'", "vastu": "पश्चिम"}, {"room": "रसोई", "size": "9' × 10'", "vastu": "आग्नेय"}],
-    "highlights": "28x45 में बड़ा आँगन और 3 खुले कमरे।"
-  },
-  {
-    "id": "ind_1f_11", "floors": 1, "floor_label": "1 मंज़िला बड़ा मकान", "size_ft": "30 × 50 Ft", "plot_area_sqft": 1500, "built_area_sqft": 1500, "facing": "पूर्व मुखी (East)", "config": "4 कमरे + बड़ा हॉल + खुला आँगन + बैठक + कार पार्किंग", "est_cost": "₹19 - ₹24 लाख", "tag": "Large",
-    "layout": [{"room": "शयनकक्ष-1", "size": "14' × 14'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "13' × 13'", "vastu": "पश्चिम"}, {"room": "बैठक", "size": "13' × 14'", "vastu": "ईशान"}, {"room": "रसोई", "size": "10' × 11'", "vastu": "आग्नेय"}],
-    "highlights": "30x50 में 4 कमरों का खुला व हवादार बड़ा मकान।"
-  },
-  {
-    "id": "ind_1f_12", "floors": 1, "floor_label": "1 मंज़िला बड़ा मकान", "size_ft": "35 × 50 Ft", "plot_area_sqft": 1750, "built_area_sqft": 1750, "facing": "उत्तर मुखी (North)", "config": "4 बेडरूम + 1 बड़ी बैठक + खुला चौक (आँगन) + रसोई + 2 बाथरूम", "est_cost": "₹22 - ₹28 लाख", "tag": "Large",
-    "layout": [{"room": "मास्टर बेडरूम", "size": "15' × 14'", "vastu": "नैऋत्य"}, {"room": "कमरा 2 व 3", "size": "13' × 13'", "vastu": "उत्तर/पश्चिम"}, {"room": "रसोई", "size": "10' × 12'", "vastu": "आग्नेय"}],
-    "highlights": "35x50 का पारंपरिक राजस्थानी चौक स्टाइल मकान।"
-  },
-  {
-    "id": "ind_1f_13", "floors": 1, "floor_label": "1 मंज़िला छोटा मकान", "size_ft": "20 × 30 Ft", "plot_area_sqft": 600, "built_area_sqft": 600, "facing": "पूर्व मुखी (East)", "config": "2 कमरे + रसोई + हॉल + लैट-बाथ", "est_cost": "₹8 - ₹10 लाख", "tag": "Small",
-    "layout": [{"room": "शयनकक्ष-1", "size": "10' × 12'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "10' × 11'", "vastu": "पश्चिम"}, {"room": "रसोई", "size": "6' × 8'", "vastu": "आग्नेय"}],
-    "highlights": "600 वर्ग फीट में 2 कमरों का परफेक्ट लेआउट।"
-  },
-  {
-    "id": "ind_1f_14", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "25 × 35 Ft", "plot_area_sqft": 875, "built_area_sqft": 875, "facing": "उत्तर मुखी (North)", "config": "2 बेडरूम + बैठक + रसोई + हॉल + बरामदा", "est_cost": "₹11 - ₹14 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "12' × 12'", "vastu": "नैऋत्य"}, {"room": "बैठक", "size": "11' × 12'", "vastu": "वायव्य"}, {"room": "रसोई", "size": "8' × 9'", "vastu": "आग्नेय"}],
-    "highlights": "25x35 में 3 कमरों का मजबूत ढांचा।"
-  },
-  {
-    "id": "ind_1f_15", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "26 × 40 Ft", "plot_area_sqft": 1040, "built_area_sqft": 1040, "facing": "पश्चिम मुखी (West)", "config": "3 कमरे + आँगन + रसोई + पूजा + लैट-बाथ", "est_cost": "₹13 - ₹16 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "12' × 13'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "11' × 12'", "vastu": "उत्तर"}, {"room": "रसोई", "size": "8' × 10'", "vastu": "आग्नेय"}],
-    "highlights": "26x40 में 3 कमरों का खुला विलेज लेआउट।"
-  },
-  {
-    "id": "ind_1f_16", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "27 × 48 Ft", "plot_area_sqft": 1296, "built_area_sqft": 1296, "facing": "पूर्व मुखी (East)", "config": "3 बेडरूम + बैठक + बड़ा हॉल + रसोई + स्टोर", "est_cost": "₹16 - ₹20 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "13' × 14'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "12' × 13'", "vastu": "पश्चिम"}, {"room": "रसोई", "size": "9' × 10'", "vastu": "आग्नेय"}],
-    "highlights": "लंबाई वाले 27x48 प्लॉट के लिए आदर्श मकान।"
-  },
-  {
-    "id": "ind_1f_17", "floors": 1, "floor_label": "1 मंज़िला बड़ा मकान", "size_ft": "32 × 55 Ft", "plot_area_sqft": 1760, "built_area_sqft": 1760, "facing": "उत्तर मुखी (North)", "config": "4 बेडरूम + बैठक + खुला चौक + स्टोर + कार पोर्च", "est_cost": "₹23 - ₹28 लाख", "tag": "Large",
-    "layout": [{"room": "शयनकक्ष-1", "size": "14' × 14'", "vastu": "नैऋत्य"}, {"room": "कमरा 2 व 3", "size": "13' × 13'", "vastu": "उत्तर/पश्चिम"}, {"room": "रसोई", "size": "10' × 11'", "vastu": "आग्नेय"}],
-    "highlights": "32x55 का खुला भारतीय विलेज हाउस प्लान।"
-  },
-  {
-    "id": "ind_1f_18", "floors": 1, "floor_label": "1 मंज़िला बड़ा मकान", "size_ft": "40 × 50 Ft", "plot_area_sqft": 2000, "built_area_sqft": 2000, "facing": "पूर्व मुखी (East)", "config": "5 कमरे + बड़ा केंद्रीय चौक + रसोई + 2 बाथरूम + बरामदा", "est_cost": "₹26 - ₹32 लाख", "tag": "Large",
-    "layout": [{"room": "मास्टर बेडरूम", "size": "15' × 15'", "vastu": "नैऋत्य"}, {"room": "अन्य 4 कमरे", "size": "13' × 14'", "vastu": "वास्तु अनुसार"}, {"room": "रसोई", "size": "11' × 12'", "vastu": "आग्नेय"}],
-    "highlights": "2000 वर्ग फीट में 5 कमरों का बड़ा पारंपरिक मकान।"
-  },
-  {
-    "id": "ind_1f_19", "floors": 1, "floor_label": "1 मंज़िला छोटा मकान", "size_ft": "16 × 40 Ft", "plot_area_sqft": 640, "built_area_sqft": 640, "facing": "उत्तर मुखी (North)", "config": "2 कमरे + रसोई + हॉल + लैट-बाथ", "est_cost": "₹8 - ₹10 लाख", "tag": "Small",
-    "layout": [{"room": "शयनकक्ष-1", "size": "11' × 12'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "10' × 11'", "vastu": "पश्चिम"}, {"room": "रसोई", "size": "6' × 8'", "vastu": "आग्नेय"}],
-    "highlights": "कम चौड़ाई वाले 16x40 प्लॉट का स्मार्ट लेआउट।"
-  },
-  {
-    "id": "ind_1f_20", "floors": 1, "floor_label": "1 मंज़िला सामान्य मकान", "size_ft": "23 × 42 Ft", "plot_area_sqft": 966, "built_area_sqft": 966, "facing": "दक्षिण मुखी (South)", "config": "3 कमरे + हॉल + रसोई + पूजा + बरामदा", "est_cost": "₹12 - ₹15 लाख", "tag": "Medium",
-    "layout": [{"room": "शयनकक्ष-1", "size": "12' × 13'", "vastu": "नैऋत्य"}, {"room": "शयनकक्ष-2", "size": "11' × 12'", "vastu": "उत्तर"}, {"room": "रसोई", "size": "8' × 9'", "vastu": "आग्नेय"}],
-    "highlights": "23x42 का 3 कमरों का 100% वास्तु सम्मत घर।"
-  }
-];
+const ALL_HOUSE_PLANS = {plans_json};
 
 let currentFilteredPlans = [...ALL_HOUSE_PLANS];
 
@@ -344,8 +636,8 @@ function generateCadBlueprintSvg(p) {
       [margin, margin, w1, h1, rooms[0]?.room?.split(' ')[0] || 'शयनकक्ष', rooms[0]?.size || "12'×14'"],
       [margin + w1, margin, w2, h1, rooms[1]?.room?.split(' ')[0] || 'शयनकक्ष', rooms?.size || "12'×12'"],
       [margin, margin + h1, w1 * 0.65, h2, rooms[3]?.room?.split(' ')[0] || 'रसोई', rooms?.size || "8'×10'"],
-      [margin + w1 * 0.65, margin + h1, plotW - w1 * 0.65, h2, rooms[4]?.room?.split(' ')[0] || 'हॉल/बैठक', rooms[4]?.size || "14'×16'"],
-      [margin, margin + h1 + h2, plotW * 0.45, h3, rooms[5]?.room?.split(' ')[0] || 'पूजा/बाथ', rooms[5]?.size || "6'×7'"],
+      [margin + w1 * 0.65, margin + h1, plotW - w1 * 0.65, h2, rooms[4]?.room?.split(' ')[0] || 'हॉल/बैठक', rooms?.size || "14'×16'"],
+      [margin, margin + h1 + h2, plotW * 0.45, h3, rooms[5]?.room?.split(' ')[0] || 'पूजा/बाथ', rooms?.size || "6'×7'"],
       [margin + plotW * 0.45, margin + h1 + h2, plotW * 0.55, h3, rooms[6]?.room?.split(' ')[0] || 'बरामदा/पोर्च', rooms[6]?.size || "10'×12'"]
     ];
   } else {
@@ -424,7 +716,7 @@ function renderHousePlans(plansToRender) {
   grid.innerHTML = plansToRender.map(p => {
     const svgCode = generateCadBlueprintSvg(p);
     return `
-      <div class="plan-card" onclick="openHousePlanModal('${p.id}')" style="cursor: pointer; display:flex; flex-direction:column; background:#fff; border:1px solid #cbd5e1; border-radius:14px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.06); transition:transform 0.2s, box-shadow 0.2s;">
+      <div class="plan-card" onclick="openHousePlanModal('${p.id}')">
         
         <!-- 2D CAD Blueprint SVG Drawing Preview -->
         <div style="background:#081325; padding:6px; overflow:hidden; border-bottom:2px solid #0284c7;">
@@ -432,7 +724,7 @@ function renderHousePlans(plansToRender) {
         </div>
 
         <!-- Plan Info Card Details -->
-        <div style="padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; background: #fff;">
+        <div style="padding: 18px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; background: #fff;">
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <h3 style="font-size: 18px; font-weight: 900; color: #0f172a;">${p.size_ft}</h3>
@@ -449,12 +741,12 @@ function renderHousePlans(plansToRender) {
               <b>कमरे:</b> ${p.config}
             </p>
 
-            <div style="font-size: 11.5px; color: #64748b; margin-bottom: 12px;">
+            <div style="font-size: 11.5px; color: #64748b; margin-bottom: 14px;">
               <i class="fa-solid fa-compass" style="color:var(--gold);"></i> <b>दिशा:</b> ${p.facing} • <b>लागत:</b> <b style="color:#047857;">${p.est_cost}</b>
             </div>
           </div>
 
-          <button class="btn-primary" style="width: 100%; justify-content: center; padding: 10px; font-size: 13px; font-weight: 700; border-radius:8px;">
+          <button class="btn btn-gold" style="width: 100%; justify-content: center; padding: 10px; font-size: 13px; font-weight: 800; border-radius:8px;">
             <i class="fa-solid fa-eye"></i> पूरा 2D नक्शा व नाप देखें
           </button>
         </div>
@@ -490,13 +782,13 @@ function openHousePlanModal(planId) {
         <h3 style="font-size: 20px; font-weight: 800; color: #fef08a;">${p.size_ft} — साधारण भारतीय मकान का 2D नक्शा</h3>
         <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">${p.floor_label} | कुल क्षेत्रफल: ${p.plot_area_sqft} वर्ग फीट (Sq.Ft) | ${p.facing}</p>
       </div>
-      <button onclick="closeHousePlanModal()" style="background: transparent; border: 0; color: #fff; font-size: 26px; cursor: pointer; padding: 4px;">&times;</button>
+      <button onclick="closeHousePlanModal()" style="background: transparent; border: 0; color: #fff; font-size: 28px; cursor: pointer; padding: 4px;">&times;</button>
     </div>
 
     <!-- Body -->
     <div style="padding: 24px; max-height: calc(85vh - 130px); overflow-y: auto;">
       
-      <!-- Visual Blueprint Image Box (Full High-Res 2D CAD Blueprint) -->
+      <!-- Visual Blueprint Image Box -->
       <div style="background: #081325; border-radius: 14px; padding: 12px; color: #fff; margin-bottom: 20px; border: 2px solid #334155; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
           <b style="color: #fef08a; font-size: 14px;"><i class="fa-solid fa-compass-drafting"></i> 2D CAD वास्तुकला नक्शा (Architectural Layout Blueprint):</b>
@@ -513,8 +805,8 @@ function openHousePlanModal(planId) {
         <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">
           <i class="fa-solid fa-table-list" style="color:var(--accent);"></i> कमरों का वास्तविक नाप (Feet & Inches) व वास्तु स्थिति:
         </h4>
-        <div class="table-container" style="border: 1px solid #e2e8f0; border-radius: 10px; overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; text-align:left;">
+        <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
             <thead>
               <tr style="background: #f8fafc; border-bottom:2px solid #cbd5e1;">
                 <th style="padding: 10px 14px; color:#475569; font-weight:700;">कक्ष / रूम (Room Name)</th>
@@ -551,10 +843,10 @@ function openHousePlanModal(planId) {
 
       <!-- Action Buttons -->
       <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
-        <a href="${waUrl}" target="_blank" class="btn-primary" style="background: #25d366; text-decoration: none; padding: 12px 20px; font-size: 14px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
+        <a href="${waUrl}" target="_blank" class="btn btn-whatsapp" style="padding: 12px 20px; font-size: 14px;">
           <i class="fa-brands fa-whatsapp fa-lg"></i> इस नक्शे की PDF व कोटेशन मंगाएं (WhatsApp)
         </a>
-        <a href="tel:9785438345" class="btn-secondary" style="text-decoration: none; padding: 10px 18px; font-size: 14px; font-weight: 700; display:inline-flex; align-items:center; gap:6px;">
+        <a href="tel:9785438345" class="btn btn-outline" style="background:#0b1220; color:#fff; border-color:#0b1220; padding: 10px 18px; font-size: 14px;">
           <i class="fa-solid fa-phone"></i> 9785438345 पर कॉल करें
         </a>
       </div>
@@ -618,9 +910,33 @@ function searchHousePlans(query) {
   renderHousePlans(results);
 }
 
+function calculateEstimate() {
+  const sqft = Number(document.getElementById('calcSqft')?.value) || 0;
+  const type = document.getElementById('calcType')?.value;
+  const rate = (type === 'labour') ? 210 : 1300;
+  const total = sqft * rate;
+  const resElem = document.getElementById('calcResult');
+  if (resElem) {
+    resElem.innerText = '₹' + total.toLocaleString('en-IN');
+  }
+}
+
+function handleContactSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('cfName').value.trim();
+  const phone = document.getElementById('cfPhone').value.trim();
+  const address = document.getElementById('cfAddress').value.trim();
+  const type = document.getElementById('cfType').value;
+  const msg = document.getElementById('cfMsg').value.trim();
+
+  const waText = encodeURIComponent(`नमस्ते प्रकाश स्वामी जी, मेरा नाम ${name} है (मो: ${phone}, पता: ${address})। मुझे '${type}' का कार्य करवाना है। विवरण: ${msg}`);
+  window.open(`https://wa.me/919785438345?text=${waText}`, '_blank');
+}
+
 // Initial render
 document.addEventListener('DOMContentLoaded', () => {
   renderHousePlans(ALL_HOUSE_PLANS);
+  calculateEstimate();
 });
 </script>
 </body>
