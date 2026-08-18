@@ -24,12 +24,19 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     body { background: var(--bg); color: var(--text); min-height: 100vh; }
     
-    /* Login Page */
-    .login-wrapper { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%); padding: 16px; }
+    /* Login Page with Prakash Swami Background */
+    .login-wrapper {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(rgba(11, 18, 32, 0.82), rgba(11, 18, 32, 0.94)), url('prakash-chand-swami-construction-site.jpg') center/cover no-repeat;
+      padding: 16px;
+      position: relative;
+    }
     .login-card { width: min(450px, 100%); background: var(--card); border-radius: 20px; padding: 32px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
     .brand-header { text-align: center; margin-bottom: 20px; }
     .brand-header h2 { color: var(--primary); font-size: 22px; font-weight: 800; }
-    .brand-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .brand-header p { color: var(--muted); font-size: 13px; margin-top: 2px; }
     
     .role-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #e2e8f0; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
     .role-tabs button { padding: 10px 4px; border: 0; background: transparent; font-weight: 700; font-size: 13px; border-radius: 8px; cursor: pointer; color: var(--muted); transition: 0.2s; }
@@ -219,9 +226,11 @@
 <div id="loginSection" class="login-wrapper">
   <div class="login-card">
     <div class="brand-header">
-      <i class="fa-solid fa-helmet-safety" style="font-size:32px; color:var(--accent); margin-bottom:8px;"></i>
-      <h2>Prakash Swami Constructions</h2>
-      <p>Construction Management Portal</p>
+      <div style="text-align:center; margin-bottom:12px;">
+        <img src="prakash-chand-swami-construction-site.jpg" alt="Prakash Chand Swami" onerror="this.onerror=null; this.src='prakash-chand-swami-project-planning.jpg';" style="width:84px; height:84px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); box-shadow:0 6px 18px rgba(0,0,0,0.25); display:inline-block;">
+      </div>
+      <h2 style="color:var(--primary); font-size:22px; font-weight:800;">Prakash Swami Constructions</h2>
+      <p style="color:var(--muted); font-size:13px; margin-top:2px;">Construction Management Portal</p>
     </div>
 
     <div class="role-tabs">
@@ -322,6 +331,16 @@ function escapeAttr(val) {
     .replace(/\"/g, '&quot;')
     .replace(/\n/g, ' ');
 }
+
+// Global modal background click to close
+window.addEventListener('DOMContentLoaded', () => {
+  const mc = document.getElementById('modalContainer');
+  if (mc) {
+    mc.addEventListener('click', (e) => {
+      if (e.target === mc) mc.classList.add('hidden');
+    });
+  }
+});
 
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', async () => {
@@ -1010,8 +1029,11 @@ async function openEditProjectModal(id) {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
   modal.innerHTML = `
-    <div class="modal-card">
-      <h3>प्रोजेक्ट एडिट करें</h3>
+    <div class="modal-card" style="max-width:550px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <h3 style="font-size:18px;"><i class="fa-solid fa-pen" style="color:var(--accent);"></i> प्रोजेक्ट एडिट करें</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+      </div>
       <form onsubmit="updateProjectRecord(event, '${id}')">
         <div class="form-group"><label>Project Name</label><input id="epName" value="${p.name || ''}" required></div>
         <div class="form-group"><label>Site Address</label><input id="epAddress" value="${p.address || ''}"></div>
@@ -1026,7 +1048,10 @@ async function openEditProjectModal(id) {
           </select>
         </div>
         <div class="form-group"><label>Note / Remarks</label><textarea id="epNotes" rows="2">${p.notes || ''}</textarea></div>
-        <button type="submit" class="btn-primary">Update Project</button>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+          <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+          <button type="submit" class="btn-primary" style="width:auto;">Update Project</button>
+        </div>
       </form>
     </div>
   `;
@@ -1060,16 +1085,16 @@ function openEditProjectNoteModal(projectId, currentNote) {
     <div class="modal-card" style="max-width:480px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <h3><i class="fa-solid fa-comment-dots" style="color:var(--accent);"></i> प्रोजेक्ट नोट लिखें / बदलें</h3>
-        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:20px; cursor:pointer;">&times;</button>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
       </div>
       <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">यह नोट ग्राहक और एडमिन दोनों को डैशबोर्ड पर दिखेगा।</p>
       <form onsubmit="saveProjectNote(event, '${projectId}')">
         <div class="form-group">
           <textarea id="projectNoteInput" rows="4" placeholder="प्रोजेक्ट से जुड़ी कोई भी टिप्पणी या निर्देश यहाँ लिखें..." required>${currentNote}</textarea>
         </div>
-        <div style="display:flex; gap:10px; justify-flex-end;">
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
           <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
-          <button type="submit" class="btn-primary">नोट सेव करें</button>
+          <button type="submit" class="btn-primary" style="width:auto;">नोट सेव करें</button>
         </div>
       </form>
     </div>
@@ -1100,7 +1125,7 @@ async function openFullAgreementModal(contractId) {
     <div class="modal-card" style="max-width:850px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
         <h3><i class="fa-solid fa-file-contract" style="color:var(--accent);"></i> करारनामा / अनुबंध विवरण (v${c.version})</h3>
-        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer;">&times;</button>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
       </div>
 
       <div style="margin-bottom:14px; max-height: calc(82vh - 140px); overflow-y:auto; padding-right:6px;">
@@ -1133,7 +1158,7 @@ async function openEditContractTermsModal(contractId) {
     <div class="modal-card" style="max-width:550px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
         <h3><i class="fa-solid fa-pen-nib" style="color:var(--gold);"></i> अनुबंध की दर, राशि व नोट्स दर्ज करें</h3>
-        <button onclick="openFullAgreementModal('${contractId}')" style="border:0; background:transparent; font-size:22px; cursor:pointer;">&times;</button>
+        <button onclick="openFullAgreementModal('${contractId}')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
       </div>
 
       <form onsubmit="saveContractTerms(event, '${contractId}')">
@@ -1300,8 +1325,11 @@ function openAddDailyUpdateModal() {
     const modal = $('modalContainer');
     modal.classList.remove('hidden');
     modal.innerHTML = `
-      <div class="modal-card">
-        <h3>साइट कार्य व फोटो अपलोड करें</h3>
+      <div class="modal-card" style="max-width:550px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          <h3 style="font-size:18px;"><i class="fa-solid fa-camera" style="color:var(--accent);"></i> साइट कार्य व फोटो अपलोड करें</h3>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+        </div>
         <form onsubmit="saveDailyUpdate(event)">
           <div class="form-group">
             <label>Project चुने</label>
@@ -1319,7 +1347,10 @@ function openAddDailyUpdateModal() {
             <input type="hidden" id="duPhotoBase64">
             <div id="duPhotoPreview" style="margin-top:10px;"></div>
           </div>
-          <button type="submit" class="btn-primary">अपलोड करें</button>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+            <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+            <button type="submit" class="btn-primary" style="width:auto;">अपलोड करें</button>
+          </div>
         </form>
       </div>
     `;
@@ -1431,7 +1462,7 @@ async function renderAdminCustomers(container) {
   `;
 }
 
-// Modal to View All Projects & Daily Updates of a Customer
+// Modal to View All Projects & Progress of a Customer (Clean Read-Only View)
 async function openCustomerProjectsModal(customerId, customerName) {
   const [projRes, contRes, updatesRes, payRes] = await Promise.all([
     getDB().from('projects').select('*').eq('customer_id', customerId).order('created_at', { ascending: false }),
@@ -1451,10 +1482,10 @@ async function openCustomerProjectsModal(customerId, customerName) {
     <div class="modal-card" style="max-width:850px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px;">
         <div>
-          <h3><i class="fa-solid fa-house-chimney" style="color:var(--accent);"></i> ${customerName} — प्रोजेक्ट्स एवं कार्य प्रगति</h3>
+          <h3 style="font-size:18px;"><i class="fa-solid fa-house-chimney" style="color:var(--accent);"></i> ${customerName} — प्रोजेक्ट्स एवं कार्य प्रगति</h3>
           <p style="color:var(--muted); font-size:13px;">कुल प्रोजेक्ट्स: ${projects.length}</p>
         </div>
-        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer;">&times;</button>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
       </div>
 
       ${projects.length === 0 ? `
@@ -1503,15 +1534,12 @@ async function openCustomerProjectsModal(customerId, customerName) {
                   <div class="stat-card" style="padding:10px 14px; background:#fff1f2;"><div><small style="color:var(--muted);">बकाया राशि</small><div style="font-size:16px; font-weight:800; color:var(--danger);">₹${remainAmt.toLocaleString('en-IN')}</div></div></div>
                 </div>
 
-                <!-- Daily Work Updates & Photos for this Project -->
+                <!-- Daily Work Updates & Photos for this Project (Read-Only Progress View) -->
                 <div style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:14px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <h4 style="font-size:14px; font-weight:700; color:#334155;">
-                      <i class="fa-solid fa-camera-retro" style="color:var(--accent);"></i> दैनिक कार्य प्रगति व साइट फोटो (${projUpdates.length})
+                      <i class="fa-solid fa-camera-retro" style="color:var(--accent);"></i> दैनिक कार्य प्रगति व साइट फोटो विवरण (${projUpdates.length})
                     </h4>
-                    <button class="btn-sm btn-secondary" onclick="openAddDailyUpdateForProject('${p.id}', '${escapeAttr(p.name)}')">
-                      <i class="fa-solid fa-plus"></i> नया अपडेट जोड़ें
-                    </button>
                   </div>
 
                   ${projUpdates.length === 0 ? '<p style="color:var(--muted); font-size:12px; font-style:italic;">इस प्रोजेक्ट का कोई दैनिक फोटो अपडेट अभी दर्ज नहीं है।</p>' : `
@@ -1537,77 +1565,81 @@ async function openCustomerProjectsModal(customerId, customerName) {
   `;
 }
 
-function openAddDailyUpdateForProject(projId, projName) {
-  const modal = $('modalContainer');
-  modal.classList.remove('hidden');
-  modal.innerHTML = `
-    <div class="modal-card" style="max-width:500px;">
-      <h3><i class="fa-solid fa-camera"></i> साइट कार्य व फोटो अपलोड (${projName})</h3>
-      <form onsubmit="saveDirectProjectUpdate(event, '${projId}')">
-        <div class="form-group">
-          <label>आज का कार्य विवरण (Description)</label>
-          <textarea id="dpuDesc" required rows="3" placeholder="आज क्या कार्य हुआ (उदा. 3 कमरों की दीवार चिनाई व लेंटेल बीम पूर्ण)..."></textarea>
-        </div>
-        <div class="form-group">
-          <label>साइट फोटो चुनें</label>
-          <input type="file" id="dpuPhoto" accept="image/*" onchange="previewDirectUpdateImage(event)">
-          <input type="hidden" id="dpuPhotoBase64">
-          <div id="dpuPhotoPreview" style="margin-top:10px;"></div>
-        </div>
-        <button type="submit" class="btn-primary">अपलोड करें</button>
-      </form>
-    </div>
-  `;
-}
-
-function previewDirectUpdateImage(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    $('dpuPhotoBase64').value = evt.target.result;
-    $('dpuPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:100%; max-height:200px; object-fit:cover; border-radius:8px;">`;
-  };
-  reader.readAsDataURL(file);
-}
-
-async function saveDirectProjectUpdate(e, projId) {
-  e.preventDefault();
-  await getDB().from('daily_updates').insert({
-    project_id: projId,
-    description: $('dpuDesc').value,
-    image_url: $('dpuPhotoBase64').value || null,
-    created_by: currentUser.id
-  });
-  alert('कार्य फोटो सफलतापूर्वक अपलोड हो गई!');
-  $('modalContainer').classList.add('hidden');
-  openView('customers');
-}
-
+// 6-Field Add New Customer Modal
 function openAddCustomerModal() {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
   modal.innerHTML = `
-    <div class="modal-card">
-      <h3>नया ग्राहक जोड़ें</h3>
+    <div class="modal-card" style="max-width:520px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-user-plus" style="color:var(--accent);"></i> नया ग्राहक जोड़ें</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+      </div>
+
       <form onsubmit="saveCustomerRecord(event)">
-        <div class="form-group"><label>नाम (Full Name)</label><input id="acName" required></div>
-        <div class="form-group"><label>मोबाइल नंबर</label><input id="acPhone" required></div>
-        <div class="form-group"><label>पता (Address)</label><input id="acAddress"></div>
-        <div class="form-group"><label>पासवर्ड</label><input id="acPass" type="password" value="123456" required></div>
-        <button type="submit" class="btn-primary">ग्राहक सेव करें</button>
+        <div class="form-group">
+          <label>१. पूरा नाम (Full Name)</label>
+          <input id="acName" required placeholder="ग्राहक का पूरा नाम दर्ज करें">
+        </div>
+
+        <div class="form-group">
+          <label>२. मोबाइल नंबर (Mobile / Login ID)</label>
+          <input id="acPhone" type="tel" required placeholder="१० अंकों का मोबाइल नंबर">
+        </div>
+
+        <div class="form-group">
+          <label>३. ईमेल (Email Address)</label>
+          <input id="acEmail" type="email" placeholder="customer@gmail.com (वैकल्पिक)">
+        </div>
+
+        <div class="form-group" style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--border);">
+          <label><i class="fa-solid fa-camera"></i> ४. ग्राहक की फ़ोटो (Photo / Image Upload)</label>
+          <div style="display:flex; gap:10px; margin-top:8px; align-items:center;">
+            <input type="file" id="acPhotoFile" accept="image/*" onchange="previewNewCustomerPhoto(event)" style="display:none;">
+            <button type="button" class="btn-secondary" onclick="$('acPhotoFile').click()"><i class="fa-solid fa-image"></i> फ़ोटो चुनें</button>
+            <div id="acPhotoPreview"></div>
+          </div>
+          <input type="hidden" id="acPhotoBase64">
+        </div>
+
+        <div class="form-group">
+          <label>५. पता / गाँव (Site / Permanent Address)</label>
+          <input id="acAddress" placeholder="गाँव, तहसील, जिला">
+        </div>
+
+        <div class="form-group">
+          <label>६. लॉगिन पासवर्ड (Password)</label>
+          <input id="acPass" type="password" value="123456" required placeholder="कम से कम ६ अक्षर">
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">
+          <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+          <button type="submit" class="btn-primary" style="width:auto;"><i class="fa-solid fa-check"></i> ग्राहक सेव करें</button>
+        </div>
       </form>
     </div>
   `;
+}
+
+function previewNewCustomerPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    $('acPhotoBase64').value = evt.target.result;
+    $('acPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">`;
+  };
+  reader.readAsDataURL(file);
 }
 
 async function saveCustomerRecord(e) {
   e.preventDefault();
   const phone = $('acPhone').value.trim();
-  const email = `${phone}@psconstructions.in`;
+  const email = $('acEmail').value.trim() || `${phone}@psconstructions.in`;
   const name = $('acName').value.trim();
   const address = $('acAddress').value.trim();
   const pass = $('acPass').value.trim();
+  const photoBase64 = $('acPhotoBase64')?.value || null;
 
   const { data: auth, error } = await getDB().auth.signUp({
     email: email,
@@ -1622,6 +1654,7 @@ async function saveCustomerRecord(e) {
     phone: phone,
     email: email,
     address: address,
+    image_url: photoBase64,
     role: 'customer'
   });
 
@@ -1630,23 +1663,30 @@ async function saveCustomerRecord(e) {
   openView('customers');
 }
 
-async function openEditCustomerModal(id) {
-  const { data: c } = await getDB().from('profiles').select('*').eq('id', id).single();
-  if (!c) return;
+function openEditCustomerModal(id) {
+  getDB().from('profiles').select('*').eq('id', id).single().then(({ data: c }) => {
+    if (!c) return;
 
-  const modal = $('modalContainer');
-  modal.classList.remove('hidden');
-  modal.innerHTML = `
-    <div class="modal-card">
-      <h3>ग्राहक विवरण अपडेट करें</h3>
-      <form onsubmit="updateCustomerRecord(event, '${id}')">
-        <div class="form-group"><label>नाम</label><input id="ecName" value="${c.name || ''}" required></div>
-        <div class="form-group"><label>मोबाइल</label><input id="ecPhone" value="${c.phone || ''}" required></div>
-        <div class="form-group"><label>पता</label><input id="ecAddress" value="${c.address || ''}"></div>
-        <button type="submit" class="btn-primary">अपडेट करें</button>
-      </form>
-    </div>
-  `;
+    const modal = $('modalContainer');
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:500px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          <h3 style="font-size:18px;"><i class="fa-solid fa-pen" style="color:var(--accent);"></i> ग्राहक विवरण एडिट करें</h3>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+        </div>
+        <form onsubmit="updateCustomerRecord(event, '${id}')">
+          <div class="form-group"><label>नाम</label><input id="ecName" value="${c.name || ''}" required></div>
+          <div class="form-group"><label>मोबाइल</label><input id="ecPhone" value="${c.phone || ''}" required></div>
+          <div class="form-group"><label>पता</label><input id="ecAddress" value="${c.address || ''}"></div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+            <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+            <button type="submit" class="btn-primary" style="width:auto;">अपडेट करें</button>
+          </div>
+        </form>
+      </div>
+    `;
+  });
 }
 
 async function updateCustomerRecord(e, id) {
@@ -1687,7 +1727,7 @@ async function openCustomerPaymentModal(customerId, customerName, customerPhone)
           <h3><i class="fa-solid fa-receipt" style="color:var(--accent);"></i> ${customerName} — ग्राहक भुगतान खाता (Financial Ledger)</h3>
           <p style="color:var(--muted); font-size:13px;">Mobile: ${customerPhone}</p>
         </div>
-        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer;">&times;</button>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
       </div>
 
       <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:16px;">
@@ -1866,7 +1906,7 @@ function openWorkerAttendanceModal(workerId, workerName, dailyWage) {
       <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
           <h3><i class="fa-solid fa-clipboard-user" style="color:var(--accent);"></i> ${workerName} - हाजिरी रिकॉर्ड (₹${dailyWage}/दिन)</h3>
-          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer;">&times;</button>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
         </div>
         <div class="table-container">
           <table>
@@ -1893,8 +1933,11 @@ function openAddWorkerModal() {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
   modal.innerHTML = `
-    <div class="modal-card">
-      <h3>नया कारीगर / लेबर जोड़ें (Face Registration)</h3>
+    <div class="modal-card" style="max-width:550px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <h3 style="font-size:18px;"><i class="fa-solid fa-user-plus" style="color:var(--accent);"></i> नया कारीगर / लेबर जोड़ें</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+      </div>
       <form onsubmit="saveWorkerRecord(event)">
         <div class="form-group"><label>कारीगर का नाम</label><input id="awName" required></div>
         <div class="form-group"><label>मोबाइल नंबर (Login ID)</label><input id="awPhone" required></div>
@@ -1916,7 +1959,10 @@ function openAddWorkerModal() {
           <div id="awFacePreview" style="margin-top:10px;"></div>
         </div>
 
-        <button type="submit" class="btn-primary" style="margin-top:10px;">कारीगर सेव करें</button>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+          <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+          <button type="submit" class="btn-primary" style="width:auto;">कारीगर सेव करें</button>
+        </div>
       </form>
     </div>
   `;
@@ -1978,24 +2024,31 @@ async function saveWorkerRecord(e) {
   openView('workers');
 }
 
-async function openEditWorkerModal(id) {
-  const { data: w } = await getDB().from('profiles').select('*').eq('id', id).single();
-  if (!w) return;
+function openEditWorkerModal(id) {
+  getDB().from('profiles').select('*').eq('id', id).single().then(({ data: w }) => {
+    if (!w) return;
 
-  const modal = $('modalContainer');
-  modal.classList.remove('hidden');
-  modal.innerHTML = `
-    <div class="modal-card">
-      <h3>कारीगर विवरण एडिट करें</h3>
-      <form onsubmit="updateWorkerRecord(event, '${id}')">
-        <div class="form-group"><label>नाम</label><input id="ewName" value="${w.name || ''}" required></div>
-        <div class="form-group"><label>मोबाइल</label><input id="ewPhone" value="${w.phone || ''}" required></div>
-        <div class="form-group"><label>दैनिक दिहाड़ी दर (₹)</label><input id="ewWage" type="number" value="${w.daily_wage || 0}" required></div>
-        <div class="form-group"><label>पता</label><input id="ewAddress" value="${w.address || ''}"></div>
-        <button type="submit" class="btn-primary">अपडेट करें</button>
-      </form>
-    </div>
-  `;
+    const modal = $('modalContainer');
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:500px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          <h3 style="font-size:18px;"><i class="fa-solid fa-pen" style="color:var(--accent);"></i> कारीगर विवरण एडिट करें</h3>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+        </div>
+        <form onsubmit="updateWorkerRecord(event, '${id}')">
+          <div class="form-group"><label>नाम</label><input id="ewName" value="${w.name || ''}" required></div>
+          <div class="form-group"><label>मोबाइल</label><input id="ewPhone" value="${w.phone || ''}" required></div>
+          <div class="form-group"><label>दैनिक दिहाड़ी दर (₹)</label><input id="ewWage" type="number" value="${w.daily_wage || 0}" required></div>
+          <div class="form-group"><label>पता</label><input id="ewAddress" value="${w.address || ''}"></div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+            <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+            <button type="submit" class="btn-primary" style="width:auto;">अपडेट करें</button>
+          </div>
+        </form>
+      </div>
+    `;
+  });
 }
 
 async function updateWorkerRecord(e, id) {
@@ -2039,7 +2092,7 @@ async function openWorkerPaymentModal(workerId, workerName, workerPhone, dailyWa
           <h3><i class="fa-solid fa-wallet" style="color:var(--accent);"></i> ${workerName} — वेतन व मजदूरी भुगतान खाता</h3>
           <p style="color:var(--muted); font-size:13px;">Phone: ${workerPhone} | दर: <b>₹${dailyWage}/दिन</b></p>
         </div>
-        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer;">&times;</button>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
       </div>
 
       <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:16px;">
@@ -2120,7 +2173,10 @@ function showFullImage(imgUrl, title) {
   modal.classList.remove('hidden');
   modal.innerHTML = `
     <div class="modal-card" style="text-align:center; max-width:500px;">
-      <h3 style="margin-bottom:12px;">${title}</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3>${title}</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+      </div>
       <img src="${imgUrl}" style="max-width:100%; max-height:70vh; border-radius:12px; object-fit:contain;">
       <div style="margin-top:14px;">
         <button class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">बंद करें</button>
@@ -2218,8 +2274,11 @@ function openAddExpenseModal() {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
   modal.innerHTML = `
-    <div class="modal-card">
-      <h3>नया खर्च दर्ज करें</h3>
+    <div class="modal-card" style="max-width:500px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <h3 style="font-size:18px;"><i class="fa-solid fa-receipt" style="color:var(--accent);"></i> नया खर्च दर्ज करें</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+      </div>
       <form onsubmit="saveExpenseRecord(event)">
         <div class="form-group"><label>मद / शीर्षक (Expense Title)</label><input id="exTitle" required placeholder="उदा. सीमेंट की 50 बोरियां"></div>
         <div class="form-group">
@@ -2233,7 +2292,10 @@ function openAddExpenseModal() {
           </select>
         </div>
         <div class="form-group"><label>राशि (₹)</label><input id="exAmount" type="number" required></div>
-        <button type="submit" class="btn-primary">खर्च सेव करें</button>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+          <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+          <button type="submit" class="btn-primary" style="width:auto;">खर्च सेव करें</button>
+        </div>
       </form>
     </div>
   `;
@@ -2592,7 +2654,10 @@ function openCustomerSignupModal() {
   modal.classList.remove('hidden');
   modal.innerHTML = `
     <div class="modal-card" style="max-width:440px;">
-      <h3>नया कस्टमर खाता बनाएं (Sign Up)</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <h3>नया कस्टमर खाता बनाएं (Sign Up)</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:26px; cursor:pointer; color:var(--muted); padding:2px 6px;">&times;</button>
+      </div>
       <form onsubmit="handleCustomerSignup(event)">
         <div class="form-group"><label>आपका नाम</label><input id="suName" required></div>
         <div class="form-group"><label>मोबाइल नंबर</label><input id="suPhone" required></div>
@@ -2883,5 +2948,5 @@ async function saveWorkerSiteUpdate(e) {
   $('wuPhotoPreview').innerHTML = '';
 }
 </script>
-<script src="auth-fix.js"><\/script></body>
+</body>
 </html>
