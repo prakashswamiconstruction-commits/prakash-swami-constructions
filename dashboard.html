@@ -1526,7 +1526,7 @@ function previewEditGalleryPhoto(e) {
 async function updateGalleryProjectSubmit(e, id) {
   e.preventDefault();
   const title = $('egpTitle').value.trim();
-  const location = $('egpLocation').value.trim();
+  const location = $('egpLocation')?.value.trim() || 'साइट';
   const category = $('egpCategory').value;
   const description = $('egpDesc').value.trim();
   const photoBase64 = $('egpPhotoBase64').value;
@@ -1942,6 +1942,157 @@ async function deleteProject(id) {
   if (!confirm('क्या आप इस प्रोजेक्ट को हटाना चाहते हैं?')) return;
   await db.from('projects').delete().eq('id', id);
   openView(currentRole === 'admin' ? 'projects' : 'my_projects');
+}
+
+// ==========================================
+// ADMIN: DAILY SITE UPDATES (PHOTO & WORK LOGS)
+// ==========================================
+async function renderAdminDailyUpdates(container) {
+  const [updatesRes, projRes] = await Promise.all([
+    db.from('daily_updates').select('*, project:project_id(name, address), created_by_profile:created_by(name, role)').order('created_at', { ascending: false }),
+    db.from('projects').select('id, name')
+  ]);
+
+  const updates = updatesRes.data || [];
+  const projects = projRes.data || [];
+
+  container.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>दैनिक कार्य प्रगति एवं साइट फ़ोटो (Daily Updates)</h1>
+        <p style="color:var(--muted); font-size:13px;">साइट पर रोज होने वाले कार्यों और फ़ोटो का संपूर्ण रिकॉर्ड</p>
+      </div>
+      <button class="btn-primary" style="width:auto;" onclick="openAddDailyUpdateModal()">
+        <i class="fa-solid fa-plus-circle"></i> + नया दैनिक अपडेट जोड़ें
+      </button>
+    </div>
+
+    <!-- Daily Updates Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:20px;">
+      ${updates.length === 0 ? `
+        <div class="card" style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--muted);">
+          <i class="fa-solid fa-camera fa-3x" style="margin-bottom:12px; opacity:0.5;"></i>
+          <h3>कोई दैनिक अपडेट दर्ज नहीं है</h3>
+          <p style="margin-top:6px; font-size:13px;">नीचे दिए बटन से आज का कार्य और फ़ोटो जोड़ें।</p>
+        </div>
+      ` : ''}
+      ${updates.map(u => `
+        <div class="card" style="padding:0; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+          <div style="height:200px; width:100%; position:relative; overflow:hidden; background:#0b1220;">
+            ${u.image_url ? `
+              <img src="${u.image_url}" onclick="showFullImage('${u.image_url}', 'Site Update Photo')" style="width:100%; height:100%; object-fit:cover; cursor:pointer;">
+            ` : '<div style="width:100%; height:100%; display:grid; place-items:center; color:#94a3b8;"><i class="fa-solid fa-image fa-3x"></i></div>'}
+            <span class="btn-sm btn-gold" style="position:absolute; top:10px; right:10px; font-size:11px; padding:3px 8px;">
+              ${new Date(u.created_at).toLocaleDateString('en-IN')}
+            </span>
+          </div>
+
+          <div style="padding:16px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <h4 style="font-size:15px; font-weight:800; color:var(--primary); margin-bottom:4px;">
+                <i class="fa-solid fa-building" style="color:var(--accent);"></i> ${safeStr(u.project?.name, 'General Site Update')}
+              </h4>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:8px;">
+                <b>अपलोडकर्ता:</b> ${safeStr(u.created_by_profile?.name, 'Admin/Worker')} (${safeStr(u.created_by_profile?.role, 'Staff')})
+              </p>
+              <p style="font-size:13px; color:#334155; line-height:1.5; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                ${safeStr(u.description)}
+              </p>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; border-top:1px solid var(--border); padding-top:12px; margin-top:12px;">
+              <button class="btn-sm btn-danger" onclick="deleteDailyUpdate('${u.id}')">
+                <i class="fa-solid fa-trash"></i> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function openAddDailyUpdateModal() {
+  db.from('projects').select('id, name').then(({ data: projects }) => {
+    const modal = $('modalContainer');
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:540px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+          <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-camera" style="color:var(--accent);"></i> नया दैनिक साइट अपडेट जोड़ें</h3>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
+        </div>
+
+        <form onsubmit="saveAdminDailyUpdateSubmit(event)">
+          <div class="form-group">
+            <label>१. संबंधित प्रोजेक्ट चुनें (Project)</label>
+            <select id="adProjectSelect">
+              <option value="">-- सामान्य / General Site --</option>
+              ${(projects || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>२. आज का कार्य विवरण (Work Description)</label>
+            <textarea id="adDesc" rows="3" required placeholder="आज साइट पर क्या काम हुआ? उदा. कॉलम ढलाई व तराई कार्य पूर्ण..."></textarea>
+          </div>
+
+          <div class="form-group" style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--border);">
+            <label><i class="fa-solid fa-camera"></i> ३. कार्य स्थल की फ़ोटो चुनें (Photo)</label>
+            <div style="display:flex; gap:10px; margin-top:8px; align-items:center;">
+              <input type="file" id="adPhotoFile" accept="image/*" onchange="previewAdminDailyUpdatePhoto(event)" style="display:none;" required>
+              <button type="button" class="btn-secondary" onclick="$('adPhotoFile').click()"><i class="fa-solid fa-image"></i> फ़ोन से फ़ोटो चुनें</button>
+              <div id="adPhotoPreview"></div>
+            </div>
+            <input type="hidden" id="adPhotoBase64">
+          </div>
+
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">
+            <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+            <button type="submit" class="btn-primary" style="width:auto;"><i class="fa-solid fa-upload"></i> अपडेट सेव करें</button>
+          </div>
+        </form>
+      </div>
+    `;
+  });
+}
+
+function previewAdminDailyUpdatePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    $('adPhotoBase64').value = evt.target.result;
+    $('adPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:60px; height:60px; border-radius:8px; object-fit:cover; border:2px solid var(--accent);">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveAdminDailyUpdateSubmit(e) {
+  e.preventDefault();
+  const projId = $('adProjectSelect').value || null;
+  const desc = $('adDesc').value.trim();
+  const photo = $('adPhotoBase64').value;
+
+  if (!photo) return alert('कृपया एक कार्य फ़ोटो चुनें!');
+
+  await db.from('daily_updates').insert({
+    project_id: projId,
+    description: desc,
+    image_url: photo,
+    created_by: currentUser ? currentUser.id : null,
+    created_at: new Date().toISOString()
+  });
+
+  alert('दैनिक कार्य अपडेट सफलतापूर्वक दर्ज हो गया! ✅');
+  $('modalContainer').classList.add('hidden');
+  openView('daily_updates');
+}
+
+async function deleteDailyUpdate(id) {
+  if (!confirm('क्या आप इस दैनिक अपडेट को हटाना चाहते हैं?')) return;
+  await db.from('daily_updates').delete().eq('id', id);
+  openView('daily_updates');
 }
 
 // ==========================================
@@ -3031,36 +3182,121 @@ async function saveBusinessSettings(e) {
 }
 
 // ==========================================
-// CUSTOMER PORTAL VIEWS
+// CUSTOMER PORTAL VIEWS & PROFILE PHOTO + ADDRESS
 // ==========================================
 async function renderCustomerProfile(container) {
   const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser?.id).single();
   const u = profile || currentUser;
 
   container.innerHTML = `
-    <div class="page-head"><h1>मेरी प्रोफ़ाइल (My Profile)</h1></div>
-    <div class="card" style="max-width:650px;">
+    <div class="page-head">
+      <h1>मेरी प्रोफ़ाइल (My Profile)</h1>
+    </div>
+
+    <!-- Customer Profile Summary Card with Avatar & Address -->
+    <div class="card" style="max-width:700px; display:flex; align-items:center; gap:20px; background:linear-gradient(135deg, #0b1220 0%, #1e293b 100%); color:#fff; padding:22px; margin-bottom:20px; border-radius:18px; box-shadow:0 10px 25px rgba(0,0,0,0.15);">
+      <div style="position:relative; width:90px; height:90px; flex-shrink:0;">
+        ${u?.image_url ? `
+          <img src="${u.image_url}" id="custProfileAvatarImg" onclick="showFullImage('${u.image_url}', 'Profile Picture')" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:3px solid var(--gold); cursor:pointer;">
+        ` : `
+          <div id="custProfileAvatarImg" style="width:90px; height:90px; border-radius:50%; background:#334155; display:grid; place-items:center; border:3px solid var(--gold); font-size:36px; color:#d7a43b;">
+            <i class="fa-solid fa-user"></i>
+          </div>
+        `}
+      </div>
+      <div>
+        <h2 style="font-size:20px; font-weight:800; color:#fff; margin-bottom:4px;">${safeStr(u?.name, 'Customer')}</h2>
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:4px;"><i class="fa-solid fa-phone" style="color:var(--gold);"></i> ${safeStr(u?.phone, '-')}</p>
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:4px;"><i class="fa-solid fa-envelope" style="color:var(--gold);"></i> ${safeStr(u?.email, '-')}</p>
+        <p style="font-size:13px; color:#cbd5e1;"><i class="fa-solid fa-location-dot" style="color:var(--accent);"></i> ${safeStr(u?.address, 'मंडावरा, राजस्थान')}</p>
+      </div>
+    </div>
+
+    <!-- Edit Profile Form -->
+    <div class="card" style="max-width:700px;">
+      <h3 style="margin-bottom:16px; font-size:17px; color:var(--primary);"><i class="fa-solid fa-pen-to-square" style="color:var(--accent);"></i> प्रोफ़ाइल विवरण एवं फ़ोटो बदलें</h3>
+      
       <form onsubmit="updateMyProfile(event)">
-        <div class="form-group"><label>पूरा नाम</label><input id="mpName" value="${escapeAttr(u?.name || '')}" required></div>
-        <div class="form-group"><label>मोबाइल नंबर</label><input id="mpPhone" type="tel" value="${escapeAttr(u?.phone || '')}" required></div>
-        <div class="form-group"><label>ईमेल</label><input id="mpEmail" type="email" value="${escapeAttr(u?.email || '')}"></div>
-        <div class="form-group"><label>पता / गाँव</label><input id="mpAddress" value="${escapeAttr(u?.address || '')}"></div>
-        <button type="submit" class="btn-primary" style="width:auto; margin-top:10px;">प्रोफाइल सेव करें</button>
+        
+        <!-- Profile Picture Upload with Preview -->
+        <div class="form-group" style="background:#f8fafc; padding:14px; border-radius:12px; border:1.5px dashed #cbd5e1; margin-bottom:18px;">
+          <label style="font-weight:700; color:#334155; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-camera" style="color:var(--accent);"></i> अपनी प्रोफ़ाइल फ़ोटो अपलोड करें (Profile Photo)
+          </label>
+          <div style="display:flex; align-items:center; gap:14px; margin-top:8px;">
+            <input type="file" id="mpPhotoFile" accept="image/*" onchange="previewCustomerProfilePhoto(event)" style="display:none;">
+            <button type="button" class="btn-secondary" onclick="$('mpPhotoFile').click()"><i class="fa-solid fa-image"></i> फ़ोन से फ़ोटो चुनें</button>
+            <div id="mpPhotoPreview">
+              ${u?.image_url ? `<img src="${u.image_url}" style="width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);">` : '<span style="font-size:12px; color:var(--muted);">कोई फ़ोटो नहीं चुनी</span>'}
+            </div>
+          </div>
+          <input type="hidden" id="mpPhotoBase64" value="${u?.image_url || ''}">
+        </div>
+
+        <div class="form-group">
+          <label>पूरा नाम (Full Name)</label>
+          <input id="mpName" value="${escapeAttr(u?.name || '')}" required placeholder="उदा. हर्ष स्वामी">
+        </div>
+
+        <div class="form-group">
+          <label>मोबाइल नंबर (Mobile Number)</label>
+          <input id="mpPhone" type="tel" value="${escapeAttr(u?.phone || '')}" required placeholder="उदा. 9929718264">
+        </div>
+
+        <div class="form-group">
+          <label>ईमेल (Email Address)</label>
+          <input id="mpEmail" type="email" value="${escapeAttr(u?.email || '')}" placeholder="उदा. customer@gmail.com">
+        </div>
+
+        <div class="form-group">
+          <label>पता / गाँव (Full Site Address / Village)</label>
+          <textarea id="mpAddress" rows="2" placeholder="उदा. ग्राम व पोस्ट: मंडावरा, तहसील: उदयपुरवाटी, जिला: झुंझुनूं (राजि.)">${escapeAttr(u?.address || '')}</textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width:auto; margin-top:10px; padding:12px 28px;">
+          <i class="fa-solid fa-floppy-disk"></i> प्रोफाइल सेव करें
+        </button>
       </form>
     </div>
   `;
 }
 
+function previewCustomerProfilePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    $('mpPhotoBase64').value = evt.target.result;
+    $('mpPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:52px; height:52px; border-radius:50%; object-fit:cover; border:2.5px solid var(--accent);">`;
+  };
+  reader.readAsDataURL(file);
+}
+
 async function updateMyProfile(e) {
   e.preventDefault();
+  const name = $('mpName').value.trim();
+  const phone = $('mpPhone').value.trim();
+  const email = $('mpEmail').value.trim();
+  const address = $('mpAddress').value.trim();
+  const photo = $('mpPhotoBase64').value;
+
   await db.from('profiles').update({
-    name: $('mpName').value.trim(),
-    phone: $('mpPhone').value.trim(),
-    email: $('mpEmail').value.trim(),
-    address: $('mpAddress').value.trim()
+    name: name,
+    phone: phone,
+    email: email,
+    address: address,
+    image_url: photo || null
   }).eq('id', currentUser.id);
 
-  alert('आपकी प्रोफ़ाइल अपडेट हो गई है!');
+  if (currentUser) {
+    currentUser.name = name;
+    currentUser.phone = phone;
+    currentUser.email = email;
+    currentUser.address = address;
+    currentUser.image_url = photo || null;
+  }
+
+  alert('आपकी प्रोफ़ाइल और फ़ोटो सफलतापूर्वक अपडेट हो गई है! ✅');
   openView('my_profile');
 }
 
@@ -3222,27 +3458,42 @@ async function handleCustomerSignup(e) {
 }
 
 // ==========================================
-// WORKER PORTAL VIEWS & FACE ATTENDANCE
+// WORKER PORTAL VIEWS & DATE-WISE ATTENDANCE LOG
 // ==========================================
 async function renderWorkerAttendance(container) {
   const today = new Date().toISOString().split('T')[0];
-  const { data: todayAtt } = await db.from('attendance')
-    .select('*')
-    .eq('worker_id', currentUser?.id)
-    .eq('work_date', today)
-    .maybeSingle();
+  const [todayRes, allAttRes] = await Promise.all([
+    db.from('attendance').select('*').eq('worker_id', currentUser?.id).eq('work_date', today).maybeSingle(),
+    db.from('attendance').select('*').eq('worker_id', currentUser?.id).order('work_date', { ascending: false })
+  ]);
+
+  const todayAtt = todayRes.data;
+  const allAtt = allAttRes.data || [];
+  const approvedDays = allAtt.filter(a => a.status === 'approved').length;
+  const dailyWage = Number(currentUser?.daily_wage || 0);
 
   container.innerHTML = `
-    <div class="page-head"><h1>दैनिक हाजिरी (Face Attendance)</h1></div>
-    <div class="card">
+    <div class="page-head">
+      <div>
+        <h1>दैनिक हाजिरी (Face Attendance & History)</h1>
+        <p style="color:var(--muted); font-size:13px;">दर: <b>₹${dailyWage}/दिन</b> | कुल स्वीकृत हाजिरी: <b>${approvedDays} दिन</b></p>
+      </div>
+    </div>
+
+    <!-- Today's Attendance Scan Card -->
+    <div class="card" style="margin-bottom:20px;">
       <div style="font-size:15px; margin-bottom:12px;">आज की तारीख: <b>${today}</b></div>
       ${todayAtt ? `
-        <div style="background:#dcfce7; padding:16px; border-radius:10px; color:#166534; font-weight:700;">
-          <i class="fa-solid fa-circle-check"></i> आज की हाजिरी दर्ज हो चुकी है! स्टेटस: ${todayAtt.status}
+        <div style="background:#dcfce7; padding:16px; border-radius:10px; color:#166534; font-weight:700; display:flex; align-items:center; gap:10px;">
+          <i class="fa-solid fa-circle-check fa-2x" style="color:var(--success);"></i>
+          <div>
+            <div>आज की हाजिरी दर्ज हो चुकी है!</div>
+            <small style="font-size:12px; opacity:0.9;">स्थिति: <b>${todayAtt.status.toUpperCase()}</b> • समय: ${new Date(todayAtt.scanned_at || todayAtt.created_at).toLocaleTimeString('en-IN')}</small>
+          </div>
         </div>
       ` : `
         <div style="background:#fef3c7; padding:16px; border-radius:10px; color:#92400e;">
-          <p style="margin-bottom:12px; font-weight:600;"><i class="fa-solid fa-camera"></i> अपनी आज की हाजिरी लगाने के लिए सेल्फी फेस स्कैन करें:</p>
+          <p style="margin-bottom:12px; font-weight:700;"><i class="fa-solid fa-camera"></i> अपनी आज की हाजिरी लगाने के लिए सेल्फी फेस स्कैन करें:</p>
           <div style="display:flex; flex-direction:column; gap:10px; max-width:320px;">
             <video id="attVideo" autoplay playsinline style="width:100%; border-radius:8px; display:none; background:#000;"></video>
             <canvas id="attCanvas" style="display:none;"></canvas>
@@ -3252,6 +3503,48 @@ async function renderWorkerAttendance(container) {
           </div>
         </div>
       `}
+    </div>
+
+    <!-- Date-Wise Attendance History Table -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:16px; color:var(--primary);"><i class="fa-solid fa-calendar-days" style="color:var(--accent);"></i> मेरी हाजिरी का पूरा इतिहास (Date-wise Attendance History)</h3>
+        <span class="btn-sm btn-gold" style="font-size:12px;">कुल रिकॉर्ड: ${allAtt.length}</span>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>तारीख (Date)</th>
+              <th>समय (Scan Time)</th>
+              <th>स्कैन फोटो</th>
+              <th>दिहाड़ी दर</th>
+              <th>स्थिति (Status)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allAtt.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);">कोई हाजिरी इतिहास नहीं मिला।</td></tr>' : ''}
+            ${allAtt.map(a => `
+              <tr>
+                <td><b>${a.work_date}</b></td>
+                <td>${new Date(a.scanned_at || a.created_at).toLocaleTimeString('en-IN')}</td>
+                <td>
+                  ${a.face_image_url ? `
+                    <img src="${a.face_image_url}" onclick="showFullImage('${a.face_image_url}', 'Attendance Photo - ${a.work_date}')" class="avatar-thumb" style="width:40px !important; height:40px !important; border-radius:6px; object-fit:cover; cursor:pointer;">
+                  ` : '-'}
+                </td>
+                <td><b style="color:var(--success);">₹${dailyWage}</b></td>
+                <td>
+                  <span class="btn-sm ${a.status === 'approved' ? 'btn-success' : (a.status === 'rejected' ? 'btn-danger' : 'btn-warning')}">
+                    ${a.status === 'approved' ? 'स्वीकृत (Present)' : (a.status === 'rejected' ? 'अस्वीकृत' : 'लंबित (Pending)')}
+                  </span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 }
@@ -3358,5 +3651,5 @@ async function saveWorkerSiteUpdate(e) {
   $('wuPhotoPreview').innerHTML = '';
 }
 </script>
-<script src="auth-fix.js"></script></body>
+</body>
 </html>
