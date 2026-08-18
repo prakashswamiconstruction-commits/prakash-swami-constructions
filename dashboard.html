@@ -24,14 +24,63 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     body { background: var(--bg); color: var(--text); min-height: 100vh; }
     
-    /* Login Page with Prakash Swami Background */
+    /* Login Page with 3 Prakash Swami Photos (Left, Center, Right) */
     .login-wrapper {
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(rgba(11, 18, 32, 0.82), rgba(11, 18, 32, 0.94)), url('prakash-chand-swami-construction-site.jpg') center/cover no-repeat;
-      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      background: radial-gradient(circle at 50% 30%, #1e293b 0%, #070d18 100%);
+      padding: 24px 16px;
       position: relative;
+    }
+    .login-side-banner {
+      width: 270px;
+      height: 530px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 2px solid rgba(215, 164, 59, 0.35);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.5);
+      position: relative;
+      background: #081325;
+      flex-shrink: 0;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+    .login-side-banner:hover {
+      transform: translateY(-4px);
+      border-color: #d7a43b;
+    }
+    .login-side-banner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+    .login-side-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(11,18,32,0.96) 0%, rgba(11,18,32,0.7) 70%, transparent 100%);
+      padding: 20px 14px 14px;
+      color: #fff;
+      text-align: center;
+    }
+    .login-side-caption h4 {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .login-side-caption p {
+      font-size: 12px;
+      color: #d7a43b;
+      font-weight: 700;
+    }
+    @media(max-width: 960px) {
+      .login-side-banner { display: none; }
     }
     .login-card { width: min(450px, 100%); background: var(--card); border-radius: 20px; padding: 32px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
     .brand-header { text-align: center; margin-bottom: 20px; }
@@ -100,7 +149,7 @@
 
     /* Cards & Tables */
     .card { background: #fff; border-radius: 16px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
-    .table-container { width: 100%; overflow-x: auto; background: #fff; border-radius: 14px; border: 1px solid var(--border); }
+    .table-container { width: 100%; overflow-x auto; background: #fff; border-radius: 14px; border: 1px solid var(--border); }
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
     th { background: #f8fafc; padding: 12px 16px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
     td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -222,12 +271,24 @@
 </head>
 <body>
 
-<!-- 1. LOGIN SCREEN -->
+<!-- 1. LOGIN SCREEN WITH 3 PRAKASH SWAMI PHOTOS -->
 <div id="loginSection" class="login-wrapper">
+  
+  <!-- Left Side Photo Frame: Prakash Swami Photo 1 -->
+  <div class="login-side-banner">
+    <img src="prakash-chand-swami-1.jpg.png" onerror="this.onerror=null; this.src='prakash-chand-swami-1.jpg';" alt="Prakash Chand Swami - Photo 1">
+    <div class="login-side-caption">
+      <h4>प्रकाश चन्द स्वामी</h4>
+      <p>२५+ वर्षों का अटूट विश्वास</p>
+    </div>
+  </div>
+
+  <!-- Center Login Card -->
   <div class="login-card">
     <div class="brand-header">
+      <!-- Circular Avatar: Prakash Swami Photo 3 -->
       <div style="text-align:center; margin-bottom:12px;">
-        <img src="prakash-chand-swami-construction-site.jpg" alt="Prakash Chand Swami" onerror="this.onerror=null; this.src='prakash-chand-swami-project-planning.jpg';" style="width:84px; height:84px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); box-shadow:0 6px 18px rgba(0,0,0,0.25); display:inline-block;">
+        <img src="prakash-chand-swami-3.jpg.jpg" alt="Prakash Chand Swami" onerror="this.onerror=null; this.src='prakash-chand-swami-3.jpg';" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:3.5px solid #d7a43b; box-shadow:0 6px 20px rgba(0,0,0,0.25); display:inline-block;">
       </div>
       <h2 style="color:var(--primary); font-size:22px; font-weight:800;">Prakash Swami Constructions</h2>
       <p style="color:var(--muted); font-size:13px; margin-top:2px;">Construction Management Portal</p>
@@ -267,6 +328,16 @@
       <p><b>Worker Login:</b> सिर्फ अपना रजिस्टर्ड मोबाइल नंबर डालें (No Password/OTP)।</p>
     </div>
   </div>
+
+  <!-- Right Side Photo Frame: Prakash Swami Photo 2 -->
+  <div class="login-side-banner">
+    <img src="prakash-chand-swami-2.jpg.jpg" onerror="this.onerror=null; this.src='prakash-chand-swami-2.jpg';" alt="Prakash Chand Swami - Photo 2">
+    <div class="login-side-caption">
+      <h4>Balaji Construction</h4>
+      <p>मजबूत व आधुनिक निर्माण</p>
+    </div>
+  </div>
+
 </div>
 
 <!-- 2. MAIN DASHBOARD APP -->
@@ -317,7 +388,7 @@ let activeEnqTab = 'customer_enq';
 
 const $ = id => document.getElementById(id);
 
-// Safe String Utilities to Prevent Any Null / Undefined Crashes
+// Safe String Utilities
 function safeStr(val, fallback = '') {
   if (val === null || val === undefined) return fallback;
   return String(val);
@@ -682,7 +753,8 @@ function generateLegalAgreementHtml(c, isLocked) {
       <div class="contract-section">
         <h4>३. तय दर एवं माप की शर्तें (RATE & MEASUREMENT)</h4>
         <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:14px; margin-bottom:10px;">
-          <p style="margin-bottom:6px;"><b>दर का प्रकार (Rate / Billing Basis):</b> <span style="color:#0284c7; font-weight:800; font-size:14px;">${parsed.rateTypeLabel}</span></p>${parsed.rateDetail ? `<p style="margin-bottom:6px;"><b>तय दर / मजदूरी (Agreed Rate / Wage):</b> <span style="font-weight:800; color:#0f172a; font-size:14px; background:#fef08a; padding:2px 8px; border-radius:4px;">${escapeAttr(parsed.rateDetail)}</span></p>` : ''}
+          <p style="margin-bottom:6px;"><b>दर का प्रकार (Rate / Billing Basis):</b> <span style="color:#0284c7; font-weight:800; font-size:14px;">${parsed.rateTypeLabel}</span></p>
+          ${parsed.rateDetail ? `<p style="margin-bottom:6px;"><b>तय दर / मजदूरी (Agreed Rate / Wage):</b> <span style="font-weight:800; color:#0f172a; font-size:14px; background:#fef08a; padding:2px 8px; border-radius:4px;">${escapeAttr(parsed.rateDetail)}</span></p>` : ''}
           <p style="margin-bottom:0;"><b>तय कुल अनुबंध राशि (Agreed Final Amount):</b> <span style="font-size:18px; font-weight:900; color:var(--primary);">${amountStr !== '0' ? '₹' + amountStr : 'दर अनुसार देय'}</span></p>
         </div>
         <p><b>माप का नियम:</b> कुल नाप छत की बाहरी सीमा (Slab Projection Area) के अनुसार वर्ग फीट में मान्य होगी अथवा प्रतिदिन के कार्य/मजदूरी अनुसार हिसाब किया जाएगा। तय स्कोप से अलग कोई भी अतिरिक्त कार्य कराने पर उसका शुल्क दोनों पक्षों की पूर्व सहमति से अलग से देय होगा।</p>
@@ -1541,7 +1613,7 @@ async function openCustomerProjectsModal(customerId, customerName) {
                   <div class="stat-card" style="padding:10px 14px; background:#fff1f2;"><div><small style="color:var(--muted);">बकाया राशि</small><div style="font-size:16px; font-weight:800; color:var(--danger);">₹${remainAmt.toLocaleString('en-IN')}</div></div></div>
                 </div>
 
-                <!-- Daily Work Updates & Photos for this Project (Read-Only Progress View) -->
+                <!-- Daily Work Updates & Photos for this Project -->
                 <div style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:14px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <h4 style="font-size:14px; font-weight:700; color:#334155;">
@@ -2915,7 +2987,6 @@ function updateCustomUpiPayLinks(upiId) {
     btn.href = `upi://pay?pa=${upiId}&pn=Prakash%20Swami%20Constructions&am=${val}&cu=INR`;
     btn.innerHTML = `<i class="fa-solid fa-bolt"></i> ⚡ Pay ₹${Number(val).toLocaleString('en-IN')} via UPI`;
   } else {
-    // Open amount link so user can enter any amount inside their UPI app
     btn.href = `upi://pay?pa=${upiId}&pn=Prakash%20Swami%20Constructions&cu=INR`;
     btn.innerHTML = `<i class="fa-solid fa-bolt"></i> ⚡ PhonePe / GPay / Paytm से Pay करें (मनचाही राशि)`;
   }
@@ -3279,6 +3350,9 @@ function previewWorkerUpdateImage(e) {
     $('wuPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:100%; max-height:200px; object-fit:cover; border-radius:8px;">`;
   };
   reader.readAsDataURL(file);
+}px; object-fit:cover; border-radius:8px;">`;
+  };
+  reader.readAsDataURL(file);
 }
 
 async function saveWorkerSiteUpdate(e) {
@@ -3293,5 +3367,5 @@ async function saveWorkerSiteUpdate(e) {
   $('wuPhotoPreview').innerHTML = '';
 }
 </script>
-<script src="auth-fix.js"><\/script><script src="auth-fix.js"><\/script><script src="auth-fix.js"><\/script><script src="auth-fix.js"><\/script><script src="auth-fix.js"></script></body>
+</body>
 </html>
