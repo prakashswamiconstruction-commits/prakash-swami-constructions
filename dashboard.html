@@ -3414,22 +3414,98 @@ function openCustomerSignupModal() {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
   modal.innerHTML = `
-    <div class="modal-card" style="max-width:440px;">
+    <div class="modal-card" style="max-width:480px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
-        <h3>नया कस्टमर खाता बनाएं (Sign Up)</h3>
+        <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-user-plus" style="color:var(--accent);"></i> नया कस्टमर खाता बनाएं (Sign Up)</h3>
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
       </div>
       <form onsubmit="handleCustomerSignup(event)">
-        <div class="form-group"><label>आपका नाम</label><input id="suName" required></div>
-        <div class="form-group"><label>मोबाइल नंबर</label><input id="suPhone" required></div>
-        <div class="form-group"><label>गाँव / पता</label><input id="suAddress"></div>
-        <div class="form-group"><label>पासवर्ड बनाएं</label><input id="suPass" type="password" required></div>
-        <button type="submit" class="btn-primary" style="width:100%;">खाता बनाएं</button>
+        <div class="form-group">
+          <label>१. आपका नाम (Full Name)</label>
+          <input id="suName" required placeholder="उदा. हर्ष स्वामी">
+        </div>
+
+        <div class="form-group">
+          <label>२. मोबाइल नंबर (Mobile Number)</label>
+          <input id="suPhone" type="tel" required placeholder="१० अंकों का मोबाइल नंबर">
+        </div>
+
+        <div class="form-group">
+          <label>३. ईमेल (Email Address)</label>
+          <input id="suEmail" type="email" placeholder="customer@gmail.com (वैकल्पिक)">
+        </div>
+
+        <div class="form-group">
+          <label>४. गाँव / पता (Site Address / Village)</label>
+          <input id="suAddress" placeholder="उदा. मंडावरा, उदयपुरवाटी, झुंझुनूं">
+        </div>
+
+        <div class="form-group" style="background:#f8fafc; padding:12px; border-radius:10px; border:1px dashed #cbd5e1;">
+          <label style="font-weight:700; color:#334155;"><i class="fa-solid fa-camera" style="color:var(--accent);"></i> ५. प्रोफ़ाइल फ़ोटो चुनें (Photo Upload)</label>
+          <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+            <input type="file" id="suPhotoFile" accept="image/*" onchange="previewCustomerSignupPhoto(event)" style="display:none;">
+            <button type="button" class="btn-secondary" onclick="$('suPhotoFile').click()"><i class="fa-solid fa-image"></i> फ़ोन से फ़ोटो चुनें</button>
+            <div id="suPhotoPreview">
+              <span style="font-size:12px; color:var(--muted);">फ़ोटो नहीं चुनी</span>
+            </div>
+          </div>
+          <input type="hidden" id="suPhotoBase64">
+        </div>
+
+        <div class="form-group">
+          <label>६. पासवर्ड बनाएं (Password)</label>
+          <input id="suPass" type="password" required placeholder="कम से कम ६ अंकों का पासवर्ड">
+        </div>
+
+        <button type="submit" class="btn-primary" style="width:100%; margin-top:10px; padding:12px;">
+          <i class="fa-solid fa-user-check"></i> खाता बनाएं
+        </button>
       </form>
     </div>
   `;
 }
 
+function previewCustomerSignupPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    $('suPhotoBase64').value = evt.target.result;
+    $('suPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:46px; height:46px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function handleCustomerSignup(e) {
+  e.preventDefault();
+  const phone = $('suPhone').value.trim();
+  const rawEmail = $('suEmail')?.value.trim();
+  const email = rawEmail || `${phone}@psconstructions.in`;
+  const name = $('suName').value.trim();
+  const address = $('suAddress').value.trim();
+  const pass = $('suPass').value.trim();
+  const photo = $('suPhotoBase64')?.value || null;
+
+  const { data: auth, error } = await db.auth.signUp({ email, password: pass });
+  if (error) return alert('त्रुटि: ' + error.message);
+
+  await db.from('profiles').insert({
+    id: auth.user.id,
+    name: name,
+    phone: phone,
+    email: email,
+    address: address,
+    image_url: photo,
+    role: 'customer',
+    is_active: true
+  });
+
+  alert('खाता और प्रोफ़ाइल फ़ोटो सफलतापूर्वक दर्ज हो गया! अब लॉगिन करें। ✅');
+  $('modalContainer').classList.add('hidden');
+  selectRole('customer');
+  $('loginId').value = phone;
+  $('loginPassword').value = pass;
+}
 async function handleCustomerSignup(e) {
   e.preventDefault();
   const phone = $('suPhone').value.trim();
