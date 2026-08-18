@@ -78,7 +78,7 @@
     .stat-item h3 { font-size: 24px; font-weight: 900; color: var(--gold); }
     .stat-item p { font-size: 12px; color: #94a3b8; font-weight: 600; }
     
-    /* Hero Showcase Card - Prakash Swami */
+    /* Hero Showcase Card - Prakash Swami Image 1 */
     .hero-visual-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 16px; backdrop-filter: blur(12px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
     .hero-visual-card img { border-radius: 12px; height: 320px; width: 100%; object-fit: cover; object-position: center top; margin-bottom: 14px; }
     
@@ -104,14 +104,14 @@
     .about-points { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
     .about-pt { background: #fff; padding: 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 8px; }
     
-    /* 11 Houses Project Gallery */
+    /* 12 Unique Houses Project Gallery */
     .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
     .gallery-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); transition: transform 0.25s, box-shadow 0.25s; cursor: pointer; display: flex; flex-direction: column; }
-    .gallery-card:hover { transform: translateY(-5px); box-shadow: 0 18px 32px rgba(0,0,0,0.12); }
-    .gallery-thumb { height: 210px; width: 100%; position: relative; overflow: hidden; }
+    .gallery-card:hover { transform: translateY(-5px); box-shadow: 0 18px 32px rgba(0,0,0,0.12); border-color: var(--gold); }
+    .gallery-thumb { height: 210px; width: 100%; position: relative; overflow: hidden; background: #0b1220; }
     .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
     .gallery-card:hover .gallery-thumb img { transform: scale(1.06); }
-    .gallery-badge { position: absolute; top: 12px; right: 12px; background: rgba(11, 18, 32, 0.85); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; backdrop-filter: blur(4px); }
+    .gallery-badge { position: absolute; top: 12px; right: 12px; background: rgba(11, 18, 32, 0.88); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; backdrop-filter: blur(4px); border: 1px solid rgba(215, 164, 59, 0.4); }
     .gallery-info { padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
     .gallery-info h3 { font-size: 16px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
     .gallery-info p { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
@@ -190,7 +190,7 @@
 
 <main id="home">
 
-  <!-- 3. Hero Section with Real Prakash Swami Photo -->
+  <!-- 3. Hero Section (Prakash Swami Image 1) -->
   <section class="hero">
     <div class="wrap">
       <div class="hero-grid">
@@ -217,7 +217,7 @@
 
         <!-- Hero Visual Showcase: Prakash Swami Photo on Site (Image 1) -->
         <div class="hero-visual-card">
-          <img src="prakash-chand-swami-1.jpg" onerror="this.src='prakash-chand-swami-construction-site.jpg';" alt="Prakash Chand Swami - Lead Contractor">
+          <img src="prakash-chand-swami-1.jpg.png" onerror="this.onerror=null; this.src='prakash-chand-swami-1.jpg';" alt="Prakash Chand Swami - Lead Contractor">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <h4 style="font-size:16px; font-weight:800; color:#fff;">प्रकाश चन्द स्वामी</h4>
@@ -323,14 +323,15 @@
     </div>
   </section>
 
-  <!-- 5. About Founder (Prakash Chand Swami) with Images 2, 3, 4 -->
+  <!-- 5. About Founder (Prakash Chand Swami Images 2 & 3) -->
   <section id="about" class="section-alt">
     <div class="wrap">
       <div class="about-grid">
         <div class="about-imgs">
-          <!-- Image 2 & Image 3 of Prakash Swami -->
-          <img src="prakash-chand-swami-2.jpg" onerror="this.src='prakash-chand-swami-construction-site.jpg';" alt="Prakash Chand Swami - Site Supervision">
-          <img src="prakash-chand-swami-3.jpg" onerror="this.src='prakash-chand-swami-project-planning.jpg';" alt="Prakash Chand Swami - Project Planning">
+          <!-- Image 2 of Prakash Swami -->
+          <img src="prakash-chand-swami-2.jpg.jpg" onerror="this.onerror=null; this.src='prakash-chand-swami-2.jpg';" alt="Prakash Chand Swami - Site Supervision">
+          <!-- Image 3 of Prakash Swami -->
+          <img src="prakash-chand-swami-3.jpg.jpg" onerror="this.onerror=null; this.src='prakash-chand-swami-3.jpg';" alt="Prakash Chand Swami - Project Planning">
         </div>
 
         <div>
@@ -354,21 +355,21 @@
     </div>
   </section>
 
-  <!-- 6. 11 Real House Construction Projects Gallery -->
+  <!-- 6. 12 Real House Construction Projects Gallery (All 12 Uploaded House Images) -->
   <section id="projects">
     <div class="wrap">
       <div class="sec-head">
         <div class="eyebrow" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;"><i class="fa-solid fa-images"></i> वास्तविक कार्य गैलरी (Real Work Gallery)</div>
         <h2>हमारे द्वारा बनाए गए वास्तविक मकान व कार्य</h2>
-        <p>मंडावरा, झुंझुनूं व शेखावाटी में पूर्ण किए गए और वर्तमान में चल रहे 11 प्रमुख निर्माण कार्य। किसी भी फोटो पर क्लिक करके पूरा विवरण देखें।</p>
+        <p>मंडावरा, झुंझुनूं व शेखावाटी में पूर्ण किए गए और वर्तमान में चल रहे 12 प्रमुख निर्माण कार्य। किसी भी फोटो पर क्लिक करके पूरा विवरण देखें।</p>
       </div>
 
       <div class="gallery-grid">
         
-        <!-- Project 1 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-1.jpg', '3 BHK स्वतंत्र विलेज रेजिडेंस (मंडावरा)', 'मजबूत नींव, 3 बड़े कमरे, खुला आँगन, हॉल व बरामदा कार्य पूर्ण।')">
+        <!-- House Project 1 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-1.jpg.jpeg', '3 BHK स्वतंत्र विलेज रेजिडेंस (मंडावरा)', 'मजबूत नींव, 3 बड़े कमरे, खुला आँगन, हॉल व बरामदा कार्य पूर्ण।')">
           <div class="gallery-thumb">
-            <img src="project-house-1.jpg" onerror="this.src='Gemini_Generated_Image_vltrqevltrqevltr.png';" alt="3 BHK House Project">
+            <img src="project-house-1.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-1.jpg';" alt="3 BHK House Project">
             <span class="gallery-badge">Completed</span>
           </div>
           <div class="gallery-info">
@@ -378,10 +379,10 @@
           </div>
         </div>
 
-        <!-- Project 2 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-2.jpg', '2-मंज़िला आधुनिक डुप्लेक्स कोठी (झुंझुनूं)', '4 बेडरूम, बालकनी, कार पार्किंग और प्रीमियम एलिवेशन के साथ तैयार।')">
+        <!-- House Project 2 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-2.jpg.jpeg', '2-मंज़िला आधुनिक डुप्लेक्स कोठी (झुंझुनूं)', '4 बेडरूम, बालकनी, कार पार्किंग और प्रीमियम एलिवेशन के साथ तैयार।')">
           <div class="gallery-thumb">
-            <img src="project-house-2.jpg" onerror="this.src='Gemini_Generated_Image_2h9x962h9x962h9x.png';" alt="Duplex House Project">
+            <img src="project-house-2.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-2.jpg';" alt="Duplex House Project">
             <span class="gallery-badge">Completed</span>
           </div>
           <div class="gallery-info">
@@ -391,10 +392,10 @@
           </div>
         </div>
 
-        <!-- Project 3 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-3.jpg', 'RCC छत ढलाई एवं शटरिंग कार्य (उदयपुरवाटी)', 'मजबूत सरिया जाल, वाइब्रेटर कॉम्पैक्शन व लीकेज-प्रूफ स्लैब ढलाई।')">
+        <!-- House Project 3 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-3.jpg.jpeg', 'RCC छत ढलाई एवं शटरिंग कार्य (उदयपुरवाटी)', 'मजबूत सरिया जाल, वाइब्रेटर कॉम्पैक्शन व लीकेज-प्रूफ स्लैब ढलाई।')">
           <div class="gallery-thumb">
-            <img src="project-house-3.jpg" onerror="this.src='20210723_122237.jpg';" alt="RCC Roof Slab Casting">
+            <img src="project-house-3.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-3.jpg';" alt="RCC Roof Slab Casting">
             <span class="gallery-badge" style="background:#16a34a; color:#fff;">Live Work</span>
           </div>
           <div class="gallery-info">
@@ -404,10 +405,10 @@
           </div>
         </div>
 
-        <!-- Project 4 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-4.jpg', 'सुपरस्ट्रक्चर दीवार चिनाई व लेंटेल बीम', 'साहुल-सूत में सीधी ईंट चिनाई व मजबूत लेंटेल बीम कार्य।')">
+        <!-- House Project 4 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-4.jpg.jpeg', 'सुपरस्ट्रक्चर दीवार चिनाई व लेंटेल बीम', 'साहुल-सूत में सीधी ईंट चिनाई व मजबूत लेंटेल बीम कार्य।')">
           <div class="gallery-thumb">
-            <img src="project-house-4.jpg" onerror="this.src='prakash-chand-swami-construction-site.jpg';" alt="Brick Masonry Work">
+            <img src="project-house-4.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-4.jpg';" alt="Brick Masonry Work">
             <span class="gallery-badge">Under Construction</span>
           </div>
           <div class="gallery-info">
@@ -417,10 +418,10 @@
           </div>
         </div>
 
-        <!-- Project 5 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-5.jpg', 'प्लिंथ बीम, DPC व मजबूत नींव कार्य', 'गहरी नींव खुदाई, कॉलम बीम व डीपीसी (DPC) लेवल कार्य।')">
+        <!-- House Project 5 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-5.jpg.jpeg', 'प्लिंथ बीम, DPC व मजबूत नींव कार्य', 'गहरी नींव खुदाई, कॉलम बीम व डीपीसी (DPC) लेवल कार्य।')">
           <div class="gallery-thumb">
-            <img src="project-house-5.jpg" onerror="this.src='prakash-chand-swami-project-planning.jpg';" alt="Plinth Beam & Foundation">
+            <img src="project-house-5.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-5.jpg';" alt="Plinth Beam & Foundation">
             <span class="gallery-badge">Foundation</span>
           </div>
           <div class="gallery-info">
@@ -430,10 +431,10 @@
           </div>
         </div>
 
-        <!-- Project 6 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-6.jpg', 'समतल सीमेंट प्लास्टर व बाहरी फिनिशिंग', 'अंदरूनी व बाहरी दीवारों पर स्मूथ डबल-कोट प्लास्टर कार्य।')">
+        <!-- House Project 6 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-6.jpg.jpeg', 'समतल सीमेंट प्लास्टर व बाहरी फिनिशिंग', 'अंदरूनी व बाहरी दीवारों पर स्मूथ डबल-कोट प्लास्टर कार्य।')">
           <div class="gallery-thumb">
-            <img src="project-house-6.jpg" onerror="this.src='Gemini_Generated_Image_vltrqevltrqevltr.png';" alt="Cement Plaster Work">
+            <img src="project-house-6.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-6.jpg';" alt="Cement Plaster Work">
             <span class="gallery-badge">Finishing</span>
           </div>
           <div class="gallery-info">
@@ -443,10 +444,10 @@
           </div>
         </div>
 
-        <!-- Project 7 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-7.jpg', 'प्रीमियम विट्रीफाइड टाइल्स व मार्बल फ्लोरिंग', 'कमरों, हॉल व सीढ़ियों में सही ढलान के साथ प्रीमियम फ्लोरिंग फिटिंग।')">
+        <!-- House Project 7 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-7.jpg.jpeg', 'प्रीमियम विट्रीफाइड टाइल्स व मार्बल फ्लोरिंग', 'कमरों, हॉल व सीढ़ियों में सही ढलान के साथ प्रीमियम फ्लोरिंग फिटिंग।')">
           <div class="gallery-thumb">
-            <img src="project-house-7.jpg" onerror="this.src='Gemini_Generated_Image_2h9x962h9x962h9x.png';" alt="Tiles & Marble Flooring">
+            <img src="project-house-7.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-7.jpg';" alt="Tiles & Marble Flooring">
             <span class="gallery-badge">Interior</span>
           </div>
           <div class="gallery-info">
@@ -456,10 +457,10 @@
           </div>
         </div>
 
-        <!-- Project 8 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-8.jpg', 'मजबूत बाउंड्री वॉल व मेन गेट पिलर', 'प्लॉट व मकान की सुरक्षा हेतु 6 फीट ऊंची मजबूत चारदीवारी।')">
+        <!-- House Project 8 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-8.jpg.jpeg', 'मजबूत बाउंड्री वॉल व मेन गेट पिलर', 'प्लॉट व मकान की सुरक्षा हेतु 6 फीट ऊंची मजबूत चारदीवारी।')">
           <div class="gallery-thumb">
-            <img src="project-house-8.jpg" onerror="this.src='20210723_122237.jpg';" alt="Boundary Wall Construction">
+            <img src="project-house-8.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-8.jpg';" alt="Boundary Wall Construction">
             <span class="gallery-badge">Compound</span>
           </div>
           <div class="gallery-info">
@@ -469,10 +470,10 @@
           </div>
         </div>
 
-        <!-- Project 9 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-9.jpg', 'पुराने मकान का रेनोवेशन व नई मंजिल', 'पुराने ढांचे की मजबूती जांचकर ऊपर नई मंजिल का संपूर्ण निर्माण।')">
+        <!-- House Project 9 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-9.jpg.jpeg', 'पुराने मकान का रेनोवेशन व नई मंजिल', 'पुराने ढांचे की मजबूती जांचकर ऊपर नई मंजिल का संपूर्ण निर्माण।')">
           <div class="gallery-thumb">
-            <img src="project-house-9.jpg" onerror="this.src='prakash-chand-swami-construction-site.jpg';" alt="House Renovation">
+            <img src="project-house-9.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-9.jpg';" alt="House Renovation">
             <span class="gallery-badge">Renovation</span>
           </div>
           <div class="gallery-info">
@@ -482,10 +483,10 @@
           </div>
         </div>
 
-        <!-- Project 10 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-10.jpg', 'गांव का खुला आँगन व बरामदा हाउस', 'पारंपरिक राजस्थानी विलेज स्टाइल में 3 कमरों का खुला घर।')">
+        <!-- House Project 10 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-10.jpg.jpeg', 'गांव का खुला आँगन व बरामदा हाउस', 'पारंपरिक राजस्थानी विलेज स्टाइल में 3 कमरों का खुला घर।')">
           <div class="gallery-thumb">
-            <img src="project-house-10.jpg" onerror="this.src='Gemini_Generated_Image_vltrqevltrqevltr.png';" alt="Village House with Verandah">
+            <img src="project-house-10.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-10.jpg';" alt="Village House with Verandah">
             <span class="gallery-badge">Completed</span>
           </div>
           <div class="gallery-info">
@@ -495,15 +496,28 @@
           </div>
         </div>
 
-        <!-- Project 11 -->
-        <div class="gallery-card" onclick="openLightbox('project-house-11.jpg', 'छत की मुंडेर, सीढ़ी टावर व वॉटरप्रूफिंग', 'पैरापेट वॉल (मुंडेर), सीढ़ी का मचान (Mumty) व वॉटरप्रूफिंग कार्य।')">
+        <!-- House Project 11 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-11.jpg.png', 'छत की मुंडेर, सीढ़ी टावर व वॉटरप्रूफिंग', 'पैरापेट वॉल (मुंडेर), सीढ़ी का मचान (Mumty) व वॉटरप्रूफिंग कार्य।')">
           <div class="gallery-thumb">
-            <img src="project-house-11.jpg" onerror="this.src='20210723_122237.jpg';" alt="Roof Parapet & Stairs Tower">
+            <img src="project-house-11.jpg.png" onerror="this.onerror=null; this.src='project-house-11.jpg';" alt="Roof Parapet & Stairs Tower">
             <span class="gallery-badge">Completed</span>
           </div>
           <div class="gallery-info">
             <h3>११. सीढ़ी टावर व पैरापेट वॉल</h3>
             <p>झुंझुनूं • छत की मुंडेर व मचान</p>
+            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+          </div>
+        </div>
+
+        <!-- House Project 12 -->
+        <div class="gallery-card" onclick="openLightbox('project-house-12.jpg.png', 'मॉडर्न फ्रंट एलिवेशन व एक्सटीरियर फिनिशिंग', 'आधुनिक कलर कॉम्बिनेशन, टेक्सचर व फ्रंट गेट पिलर डिजाइन।')">
+          <div class="gallery-thumb">
+            <img src="project-house-12.jpg.png" onerror="this.onerror=null; this.src='project-house-12.jpg';" alt="Modern Front Elevation">
+            <span class="gallery-badge">Elevation</span>
+          </div>
+          <div class="gallery-info">
+            <h3>१२. मॉडर्न फ्रंट एलिवेशन</h3>
+            <p>नवलगढ़ साइट • आकर्षक फ्रंट डिजाइन</p>
             <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
@@ -549,7 +563,7 @@
     </div>
   </section>
 
-  <!-- 8. Contact & Free Consultation Section -->
+  <!-- 8. Contact & Free Consultation Section (Prakash Swami Image 4) -->
   <section id="contact">
     <div class="wrap">
       <div class="sec-head">
@@ -599,7 +613,7 @@
           <!-- Image 4 of Prakash Swami in Contact Card -->
           <div style="background:#fff; padding:30px; border-radius:16px; border:1px solid var(--line); box-shadow:var(--shadow);">
             <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
-              <img src="prakash-chand-swami-4.jpg" onerror="this.src='prakash-chand-swami-construction-site.jpg';" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);" alt="Prakash Chand Swami">
+              <img src="prakash-chand-swami-4.jpg.jpg" onerror="this.onerror=null; this.src='prakash-chand-swami-4.jpg';" style="width:68px; height:68px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);" alt="Prakash Chand Swami">
               <div>
                 <h3 style="font-size:18px; font-weight:800; color:var(--dark);">प्रकाश चन्द स्वामी</h3>
                 <p style="font-size:12px; color:var(--gold); font-weight:700;">BALAJI Construction Services</p>
