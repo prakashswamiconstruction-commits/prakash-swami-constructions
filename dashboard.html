@@ -512,13 +512,17 @@ function selectRole(role) {
   }
   if ($('loginId')) {
     $('loginId').type = isWorker ? 'tel' : 'email';
-    $('loginId').value = isAdmin ? ADMIN_EMAIL : '';
-    $('loginId').placeholder = isWorker ? 'अपना 10-अंकों का मोबाइल नंबर डालें' : (isAdmin ? ADMIN_EMAIL : 'अपना Email दर्ज करें (उदा. customer@gmail.com)');
+    $('loginId').value = '';
+    $('loginId').placeholder = isWorker ? 'अपना 10-अंकों का मोबाइल नंबर डालें' : (isAdmin ? 'अपना Admin Email दर्ज करें' : 'अपना Email दर्ज करें (उदा. customer@gmail.com)');
+  }
+  if ($('loginPassword')) {
+    $('loginPassword').value = '';
   }
 
   if ($('pwGroup')) $('pwGroup').classList.toggle('hidden', isWorker);
   if ($('signupGroup')) $('signupGroup').classList.toggle('hidden', role !== 'customer');
 }
+
 async function handleAuthSubmit(e) {
   e.preventDefault();
   const alertBox = $('loginAlert');
@@ -528,12 +532,12 @@ async function handleAuthSubmit(e) {
   const passVal = $('loginPassword') ? $('loginPassword').value.trim() : '';
 
   if (!db) return showLoginError('Supabase Database से कनेक्शन नहीं बन सका। कृपया इंटरनेट जांचें।');
-  if (!idVal) return showLoginError('कृपया आवश्यक जानकारी (Email या मोबाइल नंबर) दर्ज करें।');
+  if (!idVal) return showLoginError('कृपया आवश्यक जानकारी दर्ज करें।');
 
   const btn = $('loginSubmitBtn');
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> लॉग इन हो रहा है...';
   }
 
   try {
@@ -564,29 +568,14 @@ async function handleAuthSubmit(e) {
       loginEmail = `${cleanPhone}@psconstructions.in`;
     }
 
-    if (currentRole === 'admin' && idVal.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      loginEmail = ADMIN_EMAIL;
-    }
-
-    let { data, error } = await db.auth.signInWithPassword({
+    const { data, error } = await db.auth.signInWithPassword({
       email: loginEmail,
       password: passVal
     });
 
-    if (error && currentRole === 'customer' && !idVal.includes('@')) {
-      const { data: prof } = await db.from('profiles').select('email').eq('phone', idVal).eq('role', 'customer').maybeSingle();
-      if (prof?.email && prof.email !== loginEmail) {
-        const retry = await db.auth.signInWithPassword({ email: prof.email, password: passVal });
-        if (!retry.error) {
-          data = retry.data;
-          error = null;
-        }
-      }
-    }
-
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
-        return showLoginError('गलत Email/मोबाइल नंबर या पासवर्ड दर्ज किया गया है।');
+        return showLoginError('गलत Email या पासवर्ड दर्ज किया गया है।');
       }
       throw error;
     }
@@ -601,7 +590,6 @@ async function handleAuthSubmit(e) {
     }
   }
 }
-
 function showLoginError(msg) {
   const el = $('loginAlert');
   if (el) {
