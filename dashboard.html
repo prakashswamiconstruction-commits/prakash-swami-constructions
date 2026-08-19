@@ -507,17 +507,18 @@ function selectRole(role) {
   const isWorker = (role === 'worker');
   const isAdmin = (role === 'admin');
 
-  if ($('inputLabel')) $('inputLabel').textContent = isWorker ? 'मोबाइल नंबर (Worker Phone)' : (isAdmin ? 'Admin Email' : 'मोबाइल नंबर या Email (Customer Mobile/Email)');
+  if ($('inputLabel')) {
+    $('inputLabel').textContent = isWorker ? 'मोबाइल नंबर (Worker Phone)' : (isAdmin ? 'Admin Email' : 'Customer Email (ईमेल आईडी)');
+  }
   if ($('loginId')) {
-    $('loginId').type = 'text';
+    $('loginId').type = isWorker ? 'tel' : 'email';
     $('loginId').value = isAdmin ? ADMIN_EMAIL : '';
-    $('loginId').placeholder = isWorker ? 'अपना 10-अंकों का मोबाइल नंबर डालें' : (isAdmin ? ADMIN_EMAIL : 'मोबाइल नंबर या Email दर्ज करें');
+    $('loginId').placeholder = isWorker ? 'अपना 10-अंकों का मोबाइल नंबर डालें' : (isAdmin ? ADMIN_EMAIL : 'अपना Email दर्ज करें (उदा. customer@gmail.com)');
   }
 
   if ($('pwGroup')) $('pwGroup').classList.toggle('hidden', isWorker);
   if ($('signupGroup')) $('signupGroup').classList.toggle('hidden', role !== 'customer');
 }
-
 async function handleAuthSubmit(e) {
   e.preventDefault();
   const alertBox = $('loginAlert');
