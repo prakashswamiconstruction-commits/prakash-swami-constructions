@@ -2254,68 +2254,85 @@ async function deleteAttendance(id) {
 // ==========================================
 // ADMIN: PROJECTS
 // ==========================================
-async function renderAdminProjects(container) {
-  const [projRes, payRes, contRes] = await Promise.all([
-    db.from('projects').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
+async function renderCustomerProjects(container) {
+  const [projRes, contRes, payRes, setRes] = await Promise.all([
+    db.from('projects').select('*').eq('customer_id', currentUser ? currentUser.id : '').order('created_at', { ascending: false }),
+    db.from('contracts').select('*, project:project_id(name, address)'),
     db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
-    db.from('contracts').select('id, project_id, version, final_amount, status, admin_approved_at, customer_approved_at')
+    db.from('business_settings').select('*').eq('id', true).maybeSingle()
   ]);
 
   const projects = projRes.data || [];
-  const payments = payRes.data || [];
   const contracts = contRes.data || [];
+  const payments = payRes.data || [];
+  const adminUpi = setRes.data?.upi_id || '9785438345@axl';
 
   container.innerHTML = `
     <div class="page-head">
-      <h1>All Construction Projects</h1>
+      <h1>मेरे प्रोजेक्ट्स व अनुबंध</h1>
+      <button class="btn-primary" style="width:auto;" onclick="openView('my_enquiries')"><i class="fa-solid fa-plus"></i> नया काम / इन्क्वायरी भेजें</button>
     </div>
-    <div class="table-container">
-      <table>
-        <thead><tr><th>Project Name</th><th>Contract</th><th>Customer</th><th>Progress</th><th>Status</th><th>Total ₹</th><th>Paid ₹</th><th>Due ₹</th><th>Notes</th><th>Action</th></tr></thead>
-        <tbody>
-          ${projects.length === 0 ? '<tr><td colspan="10" style="text-align:center; padding:20px;">कोई प्रोजेक्ट नहीं मिला।</td></tr>' : ''}
-          ${projects.map(p => {
-            const pContract = contracts.find(c => c.project_id === p.id);
-            const total = Number(p.total_amount || 0);
-            const paid = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
-            const due = total - paid;
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>प्रोजेक्ट नाम</th>
+              <th>अनुबंध पत्र</th>
+              <th>प्रगति (Progress)</th>
+              <th>कुल राशि</th>
+              <th>जमा</th>
+              <th>बकाया (Due)</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${projects.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">आपका कोई प्रोजेक्ट नहीं है।</td></tr>' : ''}
+            ${projects.map(p => {
+              const contract = contracts.find(c => c.project_id === p.id);
+              const totalAmt = Number(p.total_amount || 0);
+              const paidAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+              const remainAmt = totalAmt - paidAmt;
+              const prog = Number(p.progress || 0);
 
-            return `
-              <tr>
-                <td><b>${p.name}</b><br><small>${p.address || ''}</small></td>
-                <td>
-                  ${pContract ? `<button class="btn-sm btn-edit" onclick="openFullAgreementModal('${pContract.id}')"><i class="fa-solid fa-file-contract"></i> v${pContract.version}</button>` : '<span style="color:var(--muted); font-size:11px;">No Contract</span>'}
-                </td>
-                <td>${p.customer?.name || '-'}<br><small>${p.customer?.phone || ''}</small></td>
-                <td>
-                  ${p.progress}%
-                  <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div>
-                </td>
-                <td><span class="btn-sm btn-success">${p.status}</span></td>
-                <td><b>₹${total.toLocaleString('en-IN')}</b></td>
-                <td><span style="color:var(--success); font-weight:700;">₹${paid.toLocaleString('en-IN')}</span></td>
-                <td><span style="color:var(--danger); font-weight:700;">₹${due.toLocaleString('en-IN')}</span></td>
-                <td>
-                  <div class="note-box">
-                    <span class="note-text" title="${p.notes || ''}">${p.notes || '<i style="color:#94a3b8;">Add note...</i>'}</span>
-                    <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${escapeAttr(p.notes || '')}')"><i class="fa-solid fa-pen-to-square"></i></button>
-                  </div>
-                </td>
-                <td>
-                  <div class="btn-action-group">
-                    <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')"><i class="fa-solid fa-trash"></i></button>
-                  </div>
-                </td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
+              return `
+                <tr>
+                  <td><b>${p.name}</b><br><small style="color:var(--muted);">${p.address || ''}</small></td>
+                  <td>${contract ? `<button class="btn-sm btn-gold" onclick="openFullAgreementModal('${contract.id}')"><i class="fa-solid fa-file-signature"></i> अनुबंध देखें</button>` : 'तैयार हो रहा है...'}</td>
+                  
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px; min-width:140px;">
+                      <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                          <b style="font-size:12.5px; color:var(--primary);">${prog}%</b>
+                        </div>
+                        <div class="progress-bar-bg" style="margin-top:0;"><div class="progress-bar-fill" style="width:${prog}%;"></div></div>
+                      </div>
+                      <button class="btn-sm btn-gold" style="padding:4px 8px; font-size:11px; white-space:nowrap;" onclick="openProjectProgressDetailsModal('${p.id}', '${escapeAttr(p.name)}')" title="दैनिक कार्य फोटो व विवरण देखें">
+                        <i class="fa-solid fa-camera"></i> Show
+                      </button>
+                    </div>
+                  </td>
+
+                  <td>₹${totalAmt.toLocaleString('en-IN')}</td>
+                  <td style="color:var(--success); font-weight:700;">₹${paidAmt.toLocaleString('en-IN')}</td>
+                  <td style="color:var(--danger); font-weight:700;">₹${remainAmt.toLocaleString('en-IN')}</td>
+                  <td>
+                    ${remainAmt > 0 ? `
+                      <a href="upi://pay?pa=${adminUpi}&pn=Prakash%20Swami%20Constructions&cu=INR" class="btn-sm btn-gold" style="text-decoration:none;">
+                        <i class="fa-solid fa-bolt"></i> Pay (UPI)
+                      </a>
+                    ` : '<span class="btn-sm btn-success">Paid ✅</span>'}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 }
-
 function openEditProjectNoteModal(projectId, currentNote) {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
