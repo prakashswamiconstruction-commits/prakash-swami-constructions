@@ -707,14 +707,67 @@ function toggleMobileSidebar(forceState) {
 }
 
 // --- VIEW ROUTER ---
+// --- ULTRA-FAST IN-MEMORY CACHE (INSTANT 0.1s TAB SWITCHING) ---
+const appCache = {
+  data: {},
+  get(key) {
+    const item = this.data[key];
+    if (!item) return null;
+    if (Date.now() - item.time > 45000) return null; // 45s TTL
+    return item.val;
+  },
+  set(key, val) {
+    this.data[key] = { val, time: Date.now() };
+  },
+  clear(prefix) {
+    if (!prefix) { this.data = {}; return; }
+    Object.keys(this.data).forEach(k => {
+      if (k.startsWith(prefix)) delete this.data[k];
+    });
+  }
+};
+
+function showTopLoader(isLoading) {
+  let loader = $('topNavLoader');
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = 'topNavLoader';
+    loader.style.cssText = 'position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg, #d7a43b, #ea580c, #16a34a); z-index:9999; transition:width 0.2s ease, opacity 0.3s ease; width:0%; opacity:0; pointer-events:none;';
+    document.body.appendChild(loader);
+  }
+  if (isLoading) {
+    loader.style.opacity = '1';
+    loader.style.width = '75%';
+  } else {
+    loader.style.width = '100%';
+    setTimeout(() => {
+      loader.style.opacity = '0';
+      setTimeout(() => { loader.style.width = '0%'; }, 250);
+    }, 120);
+  }
+}
+
+// --- SMOOTH INSTANT VIEW ROUTER ---
+let currentActiveViewId = null;
+
 async function openView(viewId, btnElement) {
   toggleMobileSidebar(false);
   document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
   const btn = btnElement || $(`btn-${viewId}`);
   if (btn) btn.classList.add('active');
 
+  currentActiveViewId = viewId;
   const main = $('mainContent');
-  main.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><p style="margin-top:10px; color:var(--muted);">लोड हो रहा है...</p></div>';
+
+  // Check if we have cached HTML rendered for this view to show instantly (0ms latency)
+  const cachedHtml = appCache.get('view_html_' + currentRole + '_' + viewId);
+  if (cachedHtml) {
+    main.innerHTML = cachedHtml;
+  } else {
+    main.innerHTML = '<div style="text-align:center; padding:50px; color:var(--muted);"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--accent);"></i><br><p style="margin-top:10px; font-size:13px; font-weight:600;">लोड हो रहा है...</p></div>';
+  }
+
+  showTopLoader(true);
 
   try {
     if (currentRole === 'admin') {
@@ -738,8 +791,15 @@ async function openView(viewId, btnElement) {
       else if (viewId === 'worker_earnings') await renderWorkerEarnings(main);
       else if (viewId === 'worker_updates') await renderWorkerUpdates(main);
     }
+
+    // Save successfully rendered HTML to cache for instant 0.1s switching next time
+    if (main.innerHTML && !main.innerHTML.includes('alert-error')) {
+      appCache.set('view_html_' + currentRole + '_' + viewId, main.innerHTML);
+    }
   } catch (err) {
     main.innerHTML = `<div class="card alert-box alert-error">Error loading section: ${err.message}</div>`;
+  } finally {
+    showTopLoader(false);
   }
 }
 
@@ -757,7 +817,6 @@ function showFullImage(url, title = 'Photo Preview') {
     </div>
   `;
 }
-
 // ==========================================
 // NOTIFICATIONS SYSTEM
 // ==========================================
