@@ -3715,7 +3715,7 @@ async function submitCustomerEnquiry(e) {
   }
 
   try {
-    // 1. Primary insert with full data
+    // Attempt 1: Full payload with estimated_budget
     let res = await db.from('enquiries').insert({
       customer_id: custId,
       name: custName,
@@ -3727,16 +3727,27 @@ async function submitCustomerEnquiry(e) {
       created_at: new Date().toISOString()
     });
 
-    // 2. Fallback in case of column differences
+    // Attempt 2: If column difference exists, retry with budget & work
     if (res.error) {
-      console.warn('Retrying with standard schema...', res.error);
+      console.warn('Attempt 1 failed, retrying with budget & work schema...', res.error);
       res = await db.from('enquiries').insert({
         customer_id: custId,
-        work_details: `${custName} (${custPhone}) - ${work}`,
+        work: work,
+        budget: budget,
         address: address,
-        estimated_budget: budget,
         status: 'pending',
         created_at: new Date().toISOString()
+      });
+    }
+
+    // Attempt 3: Minimal fallback
+    if (res.error) {
+      console.warn('Attempt 2 failed, retrying minimal insert...', res.error);
+      res = await db.from('enquiries').insert({
+        customer_id: custId,
+        work_details: `${custName} (${custPhone}): ${work} [Budget: ₹${budget}]`,
+        address: address,
+        status: 'pending'
       });
     }
 
@@ -3749,7 +3760,7 @@ async function submitCustomerEnquiry(e) {
     openView('my_projects');
   } catch (err) {
     console.error('Enquiry submit error:', err);
-    alert('इन्क्वायरी भेजने में त्रुटि: ' + (err.message || 'कृपया इंटरनेट व Supabase जांचें।'));
+    alert('इन्क्वायरी भेजने में त्रुटि: ' + (err.message || 'कृपया Supabase SQL चलाएं।'));
   } finally {
     if (btn) {
       btn.disabled = false;
