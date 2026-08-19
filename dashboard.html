@@ -2689,55 +2689,52 @@ async function saveAdminDailyUpdateSubmit(e) {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> सेव हो रहा है...';
   }
 
+  // Fetch valid logged in User UUID
+  let uid = currentUser?.id || null;
+  if (!uid && db?.auth) {
+    try {
+      const { data: authData } = await db.auth.getUser();
+      uid = authData?.user?.id || null;
+    } catch(e) {}
+  }
+
   try {
-    // Attempt 1: Standard with description & created_by
-    let res = await db.from('daily_updates').insert({
+    // 1. Primary insert with both author_id and created_by
+    let payload = {
       project_id: projId,
       description: desc,
       image_url: photo,
-      created_by: currentUser ? currentUser.id : null,
       created_at: new Date().toISOString()
-    });
+    };
 
-    // Attempt 2: If 'created_by' failed, try with description only
-    if (res.error) {
-      console.warn('Attempt 1 failed, retrying without created_by...', res.error);
+    if (uid) {
+      payload.author_id = uid;
+      payload.created_by = uid;
+    }
+
+    let res = await db.from('daily_updates').insert(payload);
+
+    // 2. Fallback with author_id only
+    if (res.error && uid) {
+      console.warn('Retrying with author_id only...', res.error);
       res = await db.from('daily_updates').insert({
         project_id: projId,
         description: desc,
         image_url: photo,
+        author_id: uid,
         created_at: new Date().toISOString()
       });
     }
 
-    // Attempt 3: If 'description' column is missing, try 'work_details'
-    if (res.error) {
-      console.warn('Attempt 2 failed, retrying with work_details column...', res.error);
+    // 3. Fallback with work_details & author_id
+    if (res.error && uid) {
+      console.warn('Retrying with work_details & author_id...', res.error);
       res = await db.from('daily_updates').insert({
         project_id: projId,
         work_details: desc,
         image_url: photo,
+        author_id: uid,
         created_at: new Date().toISOString()
-      });
-    }
-
-    // Attempt 4: If 'work_details' is also missing, try 'notes'
-    if (res.error) {
-      console.warn('Attempt 3 failed, retrying with notes column...', res.error);
-      res = await db.from('daily_updates').insert({
-        project_id: projId,
-        notes: desc,
-        image_url: photo,
-        created_at: new Date().toISOString()
-      });
-    }
-
-    // Attempt 5: Minimal insert with photo only
-    if (res.error) {
-      console.warn('Attempt 4 failed, retrying minimal insert...', res.error);
-      res = await db.from('daily_updates').insert({
-        project_id: projId,
-        image_url: photo
       });
     }
 
@@ -2753,7 +2750,7 @@ async function saveAdminDailyUpdateSubmit(e) {
     openView('daily_updates');
   } catch(err) {
     console.error('Daily update error:', err);
-    alert('दैनिक अपडेट सेव करने में त्रुटि: ' + (err.message || 'कृपया Supabase SQL Editor में कॉलम जोड़ें।'));
+    alert('दैनिक अपडेट सेव करने में त्रुटि: ' + (err.message || 'कृपया Supabase SQL Editor में कमांड चलाएं।'));
   } finally {
     if (btn) {
       btn.disabled = false;
