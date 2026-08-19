@@ -340,6 +340,14 @@
       </div>
 
       <div class="form-group" id="pwGroup">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <label style="margin-bottom:0;">Password</label>
+          <a href="javascript:void(0)" onclick="openForgotPasswordModal()" style="font-size:12px; color:var(--accent); font-weight:700; text-decoration:none;">
+            पासवर्ड भूल गए? (Forgot Password?)
+          </a>
+        </div>
+        <input id="loginPassword" type="password" placeholder="••••••••">
+      </div>
         <label>Password</label>
         <input id="loginPassword" type="password" placeholder="••••••••">
       </div>
@@ -522,7 +530,119 @@ function selectRole(role) {
   if ($('pwGroup')) $('pwGroup').classList.toggle('hidden', isWorker);
   if ($('signupGroup')) $('signupGroup').classList.toggle('hidden', role !== 'customer');
 }
+// ==========================================
+// FORGOT & RESET PASSWORD ENGINE (SUPABASE AUTH)
+// ==========================================
+function openForgotPasswordModal() {
+  const currentEmail = $('loginId')?.value.trim() || '';
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:460px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-key" style="color:var(--accent);"></i> पासवर्ड रीसेट (Forgot Password)</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
+      </div>
 
+      <p style="font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:14px;">
+        अपना पंजीकृत Email पता दर्ज करें। हम आपके ईमेल पर पासवर्ड रीसेट करने का सुरक्षित लिंक भेजेंगे:
+      </p>
+
+      <form onsubmit="handleForgotPasswordSubmit(event)">
+        <div class="form-group">
+          <label>पंजीकृत Email (Registered Email)</label>
+          <input id="fpEmail" type="email" required value="${currentEmail}" placeholder="उदा. yourname@gmail.com">
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">
+          <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+          <button id="btnSendResetLink" type="submit" class="btn-primary" style="width:auto;"><i class="fa-solid fa-paper-plane"></i> रीसेट लिंक भेजें</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+async function handleForgotPasswordSubmit(e) {
+  e.preventDefault();
+  const email = $('fpEmail')?.value.trim();
+  if (!email) return alert('कृपया अपना ईमेल दर्ज करें!');
+
+  const btn = $('btnSendResetLink');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> लिंक भेजा जा रहा है...';
+  }
+
+  try {
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+
+    if (error) throw error;
+
+    alert(`पासवर्ड रीसेट लिंक आपके ईमेल (${email}) पर भेज दिया गया है! ✅\nकृपया अपना इनबॉक्स/स्पैम फ़ोल्डर चेक करें और लिंक पर क्लिक करके नया पासवर्ड सेट करें।`);
+    $('modalContainer').classList.add('hidden');
+  } catch(err) {
+    console.error('Password reset error:', err);
+    alert('रीसेट लिंक भेजने में त्रुटि: ' + (err.message || 'कृपया सही ईमेल जांचें।'));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> रीसेट लिंक भेजें';
+    }
+  }
+}
+
+// Modal for setting a new password when arriving from email reset link
+function openSetNewPasswordModal() {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:440px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-lock" style="color:var(--success);"></i> नया पासवर्ड सेट करें</h3>
+        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
+      </div>
+
+      <form onsubmit="handleSetNewPasswordSubmit(event)">
+        <div class="form-group">
+          <label>नया पासवर्ड दर्ज करें (New Password)</label>
+          <input id="npPassword" type="password" required minlength="6" placeholder="कम से कम 6 अक्षर">
+        </div>
+
+        <div class="form-group">
+          <label>पासवर्ड दोबारा दर्ज करें (Confirm Password)</label>
+          <input id="npConfirmPassword" type="password" required minlength="6" placeholder="वही पासवर्ड दोबारा लिखें">
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="submit" class="btn-primary" style="background:var(--success); width:100%;"><i class="fa-solid fa-check"></i> पासवर्ड अपडेट करें</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+async function handleSetNewPasswordSubmit(e) {
+  e.preventDefault();
+  const p1 = $('npPassword')?.value;
+  const p2 = $('npConfirmPassword')?.value;
+
+  if (p1 !== p2) return alert('दोनों पासवर्ड मेल नहीं खा रहे हैं!');
+  if (p1.length < 6) return alert('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए!');
+
+  try {
+    const { error } = await db.auth.updateUser({ password: p1 });
+    if (error) throw error;
+
+    alert('आपका नया पासवर्ड सफलतापूर्वक अपडेट हो गया है! ✅ अब आप नए पासवर्ड से लॉगिन कर सकते हैं।');
+    $('modalContainer').classList.add('hidden');
+    window.location.hash = '';
+  } catch(err) {
+    alert('पासवर्ड बदलने में समस्या: ' + err.message);
+  }
+}
 async function handleAuthSubmit(e) {
   e.preventDefault();
   const alertBox = $('loginAlert');
