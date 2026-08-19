@@ -4086,21 +4086,45 @@ async function renderCustomerProjects(container) {
     <div class="card" style="padding:0; overflow:hidden;">
       <div class="table-container">
         <table>
-          <thead><tr><th>प्रोजेक्ट नाम</th><th>अनुबंध पत्र</th><th>प्रगति</th><th>स्टेटस</th><th>कुल राशि</th><th>जमा</th><th>बकाया (Due)</th><th>Action</th></tr></thead>
+          <thead>
+            <tr>
+              <th>प्रोजेक्ट नाम</th>
+              <th>अनुबंध पत्र</th>
+              <th>प्रगति (Progress)</th>
+              <th>कुल राशि</th>
+              <th>जमा</th>
+              <th>बकाया (Due)</th>
+              <th>Action</th>
+            </tr>
+          </thead>
           <tbody>
-            ${projects.length === 0 ? '<tr><td colspan="8" style="text-align:center; padding:24px;">आपका कोई प्रोजेक्ट नहीं है।</td></tr>' : ''}
+            ${projects.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">आपका कोई प्रोजेक्ट नहीं है।</td></tr>' : ''}
             ${projects.map(p => {
               const contract = contracts.find(c => c.project_id === p.id);
               const totalAmt = Number(p.total_amount || 0);
               const paidAmt = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
               const remainAmt = totalAmt - paidAmt;
+              const prog = Number(p.progress || 0);
 
               return `
                 <tr>
-                  <td><b>${p.name}</b><br><small>${p.address || ''}</small></td>
+                  <td><b>${p.name}</b><br><small style="color:var(--muted);">${p.address || ''}</small></td>
                   <td>${contract ? `<button class="btn-sm btn-gold" onclick="openFullAgreementModal('${contract.id}')"><i class="fa-solid fa-file-signature"></i> अनुबंध देखें</button>` : 'तैयार हो रहा है...'}</td>
-                  <td><b>${p.progress}%</b><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p.progress}%;"></div></div></td>
-                  <td><span class="btn-sm btn-success">${p.status}</span></td>
+                  
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px; min-width:140px;">
+                      <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                          <b style="font-size:12.5px; color:var(--primary);">${prog}%</b>
+                        </div>
+                        <div class="progress-bar-bg" style="margin-top:0;"><div class="progress-bar-fill" style="width:${prog}%;"></div></div>
+                      </div>
+                      <button class="btn-sm btn-gold" style="padding:4px 8px; font-size:11px; white-space:nowrap;" onclick="openProjectProgressDetailsModal('${p.id}', '${escapeAttr(p.name)}')" title="दैनिक कार्य फोटो व विवरण देखें">
+                        <i class="fa-solid fa-camera"></i> Show
+                      </button>
+                    </div>
+                  </td>
+
                   <td>₹${totalAmt.toLocaleString('en-IN')}</td>
                   <td style="color:var(--success); font-weight:700;">₹${paidAmt.toLocaleString('en-IN')}</td>
                   <td style="color:var(--danger); font-weight:700;">₹${remainAmt.toLocaleString('en-IN')}</td>
@@ -4120,7 +4144,6 @@ async function renderCustomerProjects(container) {
     </div>
   `;
 }
-
 async function renderCustomerEnquiryForm(container) {
   container.innerHTML = `
     <div class="page-head"><h1>नया निर्माण कार्य आवेदन / इन्क्वायरी</h1></div>
