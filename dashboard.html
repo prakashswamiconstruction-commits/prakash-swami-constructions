@@ -4374,22 +4374,80 @@ async function submitCustomerEnquiry(e) {
   }
 }
 async function renderCustomerPayments(container) {
-  const { data: payments } = await db.from('payments').select('*').eq('customer_id', currentUser?.id).order('paid_at', { ascending: false });
+  const [payRes, setRes] = await Promise.all([
+    db.from('payments').select('*').eq('customer_id', currentUser?.id).order('paid_at', { ascending: false }),
+    db.from('business_settings').select('*').eq('id', true).maybeSingle()
+  ]);
+
+  const payments = payRes.data || [];
+  const adminUpi = setRes.data?.upi_id || '9785438345@axl';
 
   container.innerHTML = `
-    <div class="page-head"><h1>मेरी पेमेंट हिस्ट्री</h1></div>
-    <div class="card">
+    <div class="page-head">
+      <div>
+        <h1>मेरी पेमेंट हिस्ट्री एवं UPI भुगतान (Payments & UPI)</h1>
+        <p style="color:var(--muted); font-size:13px;">दैनिक मजदूरी (Daily Wage) या किश्त का सीधा UPI भुगतान</p>
+      </div>
+      <button class="btn-primary" style="width:auto;" onclick="openSubmitCustomerPaymentReceiptModal('${adminUpi}')">
+        <i class="fa-solid fa-plus-circle"></i> + पेमेंट रसीद / UTR दर्ज करें
+      </button>
+    </div>
+
+    <!-- Direct UPI Payment Card for Customer (Daily Wage & Custom Payments) -->
+    <div class="card" style="background:linear-gradient(135deg, #0b1220 0%, #1e293b 100%); color:#fff; padding:22px; border-radius:16px; margin-bottom:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15);">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+        <div>
+          <h3 style="color:#fff; font-size:18px; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-bolt" style="color:var(--gold);"></i> ठेकेदार को डायरेक्ट UPI भुगतान (Direct Contractor UPI Pay)
+          </h3>
+          <p style="color:#94a3b8; font-size:13px; margin-top:2px;">
+            दैनिक मजदूरी (Daily Wage) या किश्त राशि डालकर सीधे PhonePe / GPay / Paytm से भुगतान करें:
+          </p>
+        </div>
+        <div style="background:rgba(215,164,59,0.15); border:1px solid rgba(215,164,59,0.4); padding:6px 14px; border-radius:10px; display:flex; align-items:center; gap:8px;">
+          <span style="color:#fde047; font-weight:800; font-size:13px;">Admin UPI: ${adminUpi}</span>
+          <button type="button" class="btn-sm btn-gold" style="padding:2px 8px; font-size:11px;" onclick="navigator.clipboard.writeText('${adminUpi}'); alert('UPI ID कॉपी हो गई: ${adminUpi}');">
+            <i class="fa-solid fa-copy"></i> Copy
+          </button>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.07); padding:16px; border-radius:12px; border:1px dashed rgba(215,164,59,0.45); display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px;">
+        <div style="flex:1; min-width:260px;">
+          <label style="color:#cbd5e1; font-size:12.5px; font-weight:700; display:block; margin-bottom:6px;">
+            भुगतान राशि दर्ज करें (Enter Amount ₹):
+          </label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input id="custManualUpiAmt" type="number" placeholder="उदा. 1500 या 5000" style="background:#fff; color:#0b1220; border:0; padding:11px 14px; border-radius:8px; font-weight:800; font-size:16px; width:180px;" oninput="updateCustUpiDeepLink(this.value, '${adminUpi}')">
+            <a id="btnCustManualUpiPay" href="upi://pay?pa=${adminUpi}&pn=Prakash%20Swami%20Constructions&cu=INR" class="btn-primary" style="display:inline-flex; width:auto; background:#16a34a; font-weight:800; text-decoration:none; padding:11px 22px; font-size:14px;">
+              <i class="fa-solid fa-bolt"></i> UPI App में खोलें & Pay करें
+            </a>
+          </div>
+        </div>
+        <div style="font-size:12px; color:#cbd5e1; line-height:1.5;">
+          ✓ प्रकाश चन्द स्वामी (Prakash Swami Constructions)<br>
+          ✓ सुरक्षित Axis Bank VPA Handle: <b>${adminUpi}</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment History Table -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:16px; color:var(--primary);"><i class="fa-solid fa-receipt" style="color:var(--accent);"></i> भुगतान रसीदें एवं इतिहास (Payment Receipts)</h3>
+        <span class="btn-sm btn-gold" style="font-size:12px;">कुल रसीदें: ${payments.length}</span>
+      </div>
       <div class="table-container">
         <table>
-          <thead><tr><th>दिनांक</th><th>माध्यम</th><th>Transaction Ref</th><th>राशि (₹)</th><th>Note</th></tr></thead>
+          <thead><tr><th>दिनांक</th><th>माध्यम</th><th>Transaction Ref / UTR</th><th>राशि (₹)</th><th>Note / विवरण</th></tr></thead>
           <tbody>
-            ${(payments || []).length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:20px;">कोई पेमेंट हिस्ट्री नहीं है।</td></tr>' : ''}
-            ${(payments || []).map(p => `
+            ${payments.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);">कोई पेमेंट हिस्ट्री नहीं है। ऊपर दिए बटन से पेमेंट करने के बाद अपनी रसीद दर्ज करें।</td></tr>' : ''}
+            ${payments.map(p => `
               <tr>
                 <td>${new Date(p.paid_at || p.created_at).toLocaleDateString('en-IN')}</td>
-                <td><span class="btn-sm btn-edit">${p.method}</span></td>
+                <td><span class="btn-sm btn-edit">${p.method || 'UPI'}</span></td>
                 <td>${safeStr(p.reference, '-')}</td>
-                <td><b style="color:var(--success);">₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
+                <td><b style="color:var(--success); font-size:14px;">₹${Number(p.amount || 0).toLocaleString('en-IN')}</b></td>
                 <td>${safeStr(p.note, '-')}</td>
               </tr>
             `).join('')}
@@ -4400,6 +4458,115 @@ async function renderCustomerPayments(container) {
   `;
 }
 
+function updateCustUpiDeepLink(amt, upiId) {
+  const btn = $('btnCustManualUpiPay');
+  if (!btn) return;
+  const num = Number(amt) || 0;
+  if (num > 0) {
+    btn.href = `upi://pay?pa=${upiId}&pn=Prakash%20Swami%20Constructions&am=${num}&cu=INR`;
+    btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Pay ₹${num.toLocaleString('en-IN')} via UPI`;
+  } else {
+    btn.href = `upi://pay?pa=${upiId}&pn=Prakash%20Swami%20Constructions&cu=INR`;
+    btn.innerHTML = `<i class="fa-solid fa-bolt"></i> UPI App में खोलें & Pay करें`;
+  }
+}
+
+function openSubmitCustomerPaymentReceiptModal(adminUpi) {
+  db.from('projects').select('id, name').eq('customer_id', currentUser?.id).then(({ data: projects }) => {
+    const modal = $('modalContainer');
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:500px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          <h3 style="font-size:17px; color:var(--primary);"><i class="fa-solid fa-receipt" style="color:var(--accent);"></i> भुगतान रसीद / UTR दर्ज करें</h3>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
+        </div>
+
+        <form onsubmit="saveCustomerPaymentReceiptSubmit(event)">
+          <div class="form-group">
+            <label>१. संबंधित प्रोजेक्ट चुनें (वैकल्पिक)</label>
+            <select id="cprProjId">
+              <option value="">-- सामान्य / Daily Wage / General --</option>
+              ${(projects || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>२. भुगतान की गई राशि (Amount ₹)</label>
+            <input id="cprAmount" type="number" required placeholder="उदा. 1500 या 25000">
+          </div>
+
+          <div class="form-group">
+            <label>३. भुगतान माध्यम (Payment Method)</label>
+            <select id="cprMethod">
+              <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+              <option value="Bank">Bank Transfer (NEFT / IMPS)</option>
+              <option value="Cash">Cash (नकद)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>४. UTR / Transaction Reference Number</label>
+            <input id="cprRef" placeholder="12 अंकों का UPI UTR या रसीद नंबर">
+          </div>
+
+          <div class="form-group">
+            <label>५. विवरण / Note (वैकल्पिक)</label>
+            <input id="cprNote" placeholder="उदा. 2 दिन की दिहाड़ी मजदूरी या प्लिंथ किश्त">
+          </div>
+
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+            <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+            <button type="submit" class="btn-primary" style="width:auto; background:var(--success);"><i class="fa-solid fa-check"></i> रसीद सेव करें</button>
+          </div>
+        </form>
+      </div>
+    `;
+  });
+}
+
+async function saveCustomerPaymentReceiptSubmit(e) {
+  e.preventDefault();
+  const projId = $('cprProjId')?.value || null;
+  const amt = Number($('cprAmount')?.value) || 0;
+  const method = $('cprMethod')?.value || 'UPI';
+  const ref = $('cprRef')?.value.trim() || null;
+  const note = $('cprNote')?.value.trim() || null;
+
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> सेव हो रहा है...';
+  }
+
+  try {
+    const { error } = await db.from('payments').insert({
+      customer_id: currentUser?.id || null,
+      project_id: projId,
+      direction: 'customer_to_business',
+      amount: amt,
+      method: method,
+      reference: ref,
+      note: note,
+      created_by: currentUser?.id || null,
+      paid_at: new Date().toISOString()
+    });
+
+    if (error) throw error;
+
+    alert('आपकी भुगतान रसीद सफलतापूर्वक दर्ज हो गई है! ✅');
+    $('modalContainer').classList.add('hidden');
+    openView('my_payments');
+  } catch(err) {
+    console.error('Payment receipt error:', err);
+    alert('पेमेंट रसीद दर्ज करने में त्रुटि: ' + (err.message || 'कृपया पुनः प्रयास करें'));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> रसीद सेव करें';
+    }
+  }
+}
 function openCustomerSignupModal() {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
