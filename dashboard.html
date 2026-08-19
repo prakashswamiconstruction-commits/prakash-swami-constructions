@@ -333,21 +333,13 @@
 
     <div id="loginAlert" class="alert-box alert-error hidden"></div>
 
-    <form id="authForm" onsubmit="handleAuthSubmit(event)">
+   <form id="authForm" onsubmit="handleAuthSubmit(event)">
       <div class="form-group">
         <label id="inputLabel">Admin Email</label>
-        <input id="loginId" type="email" required placeholder="अपना Email दर्ज करें" autocomplete="off" value="">
+        <input id="loginId" type="text" required value="satpalswami22742@gmail.com" placeholder="satpalswami22742@gmail.com">
       </div>
 
       <div class="form-group" id="pwGroup">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <label style="margin-bottom:0;">Password</label>
-          <a href="javascript:void(0)" onclick="openForgotPasswordModal()" style="font-size:12px; color:var(--accent); font-weight:700; text-decoration:none;">
-            पासवर्ड भूल गए? (Forgot Password?)
-          </a>
-        </div>
-        <input id="loginPassword" type="password" placeholder="••••••••">
-      </div>
         <label>Password</label>
         <input id="loginPassword" type="password" placeholder="••••••••">
       </div>
@@ -355,8 +347,14 @@
       <button id="loginSubmitBtn" type="submit" class="btn-primary">
         <i class="fa-solid fa-right-to-bracket"></i> Login
       </button>
-    </form>
 
+      <!-- Forgot Password Link -->
+      <div id="forgotPwLinkBox" style="text-align:center; margin-top:12px;">
+        <a href="javascript:void(0)" onclick="openForgotPasswordModal()" style="font-size:13px; color:var(--accent); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-key"></i> पासवर्ड भूल गए? (Forgot Password?)
+        </a>
+      </div>
+    </form>
     <div id="signupGroup" class="hidden" style="margin-top: 14px; text-align: center;">
       <p style="font-size: 13px; color: var(--muted);">नया खाता बनाना चाहते हैं? 
         <a href="javascript:void(0)" onclick="openCustomerSignupModal()" style="color:var(--accent); font-weight:700; text-decoration:underline;">Customer Sign Up</a>
@@ -520,18 +518,100 @@ function selectRole(role) {
   }
   if ($('loginId')) {
     $('loginId').type = isWorker ? 'tel' : 'email';
-    $('loginId').value = '';
-    $('loginId').placeholder = isWorker ? 'अपना 10-अंकों का मोबाइल नंबर डालें' : (isAdmin ? 'अपना Admin Email दर्ज करें' : 'अपना Email दर्ज करें (उदा. customer@gmail.com)');
-  }
-  if ($('loginPassword')) {
-    $('loginPassword').value = '';
+    $('loginId').value = isAdmin ? ADMIN_EMAIL : '';
+    $('loginId').placeholder = isWorker ? 'अपना 10-अंकों का मोबाइल नंबर डालें' : (isAdmin ? ADMIN_EMAIL : 'अपना Email दर्ज करें (उदा. customer@gmail.com)');
   }
 
   if ($('pwGroup')) $('pwGroup').classList.toggle('hidden', isWorker);
+  if ($('forgotPwLinkBox')) $('forgotPwLinkBox').classList.toggle('hidden', isWorker);
   if ($('signupGroup')) $('signupGroup').classList.toggle('hidden', role !== 'customer');
 }
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  const alertBox = $('loginAlert');
+  if (alertBox) alertBox.classList.add('hidden');
+  
+  const idVal = $('loginId') ? $('loginId').value.trim() : '';
+  const passVal = $('loginPassword') ? $('loginPassword').value.trim() : '';
+
+  if (!db) return showLoginError('Supabase Database से कनेक्शन नहीं बन सका। कृपया इंटरनेट जांचें।');
+  if (!idVal) return showLoginError('कृपया आवश्यक जानकारी (Email या मोबाइल नंबर) दर्ज करें।');
+
+  const btn = $('loginSubmitBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+  }
+
+  try {
+    // 1. WORKER LOGIN (By Registered Phone Number - No Password)
+    if (currentRole === 'worker') {
+      const cleanPhone = idVal.replace(/[^0-9]/g, '');
+      const { data: worker, error } = await db.from('profiles')
+        .select('*')
+        .eq('role', 'worker')
+        .or(`phone.eq.${idVal},phone.eq.${cleanPhone}`)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!worker) return showLoginError('यह मोबाइल नंबर किसी पंजीकृत कारीगर/लेबर से मेल नहीं खाता। एडमिन से संपर्क करें।');
+
+      currentUser = worker;
+      sessionStorage.setItem('ps_worker_session', JSON.stringify(worker));
+      launchDashboard();
+      return;
+    }
+
+    // 2. ADMIN OR CUSTOMER LOGIN
+    if (!passVal) return showLoginError('कृपया पासवर्ड दर्ज करें।');
+
+    let loginEmail = idVal;
+    if (currentRole === 'customer' && !idVal.includes('@')) {
+      const cleanPhone = idVal.replace(/[^0-9]/g, '');
+      loginEmail = `${cleanPhone}@psconstructions.in`;
+    }
+
+    if (currentRole === 'admin' && idVal.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      loginEmail = ADMIN_EMAIL;
+    }
+
+    let { data, error } = await db.auth.signInWithPassword({
+      email: loginEmail,
+      password: passVal
+    });
+
+    if (error && currentRole === 'customer' && !idVal.includes('@')) {
+      const { data: prof } = await db.from('profiles').select('email').eq('phone', idVal).eq('role', 'customer').maybeSingle();
+      if (prof?.email && prof.email !== loginEmail) {
+        const retry = await db.auth.signInWithPassword({ email: prof.email, password: passVal });
+        if (!retry.error) {
+          data = retry.data;
+          error = null;
+        }
+      }
+    }
+
+    if (error) {
+      if (error.message.includes('Invalid login credentials')) {
+        return showLoginError('गलत Email या पासवर्ड दर्ज किया गया है।');
+      }
+      throw error;
+    }
+
+    await loadUserProfile(data.user);
+  } catch (err) {
+    showLoginError(err.message || 'Login असफल रहा। कृपया पुनः प्रयास करें।');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
+    }
+  }
+}
+
 // ==========================================
-// FORGOT & RESET PASSWORD ENGINE (SUPABASE AUTH)
+// PASSWORD RESET (FORGOT PASSWORD) MODAL
 // ==========================================
 function openForgotPasswordModal() {
   const currentEmail = $('loginId')?.value.trim() || '';
@@ -581,7 +661,7 @@ async function handleForgotPasswordSubmit(e) {
 
     if (error) throw error;
 
-    alert(`पासवर्ड रीसेट लिंक आपके ईमेल (${email}) पर भेज दिया गया है! ✅\nकृपया अपना इनबॉक्स/स्पैम फ़ोल्डर चेक करें और लिंक पर क्लिक करके नया पासवर्ड सेट करें।`);
+    alert(`पासवर्ड रीसेट लिंक आपके ईमेल (${email}) पर भेज दिया गया है! ✅\nकृपया अपना इनबॉक्स या स्पैम फ़ोल्डर चेक करें और लिंक पर क्लिक करके नया पासवर्ड सेट करें।`);
     $('modalContainer').classList.add('hidden');
   } catch(err) {
     console.error('Password reset error:', err);
@@ -590,123 +670,6 @@ async function handleForgotPasswordSubmit(e) {
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> रीसेट लिंक भेजें';
-    }
-  }
-}
-
-// Modal for setting a new password when arriving from email reset link
-function openSetNewPasswordModal() {
-  const modal = $('modalContainer');
-  modal.classList.remove('hidden');
-  modal.innerHTML = `
-    <div class="modal-card" style="max-width:440px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-        <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-lock" style="color:var(--success);"></i> नया पासवर्ड सेट करें</h3>
-        <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
-      </div>
-
-      <form onsubmit="handleSetNewPasswordSubmit(event)">
-        <div class="form-group">
-          <label>नया पासवर्ड दर्ज करें (New Password)</label>
-          <input id="npPassword" type="password" required minlength="6" placeholder="कम से कम 6 अक्षर">
-        </div>
-
-        <div class="form-group">
-          <label>पासवर्ड दोबारा दर्ज करें (Confirm Password)</label>
-          <input id="npConfirmPassword" type="password" required minlength="6" placeholder="वही पासवर्ड दोबारा लिखें">
-        </div>
-
-        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
-          <button type="submit" class="btn-primary" style="background:var(--success); width:100%;"><i class="fa-solid fa-check"></i> पासवर्ड अपडेट करें</button>
-        </div>
-      </form>
-    </div>
-  `;
-}
-
-async function handleSetNewPasswordSubmit(e) {
-  e.preventDefault();
-  const p1 = $('npPassword')?.value;
-  const p2 = $('npConfirmPassword')?.value;
-
-  if (p1 !== p2) return alert('दोनों पासवर्ड मेल नहीं खा रहे हैं!');
-  if (p1.length < 6) return alert('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए!');
-
-  try {
-    const { error } = await db.auth.updateUser({ password: p1 });
-    if (error) throw error;
-
-    alert('आपका नया पासवर्ड सफलतापूर्वक अपडेट हो गया है! ✅ अब आप नए पासवर्ड से लॉगिन कर सकते हैं।');
-    $('modalContainer').classList.add('hidden');
-    window.location.hash = '';
-  } catch(err) {
-    alert('पासवर्ड बदलने में समस्या: ' + err.message);
-  }
-}
-async function handleAuthSubmit(e) {
-  e.preventDefault();
-  const alertBox = $('loginAlert');
-  if (alertBox) alertBox.classList.add('hidden');
-  
-  const idVal = $('loginId') ? $('loginId').value.trim() : '';
-  const passVal = $('loginPassword') ? $('loginPassword').value.trim() : '';
-
-  if (!db) return showLoginError('Supabase Database से कनेक्शन नहीं बन सका। कृपया इंटरनेट जांचें।');
-  if (!idVal) return showLoginError('कृपया आवश्यक जानकारी दर्ज करें।');
-
-  const btn = $('loginSubmitBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> लॉग इन हो रहा है...';
-  }
-
-  try {
-    // 1. WORKER LOGIN (By Registered Phone Number - No Password)
-    if (currentRole === 'worker') {
-      const cleanPhone = idVal.replace(/[^0-9]/g, '');
-      const { data: worker, error } = await db.from('profiles')
-        .select('*')
-        .eq('role', 'worker')
-        .or(`phone.eq.${idVal},phone.eq.${cleanPhone}`)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!worker) return showLoginError('यह मोबाइल नंबर किसी पंजीकृत कारीगर/लेबर से मेल नहीं खाता। एडमिन से संपर्क करें।');
-
-      currentUser = worker;
-      sessionStorage.setItem('ps_worker_session', JSON.stringify(worker));
-      launchDashboard();
-      return;
-    }
-
-    // 2. ADMIN OR CUSTOMER LOGIN
-    if (!passVal) return showLoginError('कृपया पासवर्ड दर्ज करें।');
-
-    let loginEmail = idVal;
-    if (currentRole === 'customer' && !idVal.includes('@')) {
-      const cleanPhone = idVal.replace(/[^0-9]/g, '');
-      loginEmail = `${cleanPhone}@psconstructions.in`;
-    }
-
-    const { data, error } = await db.auth.signInWithPassword({
-      email: loginEmail,
-      password: passVal
-    });
-
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        return showLoginError('गलत Email या पासवर्ड दर्ज किया गया है।');
-      }
-      throw error;
-    }
-
-    await loadUserProfile(data.user);
-  } catch (err) {
-    showLoginError(err.message || 'Login असफल रहा। कृपया पुनः प्रयास करें।');
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
     }
   }
 }
