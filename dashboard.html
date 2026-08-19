@@ -2406,10 +2406,13 @@ async function deleteProject(id) {
 // ==========================================
 // ADMIN: DAILY SITE UPDATES (PHOTO & WORK LOGS)
 // ==========================================
+// ==========================================
+// ADMIN: DAILY SITE UPDATES (PHOTO COMPRESSION & PROGRESS SYNC)
+// ==========================================
 async function renderAdminDailyUpdates(container) {
   const [updatesRes, projRes] = await Promise.all([
-    db.from('daily_updates').select('*, project:project_id(name, address), created_by_profile:created_by(name, role)').order('created_at', { ascending: false }),
-    db.from('projects').select('id, name')
+    db.from('daily_updates').select('*, project:project_id(name, address, progress), created_by_profile:created_by(name, role)').order('created_at', { ascending: false }),
+    db.from('projects').select('id, name, progress')
   ]);
 
   const updates = updatesRes.data || [];
@@ -2448,18 +2451,26 @@ async function renderAdminDailyUpdates(container) {
 
           <div style="padding:16px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
             <div>
-              <h4 style="font-size:15px; font-weight:800; color:var(--primary); margin-bottom:4px;">
-                <i class="fa-solid fa-building" style="color:var(--accent);"></i> ${safeStr(u.project?.name, 'General Site Update')}
-              </h4>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:4px;">
+                <h4 style="font-size:15px; font-weight:800; color:var(--primary);">
+                  <i class="fa-solid fa-building" style="color:var(--accent);"></i> ${safeStr(u.project?.name, 'General Site Update')}
+                </h4>
+                ${u.project?.progress !== undefined ? `<span class="btn-sm btn-edit" style="font-size:10px; padding:2px 6px;">${u.project.progress}% Work</span>` : ''}
+              </div>
               <p style="font-size:12px; color:var(--muted); margin-bottom:8px;">
-                <b>अपलोडकर्ता:</b> ${safeStr(u.created_by_profile?.name, 'Admin/Worker')} (${safeStr(u.created_by_profile?.role, 'Staff')})
+                <b>अपलोडकर्ता:</b> ${safeStr(u.created_by_profile?.name, 'Admin')}
               </p>
               <p style="font-size:13px; color:#334155; line-height:1.5; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
                 ${safeStr(u.description)}
               </p>
             </div>
 
-            <div style="display:flex; justify-content:flex-end; border-top:1px solid var(--border); padding-top:12px; margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:12px; margin-top:12px;">
+              ${u.project_id ? `
+                <button class="btn-sm btn-gold" onclick="openProjectProgressDetailsModal('${u.project_id}', '${escapeAttr(u.project?.name || 'Project')}')">
+                  <i class="fa-solid fa-list-check"></i> प्रोजेक्ट प्रोग्रेस देखें
+                </button>
+              ` : '<span></span>'}
               <button class="btn-sm btn-danger" onclick="deleteDailyUpdate('${u.id}')">
                 <i class="fa-solid fa-trash"></i> Delete
               </button>
@@ -2472,7 +2483,7 @@ async function renderAdminDailyUpdates(container) {
 }
 
 function openAddDailyUpdateModal() {
-  db.from('projects').select('id, name').then(({ data: projects }) => {
+  db.from('projects').select('id, name, progress').then(({ data: projects }) => {
     const modal = $('modalContainer');
     modal.classList.remove('hidden');
     modal.innerHTML = `
@@ -2485,9 +2496,9 @@ function openAddDailyUpdateModal() {
         <form onsubmit="saveAdminDailyUpdateSubmit(event)">
           <div class="form-group">
             <label>१. संबंधित प्रोजेक्ट चुनें (Project)</label>
-            <select id="adProjectSelect">
+            <select id="adProjectSelect" onchange="syncProjectProgressInput(this.value)">
               <option value="">-- सामान्य / General Site --</option>
-              ${(projects || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+              ${(projects || []).map(p => `<option value="${p.id}" data-prog="${p.progress || 0}">${p.name} (वर्तमान: ${p.progress || 0}%)</option>`).join('')}
             </select>
           </div>
 
@@ -2496,8 +2507,14 @@ function openAddDailyUpdateModal() {
             <textarea id="adDesc" rows="3" required placeholder="आज साइट पर क्या काम हुआ? उदा. कॉलम ढलाई व तराई कार्य पूर्ण..."></textarea>
           </div>
 
+          <div class="form-group">
+            <label><i class="fa-solid fa-bars-progress" style="color:var(--accent);"></i> ३. प्रोजेक्ट कार्य प्रगति % (Progress Percentage)</label>
+            <input id="adProgress" type="number" min="0" max="100" placeholder="उदा. 45% (0 - 100)" style="font-weight:700;">
+            <small style="color:var(--muted); font-size:11px;">(यह प्रतिशत प्रोजेक्ट की प्रोग्रेस बार में अपडेट हो जाएगा)</small>
+          </div>
+
           <div class="form-group" style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--border);">
-            <label><i class="fa-solid fa-camera"></i> ३. कार्य स्थल की फ़ोटो चुनें (Photo)</label>
+            <label><i class="fa-solid fa-camera"></i> ४. कार्य स्थल की फ़ोटो चुनें (Photo)</label>
             <div style="display:flex; gap:10px; margin-top:8px; align-items:center;">
               <input type="file" id="adPhotoFile" accept="image/*" onchange="previewAdminDailyUpdatePhoto(event)" style="display:none;" required>
               <button type="button" class="btn-secondary" onclick="$('adPhotoFile').click()"><i class="fa-solid fa-image"></i> फ़ोन से फ़ोटो चुनें</button>
@@ -2508,7 +2525,7 @@ function openAddDailyUpdateModal() {
 
           <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">
             <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
-            <button type="submit" class="btn-primary" style="width:auto;"><i class="fa-solid fa-upload"></i> अपडेट सेव करें</button>
+            <button id="btnSaveDailyUpd" type="submit" class="btn-primary" style="width:auto;"><i class="fa-solid fa-upload"></i> अपडेट सेव करें</button>
           </div>
         </form>
       </div>
@@ -2516,13 +2533,39 @@ function openAddDailyUpdateModal() {
   });
 }
 
+function syncProjectProgressInput(projId) {
+  const sel = $('adProjectSelect');
+  const opt = sel.options[sel.selectedIndex];
+  const prog = opt ? opt.getAttribute('data-prog') : '';
+  if (prog && $('adProgress')) {
+    $('adProgress').value = prog;
+  }
+}
+
 function previewAdminDailyUpdatePhoto(e) {
   const file = e.target.files[0];
   if (!file) return;
+
   const reader = new FileReader();
   reader.onload = function(evt) {
-    $('adPhotoBase64').value = evt.target.result;
-    $('adPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:60px; height:60px; border-radius:8px; object-fit:cover; border:2px solid var(--accent);">`;
+    const img = new Image();
+    img.onload = function() {
+      const maxDim = 1000;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.78);
+      $('adPhotoBase64').value = compressedBase64;
+      $('adPhotoPreview').innerHTML = `<img src="${compressedBase64}" style="width:60px; height:60px; border-radius:8px; object-fit:cover; border:2px solid var(--accent);">`;
+    };
+    img.src = evt.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -2532,20 +2575,43 @@ async function saveAdminDailyUpdateSubmit(e) {
   const projId = $('adProjectSelect').value || null;
   const desc = $('adDesc').value.trim();
   const photo = $('adPhotoBase64').value;
+  const progVal = $('adProgress')?.value !== '' ? Number($('adProgress').value) : null;
 
-  if (!photo) return alert('कृपया एक कार्य फ़ोटो चुनें!');
+  if (!photo) return alert('कृपया कार्य स्थल की एक फ़ोटो चुनें!');
 
-  await db.from('daily_updates').insert({
-    project_id: projId,
-    description: desc,
-    image_url: photo,
-    created_by: currentUser ? currentUser.id : null,
-    created_at: new Date().toISOString()
-  });
+  const btn = $('btnSaveDailyUpd');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> सेव हो रहा है...';
+  }
 
-  alert('दैनिक कार्य अपडेट सफलतापूर्वक दर्ज हो गया! ✅');
-  $('modalContainer').classList.add('hidden');
-  openView('daily_updates');
+  try {
+    const { error: updErr } = await db.from('daily_updates').insert({
+      project_id: projId,
+      description: desc,
+      image_url: photo,
+      created_by: currentUser ? currentUser.id : null,
+      created_at: new Date().toISOString()
+    });
+
+    if (updErr) throw updErr;
+
+    if (projId && progVal !== null && !isNaN(progVal)) {
+      await db.from('projects').update({ progress: Math.min(100, Math.max(0, progVal)) }).eq('id', projId);
+    }
+
+    alert('दैनिक कार्य अपडेट और प्रोजेक्ट प्रोग्रेस सफलतापूर्वक सेव हो गई! ✅');
+    $('modalContainer').classList.add('hidden');
+    openView('daily_updates');
+  } catch(err) {
+    console.error('Daily update error:', err);
+    alert('दैनिक अपडेट सेव करने में त्रुटि: ' + (err.message || 'कृपया पुनः प्रयास करें'));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-upload"></i> अपडेट सेव करें';
+    }
+  }
 }
 
 async function deleteDailyUpdate(id) {
@@ -2554,9 +2620,91 @@ async function deleteDailyUpdate(id) {
   openView('daily_updates');
 }
 
-// ==========================================
-// ADMIN: CUSTOMERS & WORKERS (BULLETPROOF MODALS)
-// ==========================================
+// DEDICATED MODAL: PROJECT PROGRESS TIMELINE & PHOTOS (FOR BOTH ADMIN & CUSTOMER)
+async function openProjectProgressDetailsModal(projectId, projectName) {
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:700px; text-align:center; padding:30px;">
+      <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--accent);"></i>
+      <p style="margin-top:10px; color:var(--muted);">प्रोजेक्ट कार्य प्रगति व फोटो लोड हो रही हैं...</p>
+    </div>
+  `;
+
+  try {
+    const [pRes, uRes] = await Promise.all([
+      db.from('projects').select('*').eq('id', projectId).single(),
+      db.from('daily_updates').select('*').eq('project_id', projectId).order('created_at', { ascending: false })
+    ]);
+
+    const p = pRes.data;
+    const updates = uRes.data || [];
+    const prog = p?.progress || 0;
+
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:700px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+          <div>
+            <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-trowel-bricks" style="color:var(--accent);"></i> ${safeStr(p?.name, projectName || 'Project')}</h3>
+            <p style="color:var(--muted); font-size:12.5px;"><i class="fa-solid fa-location-dot"></i> ${safeStr(p?.address, 'साइट का पता')}</p>
+          </div>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
+        </div>
+
+        <!-- Overall Progress Bar Card -->
+        <div class="card" style="background:#f8fafc; border:1px solid var(--border); padding:16px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-weight:700; color:#334155; font-size:14px;"><i class="fa-solid fa-chart-line" style="color:var(--accent);"></i> कुल निर्माण कार्य प्रगति:</span>
+            <span style="font-size:20px; font-weight:900; color:${prog === 100 ? 'var(--success)' : 'var(--primary)'};">${prog}%</span>
+          </div>
+          <div class="progress-bar-bg" style="height:12px; border-radius:6px;">
+            <div class="progress-bar-fill" style="width:${prog}%; border-radius:6px; background:${prog === 100 ? 'var(--success)' : 'linear-gradient(90deg, var(--gold) 0%, #ea580c 100%)'};"></div>
+          </div>
+        </div>
+
+        <!-- Daily Site Work Photos & Timeline -->
+        <h4 style="font-size:15px; margin-bottom:12px; color:var(--primary); display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-camera-retro" style="color:var(--accent);"></i> दैनिक कार्य विवरण व साइट फोटो (${updates.length})
+        </h4>
+
+        ${updates.length === 0 ? `
+          <div style="text-align:center; padding:32px; color:var(--muted); background:#f8fafc; border-radius:12px;">
+            <i class="fa-solid fa-camera fa-2x" style="opacity:0.4; margin-bottom:8px;"></i>
+            <p>इस प्रोजेक्ट का अभी कोई दैनिक फोटो अपडेट दर्ज नहीं हुआ है।</p>
+          </div>
+        ` : `
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px; max-height:55vh; overflow-y:auto; padding-right:4px;">
+            ${updates.map(u => `
+              <div style="background:#fff; border:1px solid var(--border); border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="height:130px; width:100%; position:relative; overflow:hidden; background:#0b1220;">
+                    ${u.image_url ? `
+                      <img src="${u.image_url}" onclick="showFullImage('${u.image_url}', 'Site Update - ${new Date(u.created_at).toLocaleDateString('en-IN')}')" style="width:100%; height:100%; object-fit:cover; cursor:pointer;">
+                    ` : '<div style="width:100%; height:100%; display:grid; place-items:center; color:#94a3b8; font-size:11px;">No Photo</div>'}
+                    <span class="btn-sm btn-gold" style="position:absolute; top:6px; right:6px; font-size:10px; padding:2px 6px;">
+                      ${new Date(u.created_at).toLocaleDateString('en-IN')}
+                    </span>
+                  </div>
+                  <div style="padding:10px;">
+                    <p style="font-size:12.5px; color:#334155; line-height:1.4;">${safeStr(u.description)}</p>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  } catch(err) {
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:500px; color:var(--danger);">
+        <h3>त्रुटि</h3>
+        <p>${err.message}</p>
+        <button class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')" style="margin-top:12px;">बंद करें</button>
+      </div>
+    `;
+  }
+}
 async function renderAdminCustomers(container) {
   const [custRes, projRes, payRes] = await Promise.all([
     db.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
