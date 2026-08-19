@@ -4424,17 +4424,13 @@ async function renderCustomerPayments(container) {
             </a>
           </div>
         </div>
-        <div style="font-size:12px; color:#cbd5e1; line-height:1.5;">
-          ✓ प्रकाश चन्द स्वामी (Prakash Swami Constructions)<br>
-          ✓ सुरक्षित Axis Bank VPA Handle: <b>${adminUpi}</b>
-        </div>
       </div>
     </div>
 
     <!-- Payment History Table -->
     <div class="card" style="padding:0; overflow:hidden;">
       <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="font-size:16px; color:var(--primary);"><i class="fa-solid fa-receipt" style="color:var(--accent);"></i> भुगतान रसीदें एवं इतिहास (Payment Receipts)</h3>
+        <h3 style="font-size:16px; color:var(--primary);\"><i class="fa-solid fa-receipt" style="color:var(--accent);"></i> भुगतान रसीदें एवं इतिहास (Payment Receipts)</h3>
         <span class="btn-sm btn-gold" style="font-size:12px;">कुल रसीदें: ${payments.length}</span>
       </div>
       <div class="table-container">
@@ -4457,7 +4453,6 @@ async function renderCustomerPayments(container) {
     </div>
   `;
 }
-
 function updateCustUpiDeepLink(amt, upiId) {
   const btn = $('btnCustManualUpiPay');
   if (!btn) return;
