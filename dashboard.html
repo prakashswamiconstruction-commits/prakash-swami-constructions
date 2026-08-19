@@ -1618,7 +1618,7 @@ async function startApprovalCamera() {
   const placeholder = $('apprPlaceholder');
   try {
     contractApprStream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, 
+      video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 360 } }, 
       audio: false 
     });
     video.srcObject = contractApprStream;
@@ -1627,19 +1627,19 @@ async function startApprovalCamera() {
     $('btnStartApprCam').style.display = 'none';
     $('btnCaptureApprPhoto').style.display = 'inline-flex';
   } catch(err) {
-    alert('कैमरा शुरू करने में समस्या: ' + err.message + '\\nआप नीचे गैलरी बटन से भी फोटो चुन सकते हैं।');
+    alert('कैमरा शुरू करने में समस्या: ' + err.message + '\nआप नीचे गैलरी बटन से भी फोटो चुन सकते हैं।');
   }
 }
 
 function captureApprovalPhoto() {
   const video = $('apprVideo');
-  const canvas = $('apprCanvas');
-  canvas.width = video.videoWidth || 480;
-  canvas.height = video.videoHeight || 360;
+  const canvas = $('apprCanvas') || document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 300;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  const base64 = canvas.toDataURL('image/jpeg', 0.85);
+  const base64 = canvas.toDataURL('image/jpeg', 0.75);
   $('apprPhotoBase64').value = base64;
 
   if (contractApprStream) {
@@ -1661,22 +1661,33 @@ function previewApprovalFallbackPhoto(e) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(evt) {
-    $('apprPhotoBase64').value = evt.target.result;
-    if (contractApprStream) {
-      contractApprStream.getTracks().forEach(t => t.stop());
-      contractApprStream = null;
-    }
-    const video = $('apprVideo');
-    if (video) video.style.display = 'none';
-    const placeholder = $('apprPlaceholder');
-    if (placeholder) placeholder.style.display = 'none';
-    const prev = $('apprImgPreview');
-    prev.style.display = 'block';
-    prev.innerHTML = `<img src="${evt.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 400;
+      canvas.height = 300;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, 400, 300);
+      const base64 = canvas.toDataURL('image/jpeg', 0.75);
+      $('apprPhotoBase64').value = base64;
 
-    $('btnStartApprCam').style.display = 'none';
-    $('btnCaptureApprPhoto').style.display = 'none';
-    $('btnConfirmApproval').style.display = 'inline-flex';
+      if (contractApprStream) {
+        contractApprStream.getTracks().forEach(t => t.stop());
+        contractApprStream = null;
+      }
+      const video = $('apprVideo');
+      if (video) video.style.display = 'none';
+      const placeholder = $('apprPlaceholder');
+      if (placeholder) placeholder.style.display = 'none';
+      const prev = $('apprImgPreview');
+      prev.style.display = 'block';
+      prev.innerHTML = `<img src="${base64}" style="width:100%; height:100%; object-fit:cover;">`;
+
+      $('btnStartApprCam').style.display = 'none';
+      $('btnCaptureApprPhoto').style.display = 'none';
+      $('btnConfirmApproval').style.display = 'inline-flex';
+    };
+    img.src = evt.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -1695,70 +1706,89 @@ async function confirmContractApprovalSubmit(contractId, role) {
     return alert('कृपया पहले अपनी फोटो कैप्चर करें!');
   }
 
-  const { data: c } = await db.from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
-  if (!c) return;
-
-  const now = new Date().toISOString();
-  const parsed = parseContractDetails(c);
-
-  let newAdminPhoto = parsed.adminPhoto;
-  let newCustomerPhoto = parsed.customerPhoto;
-
-  if (role === 'admin') {
-    newAdminPhoto = photo;
-  } else {
-    newCustomerPhoto = photo;
-  }
-
-  const isFullyApproved = (role === 'admin' ? Boolean(c.customer_approved_at) : Boolean(c.admin_approved_at));
-
-  const packedScope = JSON.stringify({
-    rate_type: parsed.rateType,
-    rate_detail: parsed.rateDetail,
-    scope: parsed.scopeText,
-    notes: parsed.notes,
-    admin_photo: newAdminPhoto,
-    customer_photo: newCustomerPhoto
-  });
-
-  const updateData = {
-    scope: packedScope,
-    status: isFullyApproved ? 'locked' : 'amount_discussion',
-    locked_at: isFullyApproved ? now : null
-  };
-
-  if (role === 'admin') {
-    updateData.admin_approved_at = now;
-    updateData.admin_approved_by = currentUser?.id || null;
-    updateData.admin_approved_photo = photo;
-  } else {
-    updateData.customer_approved_at = now;
-    updateData.customer_approved_by = currentUser?.id || null;
-    updateData.customer_approved_photo = photo;
+  const btn = $('btnConfirmApproval');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> अनुबंध लॉक हो रहा है...';
   }
 
   try {
-    await db.from('contracts').update(updateData).eq('id', contractId);
-  } catch(e) {
-    delete updateData.admin_approved_photo;
-    delete updateData.customer_approved_photo;
-    await db.from('contracts').update(updateData).eq('id', contractId);
-  }
+    const { data: c, error: fetchErr } = await db.from('contracts').select('*, project:project_id(*)').eq('id', contractId).single();
+    if (fetchErr || !c) throw (fetchErr || new Error('अनुबंध नहीं मिला।'));
 
-  if (isFullyApproved && c.project_id) {
-    await db.from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
-    alert('अनुबंध दोनों पक्षों की लाइव फोटो के साथ फाइनल स्वीकृत व लॉक हो चुका है! 🔒');
-  } else {
-    alert('आपकी लाइव फोटो के साथ डिजिटल स्वीकृति दर्ज हो गई है! ✅');
-  }
+    const now = new Date().toISOString();
+    const parsed = parseContractDetails(c);
 
-  if (contractApprStream) {
-    contractApprStream.getTracks().forEach(t => t.stop());
-    contractApprStream = null;
-  }
+    let newAdminPhoto = parsed.adminPhoto;
+    let newCustomerPhoto = parsed.customerPhoto;
 
-  $('modalContainer').classList.add('hidden');
-  openView(currentRole === 'admin' ? 'projects' : 'my_projects');
+    if (role === 'admin') {
+      newAdminPhoto = photo;
+    } else {
+      newCustomerPhoto = photo;
+    }
+
+    const isFullyApproved = (role === 'admin' ? Boolean(c.customer_approved_at) : Boolean(c.admin_approved_at));
+
+    const packedScope = JSON.stringify({
+      rate_type: parsed.rateType,
+      rate_detail: parsed.rateDetail,
+      scope: parsed.scopeText,
+      notes: parsed.notes,
+      admin_photo: newAdminPhoto,
+      customer_photo: newCustomerPhoto
+    });
+
+    const updateData = {
+      scope: packedScope,
+      status: isFullyApproved ? 'locked' : 'amount_discussion',
+      locked_at: isFullyApproved ? now : null
+    };
+
+    let uid = currentUser?.id || null;
+    if (!uid && db?.auth) {
+      try {
+        const { data: authData } = await db.auth.getUser();
+        uid = authData?.user?.id || null;
+      } catch(e) {}
+    }
+
+    if (role === 'admin') {
+      updateData.admin_approved_at = now;
+      if (uid) updateData.admin_approved_by = uid;
+    } else {
+      updateData.customer_approved_at = now;
+      if (uid) updateData.customer_approved_by = uid;
+    }
+
+    // Direct update with error checking
+    const { error: updErr } = await db.from('contracts').update(updateData).eq('id', contractId);
+    if (updErr) throw updErr;
+
+    if (isFullyApproved && c.project_id) {
+      await db.from('projects').update({ status: 'active', total_amount: c.final_amount }).eq('id', c.project_id);
+      alert('अनुबंध दोनों पक्षों की लाइव फोटो के साथ फाइनल स्वीकृत व लॉक हो चुका है! 🔒');
+    } else {
+      alert('आपकी लाइव फोटो के साथ डिजिटल स्वीकृति दर्ज हो गई है! ✅');
+    }
+
+    if (contractApprStream) {
+      contractApprStream.getTracks().forEach(t => t.stop());
+      contractApprStream = null;
+    }
+
+    if (typeof appCache !== 'undefined') appCache.clear();
+
+    $('modalContainer').classList.add('hidden');
+    openView(currentRole === 'admin' ? 'projects' : 'my_projects');
+  } catch(err) {
+    console.error('Contract lock error:', err);
+    alert('अनुबंध लॉक करने में त्रुटि: ' + (err.message || 'कृपया पुनः प्रयास करें'));
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-signature"></i> इस फोटो के साथ अनुबंध स्वीकृत व लॉक करें';
+    }
+  }
 }
 // ==========================================
 // ADMIN: WEBSITE GALLERY MANAGEMENT (LIVE SYNC)
