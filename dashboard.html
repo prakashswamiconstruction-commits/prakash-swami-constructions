@@ -2333,6 +2333,93 @@ async function renderCustomerProjects(container) {
     </div>
   `;
 }
+  // ==========================================
+// ADMIN: PROJECTS
+// ==========================================
+async function renderAdminProjects(container) {
+  const [projRes, payRes, contRes] = await Promise.all([
+    db.from('projects').select('*, customer:customer_id(name, phone)').order('created_at', { ascending: false }),
+    db.from('payments').select('project_id, amount').eq('direction', 'customer_to_business'),
+    db.from('contracts').select('id, project_id, version, final_amount, status, admin_approved_at, customer_approved_at')
+  ]);
+
+  const projects = projRes.data || [];
+  const payments = payRes.data || [];
+  const contracts = contRes.data || [];
+
+  container.innerHTML = `
+    <div class="page-head">
+      <h1>All Construction Projects</h1>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Project Name</th>
+            <th>Contract</th>
+            <th>Customer</th>
+            <th>Progress (कार्य प्रगति)</th>
+            <th>Total ₹</th>
+            <th>Paid ₹</th>
+            <th>Due ₹</th>
+            <th>Notes</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${projects.length === 0 ? '<tr><td colspan="9" style="text-align:center; padding:24px; color:var(--muted);">कोई प्रोजेक्ट नहीं मिला।</td></tr>' : ''}
+          ${projects.map(p => {
+            const pContract = contracts.find(c => c.project_id === p.id);
+            const total = Number(p.total_amount || 0);
+            const paid = payments.filter(pay => pay.project_id === p.id).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+            const due = total - paid;
+            const prog = Number(p.progress || 0);
+
+            return `
+              <tr>
+                <td><b>${p.name}</b><br><small style="color:var(--muted);">${p.address || ''}</small></td>
+                <td>
+                  ${pContract ? `<button class="btn-sm btn-edit" onclick="openFullAgreementModal('${pContract.id}')"><i class="fa-solid fa-file-contract"></i> v${pContract.version}</button>` : '<span style="color:var(--muted); font-size:11px;">No Contract</span>'}
+                </td>
+                <td>${p.customer?.name || '-'}<br><small style="color:var(--muted);">${p.customer?.phone || ''}</small></td>
+                
+                <td>
+                  <div style="display:flex; align-items:center; gap:8px; min-width:140px;">
+                    <div style="flex:1;">
+                      <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                        <b style="font-size:12.5px; color:var(--primary);">${prog}%</b>
+                      </div>
+                      <div class="progress-bar-bg" style="margin-top:0;"><div class="progress-bar-fill" style="width:${prog}%;"></div></div>
+                    </div>
+                    <button class="btn-sm btn-gold" style="padding:4px 8px; font-size:11px; white-space:nowrap;" onclick="openProjectProgressDetailsModal('${p.id}', '${escapeAttr(p.name)}')" title="दैनिक कार्य फोटो व विवरण देखें">
+                      <i class="fa-solid fa-camera"></i> Show
+                    </button>
+                  </div>
+                </td>
+
+                <td><b>₹${total.toLocaleString('en-IN')}</b></td>
+                <td><span style="color:var(--success); font-weight:700;">₹${paid.toLocaleString('en-IN')}</span></td>
+                <td><span style="color:var(--danger); font-weight:700;">₹${due.toLocaleString('en-IN')}</span></td>
+                <td>
+                  <div class="note-box">
+                    <span class="note-text" title="${p.notes || ''}">${p.notes || '<i style="color:#94a3b8;">Add note...</i>'}</span>
+                    <button class="btn-sm btn-edit" style="padding:2px 6px;" onclick="openEditProjectNoteModal('${p.id}', '${escapeAttr(p.notes || '')}')"><i class="fa-solid fa-pen-to-square"></i></button>
+                  </div>
+                </td>
+                <td>
+                  <div class="btn-action-group">
+                    <button class="btn-sm btn-edit" onclick="openEditProjectModal('${p.id}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-sm btn-danger" onclick="deleteProject('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
 function openEditProjectNoteModal(projectId, currentNote) {
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
