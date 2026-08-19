@@ -2699,10 +2699,13 @@ async function saveAdminDailyUpdateSubmit(e) {
   }
 
   try {
-    // 1. Primary insert with both author_id and created_by
+    // 1. Send all column variants simultaneously (work_done, description, work_details, notes, author_id, created_by)
     let payload = {
       project_id: projId,
+      work_done: desc,
       description: desc,
+      work_details: desc,
+      notes: desc,
       image_url: photo,
       created_at: new Date().toISOString()
     };
@@ -2714,24 +2717,24 @@ async function saveAdminDailyUpdateSubmit(e) {
 
     let res = await db.from('daily_updates').insert(payload);
 
-    // 2. Fallback with author_id only
-    if (res.error && uid) {
-      console.warn('Retrying with author_id only...', res.error);
+    // 2. Fallback: If some columns don't exist, try work_done & author_id
+    if (res.error) {
+      console.warn('Retrying with work_done & author_id...', res.error);
       res = await db.from('daily_updates').insert({
         project_id: projId,
-        description: desc,
+        work_done: desc,
         image_url: photo,
         author_id: uid,
         created_at: new Date().toISOString()
       });
     }
 
-    // 3. Fallback with work_details & author_id
-    if (res.error && uid) {
-      console.warn('Retrying with work_details & author_id...', res.error);
+    // 3. Fallback: description & author_id
+    if (res.error) {
+      console.warn('Retrying with description & author_id...', res.error);
       res = await db.from('daily_updates').insert({
         project_id: projId,
-        work_details: desc,
+        description: desc,
         image_url: photo,
         author_id: uid,
         created_at: new Date().toISOString()
