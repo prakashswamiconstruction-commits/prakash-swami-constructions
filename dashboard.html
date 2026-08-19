@@ -2603,7 +2603,7 @@ async function saveAdminDailyUpdateSubmit(e) {
   }
 
   try {
-    // Attempt 1: with created_by
+    // Attempt 1: Standard with description & created_by
     let res = await db.from('daily_updates').insert({
       project_id: projId,
       description: desc,
@@ -2612,14 +2612,45 @@ async function saveAdminDailyUpdateSubmit(e) {
       created_at: new Date().toISOString()
     });
 
-    // Attempt 2: Fallback without created_by if schema cache doesn't have it
+    // Attempt 2: If 'created_by' failed, try with description only
     if (res.error) {
-      console.warn('Retrying insert without created_by...', res.error);
+      console.warn('Attempt 1 failed, retrying without created_by...', res.error);
       res = await db.from('daily_updates').insert({
         project_id: projId,
         description: desc,
         image_url: photo,
         created_at: new Date().toISOString()
+      });
+    }
+
+    // Attempt 3: If 'description' column is missing, try 'work_details'
+    if (res.error) {
+      console.warn('Attempt 2 failed, retrying with work_details column...', res.error);
+      res = await db.from('daily_updates').insert({
+        project_id: projId,
+        work_details: desc,
+        image_url: photo,
+        created_at: new Date().toISOString()
+      });
+    }
+
+    // Attempt 4: If 'work_details' is also missing, try 'notes'
+    if (res.error) {
+      console.warn('Attempt 3 failed, retrying with notes column...', res.error);
+      res = await db.from('daily_updates').insert({
+        project_id: projId,
+        notes: desc,
+        image_url: photo,
+        created_at: new Date().toISOString()
+      });
+    }
+
+    // Attempt 5: Minimal insert with photo only
+    if (res.error) {
+      console.warn('Attempt 4 failed, retrying minimal insert...', res.error);
+      res = await db.from('daily_updates').insert({
+        project_id: projId,
+        image_url: photo
       });
     }
 
@@ -2635,7 +2666,7 @@ async function saveAdminDailyUpdateSubmit(e) {
     openView('daily_updates');
   } catch(err) {
     console.error('Daily update error:', err);
-    alert('दैनिक अपडेट सेव करने में त्रुटि: ' + (err.message || 'कृपया पुनः प्रयास करें'));
+    alert('दैनिक अपडेट सेव करने में त्रुटि: ' + (err.message || 'कृपया Supabase SQL Editor में कॉलम जोड़ें।'));
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -2643,7 +2674,6 @@ async function saveAdminDailyUpdateSubmit(e) {
     }
   }
 }
-
 async function deleteDailyUpdate(id) {
   if (!confirm('क्या आप इस दैनिक अपडेट को हटाना चाहते हैं?')) return;
   await db.from('daily_updates').delete().eq('id', id);
