@@ -1644,6 +1644,10 @@ async function renderAdminEnquiriesAndAttendance(container) {
     db.from('profiles').select('id, name, phone, daily_wage, image_url')
   ]);
 
+  if (enqRes.error) {
+    console.error('Supabase Enquiries Error:', enqRes.error);
+  }
+
   const allProfiles = profRes.data || [];
   const profileMap = {};
   allProfiles.forEach(p => profileMap[p.id] = p);
@@ -1651,10 +1655,14 @@ async function renderAdminEnquiriesAndAttendance(container) {
   const rawEnquiries = enqRes.data || [];
   const rawAttendances = attRes.data || [];
 
-  const enquiries = rawEnquiries.map(e => ({
-    ...e,
-    customer: profileMap[e.customer_id] || { name: 'Customer', phone: '-' }
-  }));
+  const enquiries = rawEnquiries.map(e => {
+    const p = profileMap[e.customer_id];
+    return {
+      ...e,
+      customerName: p?.name || e.name || 'Customer',
+      customerPhone: p?.phone || e.phone || '-'
+    };
+  });
 
   const attendances = rawAttendances.map(r => ({
     ...r,
@@ -1668,6 +1676,13 @@ async function renderAdminEnquiriesAndAttendance(container) {
     <div class="page-head">
       <h1>Enquiries & Approvals Hub</h1>
     </div>
+
+    ${enqRes.error ? `
+      <div class="alert-box alert-error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <b>Supabase Data Error:</b> ${enqRes.error.message}
+      </div>
+    ` : ''}
 
     <div class="sub-tabs">
       <button class="sub-tab-btn ${activeEnqTab === 'customer_enq' ? 'active' : ''}" onclick="switchEnquirySubTab('customer_enq')">
@@ -1684,17 +1699,17 @@ async function renderAdminEnquiriesAndAttendance(container) {
         <table>
           <thead><tr><th>Customer</th><th>Work Details</th><th>Budget</th><th>Address</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>
-            ${enquiries.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:20px;">कोई इन्क्वायरी नहीं मिली।</td></tr>' : ''}
+            ${enquiries.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">कोई इन्क्वायरी नहीं मिली।</td></tr>' : ''}
             ${enquiries.map(e => `
               <tr>
-                <td><b>${e.customer?.name || 'Customer'}</b><br><small>${e.customer?.phone || ''}</small></td>
-                <td>${e.work_details || e.work || '-'}</td>
+                <td><b>${safeStr(e.customerName, 'Customer')}</b><br><small>${safeStr(e.customerPhone, '-')}</small></td>
+                <td>${safeStr(e.work_details || e.work, '-')}</td>
                 <td>₹${Number(e.estimated_budget || e.budget || 0).toLocaleString('en-IN')}</td>
-                <td>${e.address || '-'}</td>
-                <td><span class="btn-sm ${e.status === 'approved' ? 'btn-success' : (e.status === 'rejected' ? 'btn-danger' : 'btn-warning')}">${e.status}</span></td>
+                <td>${safeStr(e.address, '-')}</td>
+                <td><span class="btn-sm ${e.status === 'approved' ? 'btn-success' : (e.status === 'rejected' ? 'btn-danger' : 'btn-warning')}">${safeStr(e.status, 'pending')}</span></td>
                 <td>
                   <div class="btn-action-group">
-                    ${e.status === 'pending' ? `<button class="btn-sm btn-success" onclick="approveEnquiry('${e.id}', '${e.customer_id}', '${escapeAttr(e.work_details || e.work || '')}', '${escapeAttr(e.address || '')}', ${e.estimated_budget || e.budget || 0})"><i class="fa-solid fa-check"></i> Approve & Contract</button>` : ''}
+                    ${e.status === 'pending' ? `<button class="btn-sm btn-success" onclick="approveEnquiry('${e.id}', '${e.customer_id || ''}', '${escapeAttr(e.work_details || e.work || '')}', '${escapeAttr(e.address || '')}', ${e.estimated_budget || e.budget || 0})"><i class="fa-solid fa-check"></i> Approve & Contract</button>` : ''}
                     <button class="btn-sm btn-danger" onclick="deleteEnquiry('${e.id}')"><i class="fa-solid fa-trash"></i></button>
                   </div>
                 </td>
@@ -1711,7 +1726,7 @@ async function renderAdminEnquiriesAndAttendance(container) {
         <table>
           <thead><tr><th>Date & Time</th><th>Worker</th><th>Face Comparison</th><th>Wage</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>
-            ${attendances.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:20px;">कोई हाजिरी अनुरोध नहीं है।</td></tr>' : ''}
+            ${attendances.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">कोई हाजिरी अनुरोध नहीं है।</td></tr>' : ''}
             ${attendances.map(r => `
               <tr>
                 <td><b>${r.work_date}</b><br><small style="color:var(--muted);">${new Date(r.scanned_at || r.created_at).toLocaleTimeString('en-IN')}</small></td>
