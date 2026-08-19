@@ -4352,14 +4352,41 @@ async function renderAdminSettings(container) {
   const { data: settings } = await db.from('business_settings').select('*').single();
 
   container.innerHTML = `
-    <div class="page-head"><h1>बिज़नेस सेटिंग्स</h1></div>
-    <div class="card" style="max-width:550px;">
+    <div class="page-head">
+      <h1>बिज़नेस एवं सिक्योरिटी सेटिंग्स</h1>
+    </div>
+
+    <!-- Business Settings Card -->
+    <div class="card" style="max-width:550px; margin-bottom:24px;">
+      <h3 style="font-size:16px; margin-bottom:14px; color:var(--primary);">
+        <i class="fa-solid fa-sliders" style="color:var(--accent);"></i> व्यवसाय विवरण (Business Info)
+      </h3>
       <form onsubmit="saveBusinessSettings(event)">
         <div class="form-group"><label>व्यवसाय का नाम</label><input value="PRAKASH SWAMI CONSTRUCTIONS" disabled></div>
         <div class="form-group"><label>हेल्पलाइन फोन / WhatsApp</label><input id="bsPhone" value="${settings?.phone || '9785438345'}"></div>
         <div class="form-group"><label>Admin UPI ID</label><input id="bsUpi" value="${settings?.upi_id || '9785438345@axl'}"></div>
         <div class="form-group"><label>कार्यालय पता</label><input id="bsAddr" value="${settings?.address || 'मंडावरा, झुंझुनूं, राजस्थान'}"></div>
-        <button type="submit" class="btn-primary" style="width:auto;">सेटिंग्स सेव करें</button>
+        <button type="submit" class="btn-primary" style="width:auto;"><i class="fa-solid fa-floppy-disk"></i> सेटिंग्स सेव करें</button>
+      </form>
+    </div>
+
+    <!-- Admin Password Update Card -->
+    <div class="card" style="max-width:550px;">
+      <h3 style="font-size:16px; margin-bottom:14px; color:var(--primary);">
+        <i class="fa-solid fa-lock" style="color:var(--accent);"></i> एडमिन पासवर्ड बदलें (Change Admin Password)
+      </h3>
+      <form onsubmit="updateAdminPasswordSubmit(event)">
+        <div class="form-group">
+          <label>नया पासवर्ड (New Password)</label>
+          <input id="admNewPass" type="password" required placeholder="नया सुरक्षित पासवर्ड डालें (min 6 chars)">
+        </div>
+        <div class="form-group">
+          <label>पासवर्ड पुष्टि करें (Confirm Password)</label>
+          <input id="admConfirmPass" type="password" required placeholder="दोबारा नया पासवर्ड डालें">
+        </div>
+        <button id="btnAdmPassSave" type="submit" class="btn-primary" style="width:auto; background:var(--gold);">
+          <i class="fa-solid fa-key"></i> पासवर्ड अपडेट करें
+        </button>
       </form>
     </div>
   `;
@@ -4373,9 +4400,37 @@ async function saveBusinessSettings(e) {
     upi_id: $('bsUpi').value,
     address: $('bsAddr').value
   });
-  alert('सेटिंग्स सेव हो गईं!');
+  alert('सेटिंग्स सेव हो गईं! ✅');
 }
 
+async function updateAdminPasswordSubmit(e) {
+  e.preventDefault();
+  const p1 = $('admNewPass').value.trim();
+  const p2 = $('admConfirmPass').value.trim();
+  if (p1.length < 6) return alert('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए!');
+  if (p1 !== p2) return alert('दोनों पासवर्ड मेल नहीं खा रहे हैं!');
+
+  const btn = $('btnAdmPassSave');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> अपडेट हो रहा है...';
+  }
+
+  try {
+    const { error } = await db.auth.updateUser({ password: p1 });
+    if (error) throw error;
+    alert('एडमिन पासवर्ड सफलतापूर्वक अपडेट हो गया! ✅ अगली बार इसी पासवर्ड से लॉगिन करें।');
+    $('admNewPass').value = '';
+    $('admConfirmPass').value = '';
+  } catch (err) {
+    alert('पासवर्ड बदलने में समस्या: ' + (err.message || 'कृपया पुनः प्रयास करें'));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-key"></i> पासवर्ड अपडेट करें';
+    }
+  }
+}
 // ==========================================
 // CUSTOMER PORTAL VIEWS & PROFILE PHOTO + ADDRESS
 // ==========================================
@@ -4448,7 +4503,16 @@ async function renderCustomerProfile(container) {
           <textarea id="mpAddress" rows="2" placeholder="उदा. ग्राम व पोस्ट: मंडावरा, तहसील: उदयपुरवाटी, जिला: झुंझुनूं (राजि.)">${escapeAttr(u?.address || '')}</textarea>
         </div>
 
-        <button type="submit" class="btn-primary" style="width:auto; margin-top:10px; padding:12px 28px;">
+        <!-- Password Change Field for Customer -->
+        <div class="form-group" style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid var(--border); margin-top:10px;">
+          <label style="font-weight:700; color:#334155; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-key" style="color:var(--gold);"></i> नया पासवर्ड बदलें (New Password - Optional)
+          </label>
+          <input id="mpPassword" type="password" placeholder="यदि पासवर्ड बदलना चाहते हैं तो नया पासवर्ड दर्ज करें" style="margin-top:6px;">
+          <small style="color:var(--muted); font-size:11px;">(पासवर्ड नहीं बदलना हो तो इसे खाली छोड़ दें)</small>
+        </div>
+
+        <button id="btnCustProfSave" type="submit" class="btn-primary" style="width:auto; margin-top:10px; padding:12px 28px;">
           <i class="fa-solid fa-floppy-disk"></i> प्रोफाइल सेव करें
         </button>
       </form>
@@ -4462,7 +4526,7 @@ function previewCustomerProfilePhoto(e) {
   const reader = new FileReader();
   reader.onload = function(evt) {
     $('mpPhotoBase64').value = evt.target.result;
-    $('mpPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:52px; height:52px; border-radius:50%; object-fit:cover; border:2.5px solid var(--accent);">`;
+    $('mpPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">`;
   };
   reader.readAsDataURL(file);
 }
@@ -4474,27 +4538,58 @@ async function updateMyProfile(e) {
   const email = $('mpEmail').value.trim();
   const address = $('mpAddress').value.trim();
   const photo = $('mpPhotoBase64').value;
+  const newPass = $('mpPassword')?.value.trim();
 
-  await db.from('profiles').update({
-    name: name,
-    phone: phone,
-    email: email,
-    address: address,
-    image_url: photo || null
-  }).eq('id', currentUser.id);
-
-  if (currentUser) {
-    currentUser.name = name;
-    currentUser.phone = phone;
-    currentUser.email = email;
-    currentUser.address = address;
-    currentUser.image_url = photo || null;
+  const btn = $('btnCustProfSave');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> सेव हो रहा है...';
   }
 
-  alert('आपकी प्रोफ़ाइल और फ़ोटो सफलतापूर्वक अपडेट हो गई है! ✅');
-  openView('my_profile');
-}
+  try {
+    await db.from('profiles').update({
+      name: name,
+      phone: phone,
+      email: email,
+      address: address,
+      image_url: photo || null
+    }).eq('id', currentUser.id);
 
+    if (currentUser) {
+      currentUser.name = name;
+      currentUser.phone = phone;
+      currentUser.email = email;
+      currentUser.address = address;
+      currentUser.image_url = photo || null;
+    }
+
+    // If new password is typed, update Supabase Auth password
+    if (newPass) {
+      if (newPass.length < 6) {
+        alert('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए!');
+      } else {
+        const { error: passErr } = await db.auth.updateUser({ password: newPass });
+        if (passErr) {
+          alert('प्रोफाइल अपडेट हो गई, लेकिन पासवर्ड बदलने में समस्या: ' + passErr.message);
+        } else {
+          alert('आपकी प्रोफ़ाइल, फ़ोटो और नया पासवर्ड सफलतापूर्वक अपडेट हो गया है! ✅');
+        }
+      }
+    } else {
+      alert('आपकी प्रोफ़ाइल और फ़ोटो सफलतापूर्वक अपडेट हो गई है! ✅');
+    }
+
+    if (typeof appCache !== 'undefined') appCache.clear();
+    openView('my_profile');
+  } catch (err) {
+    alert('प्रोफ़ाइल अपडेट करने में त्रुटि: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> प्रोफाइल सेव करें';
+    }
+  }
+}
 async function renderCustomerProjects(container) {
   const [projRes, contRes, payRes, setRes] = await Promise.all([
     db.from('projects').select('*').eq('customer_id', currentUser ? currentUser.id : '').order('created_at', { ascending: false }),
