@@ -761,30 +761,46 @@ function showFullImage(url, title = 'Photo Preview') {
 // ==========================================
 // NOTIFICATIONS SYSTEM
 // ==========================================
+// ==========================================
+// UNIFIED NOTIFICATIONS SYSTEM (ADMIN, CUSTOMER, WORKER)
+// ==========================================
 async function loadNotificationsBadge() {
   if (!db || !currentUser) return;
   let count = 0;
+  const lastReadTime = localStorage.getItem('ps_notif_read_time_' + currentUser.id) || '1970-01-01T00:00:00Z';
 
-  if (currentRole === 'admin') {
-    try {
-      const [enqRes, attRes] = await Promise.all([
-        db.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending'),
-        db.from('attendance').select('id', { count: 'exact' }).eq('status', 'pending')
+  try {
+    if (currentRole === 'admin') {
+      const [enqRes, attRes, payRes] = await Promise.all([
+        db.from('enquiries').select('id', { count: 'exact' }).eq('status', 'pending').gt('created_at', lastReadTime),
+        db.from('attendance').select('id', { count: 'exact' }).eq('status', 'pending').gt('created_at', lastReadTime),
+        db.from('payments').select('id', { count: 'exact' }).eq('direction', 'customer_to_business').gt('created_at', lastReadTime)
       ]);
-      count = (enqRes.count || 0) + (attRes.count || 0);
-    } catch(e) {}
-  } else if (currentRole === 'customer') {
-    try {
-      const { count: cCount } = await db.from('daily_updates').select('id', { count: 'exact' });
-      count = cCount || 0;
-    } catch(e) {}
+      count = (enqRes.count || 0) + (attRes.count || 0) + (payRes.count || 0);
+    } else if (currentRole === 'customer') {
+      const [updRes, contRes, payRes] = await Promise.all([
+        db.from('daily_updates').select('id', { count: 'exact' }).gt('created_at', lastReadTime),
+        db.from('contracts').select('id', { count: 'exact' }).is('customer_approved_at', null).gt('created_at', lastReadTime),
+        db.from('payments').select('id', { count: 'exact' }).eq('customer_id', currentUser.id).gt('created_at', lastReadTime)
+      ]);
+      count = (updRes.count || 0) + (contRes.count || 0) + (payRes.count || 0);
+    } else if (currentRole === 'worker') {
+      const today = new Date().toISOString().split('T')[0];
+      const [todayAtt, payRes] = await Promise.all([
+        db.from('attendance').select('id').eq('worker_id', currentUser.id).eq('work_date', today).maybeSingle(),
+        db.from('payments').select('id', { count: 'exact' }).eq('worker_id', currentUser.id).gt('created_at', lastReadTime)
+      ]);
+      const attNotDone = !todayAtt?.data ? 1 : 0;
+      count = attNotDone + (payRes.count || 0);
+    }
+  } catch(e) {
+    console.warn('Notification count error:', e);
   }
 
-  const isSeen = sessionStorage.getItem('ps_notifs_dismissed') === 'true';
   const badge = $('notifBadge');
   if (badge) {
-    if (count > 0 && !isSeen) {
-      badge.textContent = count;
+    if (count > 0) {
+      badge.textContent = count > 9 ? '9+' : count;
       badge.classList.remove('hidden');
     } else {
       badge.classList.add('hidden');
@@ -793,56 +809,236 @@ async function loadNotificationsBadge() {
 }
 
 async function openNotificationsModal() {
-  sessionStorage.setItem('ps_notifs_dismissed', 'true');
+  if (currentUser) {
+    localStorage.setItem('ps_notif_read_time_' + currentUser.id, new Date().toISOString());
+  }
   const badge = $('notifBadge');
   if (badge) badge.classList.add('hidden');
 
   const modal = $('modalContainer');
   modal.classList.remove('hidden');
-  modal.innerHTML = '<div class="modal-card" style="max-width:500px; text-align:center; padding:30px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:520px; text-align:center; padding:30px;">
+      <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--accent);"></i>
+      <p style="margin-top:10px; color:var(--muted); font-size:13px;">नोटिफिकेशन लोड हो रहे हैं...</p>
+    </div>
+  `;
 
   let notifs = [];
-  if (currentRole === 'admin') {
-    try {
-      const [enqRes, attRes, payRes] = await Promise.all([
-        db.from('enquiries').select('id, work_details, work, created_at').eq('status', 'pending').limit(5),
-        db.from('attendance').select('id, worker:worker_id(name), created_at, scanned_at').eq('status', 'pending').limit(5),
-        db.from('payments').select('id, amount, customer:customer_id(name), created_at, paid_at').eq('direction', 'customer_to_business').limit(5)
+
+  try {
+    // 1. ADMIN NOTIFICATIONS
+    if (currentRole === 'admin') {
+      const [enqRes, attRes, payRes, profRes] = await Promise.all([
+        db.from('enquiries').select('*').order('created_at', { ascending: false }).limit(6),
+        db.from('attendance').select('*').order('created_at', { ascending: false }).limit(6),
+        db.from('payments').select('*').eq('direction', 'customer_to_business').order('created_at', { ascending: false }).limit(6),
+        db.from('profiles').select('id, name, phone')
       ]);
 
-      (enqRes.data || []).forEach(e => notifs.push({
-        icon: 'fa-inbox', title: 'New Customer Enquiry', desc: e.work_details || e.work || 'New inquiry', time: e.created_at, target: 'enquiries'
-      }));
-      (attRes.data || []).forEach(a => notifs.push({
-        icon: 'fa-clipboard-user', title: 'Worker Attendance Request', desc: `${a.worker?.name || 'Worker'} marked attendance`, time: a.scanned_at || a.created_at, target: 'enquiries'
-      }));
-      (payRes.data || []).forEach(p => notifs.push({
-        icon: 'fa-money-bill', title: 'Customer Payment Received', desc: `₹${p.amount} from ${p.customer?.name || 'Customer'}`, time: p.paid_at || p.created_at, target: 'payments'
-      }));
-    } catch(e) {}
-  } else {
-    notifs.push({
-      icon: 'fa-bell', title: 'Welcome to Prakash Swami Constructions', desc: 'Check your project updates and payment receipts here.', time: new Date().toISOString(), target: 'my_projects'
-    });
+      const pMap = {};
+      (profRes.data || []).forEach(p => pMap[p.id] = p);
+
+      (enqRes.data || []).forEach(e => {
+        const cName = pMap[e.customer_id]?.name || e.name || 'ग्राहक';
+        const isPending = e.status === 'pending';
+        notifs.push({
+          icon: 'fa-inbox',
+          iconBg: isPending ? '#fee2e2' : '#e0e7ff',
+          iconColor: isPending ? 'var(--danger)' : '#4338ca',
+          title: `नई ग्राहक इन्क्वायरी (${cName})`,
+          desc: `${e.work_details || e.work || 'निर्माण कार्य'} • बजट: ₹${Number(e.estimated_budget || e.budget || 0).toLocaleString('en-IN')}`,
+          time: e.created_at,
+          badge: isPending ? 'लंबित (Pending)' : 'स्वीकृत',
+          badgeClass: isPending ? 'btn-danger' : 'btn-success',
+          target: 'enquiries',
+          subTab: 'customer_enq'
+        });
+      });
+
+      (attRes.data || []).forEach(a => {
+        const wName = pMap[a.worker_id]?.name || 'कारीगर';
+        const isPending = a.status === 'pending';
+        notifs.push({
+          icon: 'fa-camera',
+          iconBg: isPending ? '#fef3c7' : '#dcfce7',
+          iconColor: isPending ? 'var(--warning)' : 'var(--success)',
+          title: `कारीगर फेस हाजिरी (${wName})`,
+          desc: `तारीख: ${a.work_date} • स्थिति: ${a.status.toUpperCase()}`,
+          time: a.scanned_at || a.created_at,
+          badge: a.status === 'approved' ? 'स्वीकृत' : (isPending ? 'लंबित' : 'अस्वीकृत'),
+          badgeClass: a.status === 'approved' ? 'btn-success' : (isPending ? 'btn-warning' : 'btn-danger'),
+          target: 'enquiries',
+          subTab: 'worker_att'
+        });
+      });
+
+      (payRes.data || []).forEach(p => {
+        const cName = pMap[p.customer_id]?.name || 'Customer';
+        notifs.push({
+          icon: 'fa-money-bill-wave',
+          iconBg: '#dcfce7',
+          iconColor: 'var(--success)',
+          title: `पेमेंट प्राप्त हुआ (₹${Number(p.amount || 0).toLocaleString('en-IN')})`,
+          desc: `ग्राहक: ${cName} • माध्यम: ${p.method || 'UPI'} ${p.note ? '• ' + p.note : ''}`,
+          time: p.paid_at || p.created_at,
+          badge: 'Inflow',
+          badgeClass: 'btn-success',
+          target: 'payments',
+          subTab: null
+        });
+      });
+    }
+
+    // 2. CUSTOMER NOTIFICATIONS
+    else if (currentRole === 'customer') {
+      const [updRes, contRes, payRes] = await Promise.all([
+        db.from('daily_updates').select('*').order('created_at', { ascending: false }).limit(5),
+        db.from('contracts').select('*').order('created_at', { ascending: false }).limit(5),
+        db.from('payments').select('*').eq('customer_id', currentUser.id).order('paid_at', { ascending: false }).limit(5)
+      ]);
+
+      (updRes.data || []).forEach(u => {
+        notifs.push({
+          icon: 'fa-image',
+          iconBg: '#e0e7ff',
+          iconColor: '#4338ca',
+          title: 'साइट पर नया दैनिक कार्य फोटो अपडेट हुआ',
+          desc: u.description || 'आज का निर्माण कार्य विवरण देखें',
+          time: u.created_at,
+          badge: 'Site Update',
+          badgeClass: 'btn-edit',
+          target: 'my_projects',
+          subTab: null
+        });
+      });
+
+      (contRes.data || []).forEach(c => {
+        const isApproved = Boolean(c.customer_approved_at);
+        notifs.push({
+          icon: 'fa-file-signature',
+          iconBg: isApproved ? '#dcfce7' : '#fef3c7',
+          iconColor: isApproved ? 'var(--success)' : 'var(--warning)',
+          title: `भवन निर्माण अनुबंध पत्र (v${c.version})`,
+          desc: isApproved ? 'अनुबंध आपकी तरफ से स्वीकृत हो चुका है।' : 'अनुबंध तैयार है, कृपया चेक करके अपनी डिजिटल सहमति दें।',
+          time: c.created_at,
+          badge: isApproved ? 'Approved ✅' : 'Approval Pending ✍',
+          badgeClass: isApproved ? 'btn-success' : 'btn-warning',
+          target: 'my_projects',
+          subTab: null
+        });
+      });
+
+      (payRes.data || []).forEach(p => {
+        notifs.push({
+          icon: 'fa-receipt',
+          iconBg: '#dcfce7',
+          iconColor: 'var(--success)',
+          title: `पेमेंट रसीद दर्ज हुई (₹${Number(p.amount || 0).toLocaleString('en-IN')})`,
+          desc: `माध्यम: ${p.method || 'UPI'} • Ref: ${p.reference || '-'}`,
+          time: p.paid_at || p.created_at,
+          badge: 'Paid Receipt',
+          badgeClass: 'btn-success',
+          target: 'my_payments',
+          subTab: null
+        });
+      });
+    }
+
+    // 3. WORKER NOTIFICATIONS
+    else if (currentRole === 'worker') {
+      const today = new Date().toISOString().split('T')[0];
+      const [todayAtt, allAtt, payRes] = await Promise.all([
+        db.from('attendance').select('*').eq('worker_id', currentUser.id).eq('work_date', today).maybeSingle(),
+        db.from('attendance').select('*').eq('worker_id', currentUser.id).order('work_date', { ascending: false }).limit(5),
+        db.from('payments').select('*').eq('worker_id', currentUser.id).eq('direction', 'business_to_worker').order('paid_at', { ascending: false }).limit(5)
+      ]);
+
+      if (!todayAtt?.data) {
+        notifs.push({
+          icon: 'fa-camera',
+          iconBg: '#fef3c7',
+          iconColor: 'var(--warning)',
+          title: 'आज की हाजिरी दर्ज करें (Face Scan Required)',
+          desc: `आज ${today} की हाजिरी के लिए तुरंत अपना फेस स्कैन करें।`,
+          time: new Date().toISOString(),
+          badge: 'Pending Scan ⏳',
+          badgeClass: 'btn-warning',
+          target: 'worker_attendance',
+          subTab: null
+        });
+      }
+
+      (allAtt.data || []).forEach(a => {
+        notifs.push({
+          icon: 'fa-calendar-check',
+          iconBg: a.status === 'approved' ? '#dcfce7' : '#fee2e2',
+          iconColor: a.status === 'approved' ? 'var(--success)' : 'var(--danger)',
+          title: `हाजिरी स्थिति (${a.work_date})`,
+          desc: `समय: ${new Date(a.scanned_at || a.created_at).toLocaleTimeString('en-IN')} • स्थिति: ${a.status.toUpperCase()}`,
+          time: a.scanned_at || a.created_at,
+          badge: a.status === 'approved' ? 'स्वीकृत ✅' : 'अस्वीकृत ❌',
+          badgeClass: a.status === 'approved' ? 'btn-success' : 'btn-danger',
+          target: 'worker_attendance',
+          subTab: null
+        });
+      });
+
+      (payRes.data || []).forEach(p => {
+        notifs.push({
+          icon: 'fa-wallet',
+          iconBg: '#dcfce7',
+          iconColor: 'var(--success)',
+          title: `मजदूरी भुगतान प्राप्त हुआ (₹${Number(p.amount || 0).toLocaleString('en-IN')})`,
+          desc: `माध्यम: ${p.method || 'UPI'} ${p.note ? '• ' + p.note : ''}`,
+          time: p.paid_at || p.created_at,
+          badge: 'Payout Received',
+          badgeClass: 'btn-success',
+          target: 'worker_earnings',
+          subTab: null
+        });
+      });
+    }
+  } catch(err) {
+    console.error('Fetch notifications error:', err);
   }
 
+  notifs.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
+
   modal.innerHTML = `
-    <div class="modal-card" style="max-width:500px;">
+    <div class="modal-card" style="max-width:540px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-        <h3><i class="fa-solid fa-bell" style="color:var(--accent);"></i> Notifications</h3>
+        <h3 style="font-size:18px; color:var(--primary);"><i class="fa-solid fa-bell" style="color:var(--accent);"></i> सभी नोटिफिकेशन (Notifications)</h3>
         <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
       </div>
-      <div style="max-height:60vh; overflow-y:auto;">
-        ${notifs.length === 0 ? '<p style="text-align:center; padding:20px; color:var(--muted);">कोई नया नोटिफिकेशन नहीं है।</p>' : ''}
+
+      <div style="max-height:65vh; overflow-y:auto; padding-right:4px;">
+        ${notifs.length === 0 ? `
+          <div style="text-align:center; padding:36px; color:var(--muted);">
+            <i class="fa-regular fa-bell fa-3x" style="opacity:0.4; margin-bottom:10px;"></i>
+            <h4>कोई नया नोटिफिकेशन नहीं है</h4>
+            <p style="font-size:12px; margin-top:4px;">सभी गतिविधियाँ अप-टू-डेट हैं।</p>
+          </div>
+        ` : ''}
+
         ${notifs.map(n => `
-          <div style="display:flex; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer; border-radius:10px; transition:0.2s;" onclick="handleNotificationClick('${n.target}')" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-            <div style="width:36px; height:36px; border-radius:50%; background:#e0e7ff; color:#4338ca; display:grid; place-items:center;">
+          <div style="display:flex; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer; border-radius:10px; transition:0.2s; align-items:flex-start;" 
+               onclick="handleNotificationClick('${n.target}', '${n.subTab || ''}')" 
+               onmouseover="this.style.background='#f8fafc'" 
+               onmouseout="this.style.background='transparent'">
+            <div style="width:38px; height:38px; border-radius:50%; background:${n.iconBg || '#e0e7ff'}; color:${n.iconColor || '#4338ca'}; display:grid; place-items:center; flex-shrink:0; font-size:15px; margin-top:2px;">
               <i class="fa-solid ${n.icon}"></i>
             </div>
             <div style="flex:1;">
-              <b style="font-size:13px;">${n.title}</b>
-              <p style="font-size:12px; color:var(--muted); margin-top:2px;">${n.desc}</p>
-              <small style="color:#94a3b8;">${new Date(n.time || Date.now()).toLocaleDateString('en-IN')} • Tap to open section</small>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <b style="font-size:13.5px; color:var(--primary);">${n.title}</b>
+                ${n.badge ? `<span class="btn-sm ${n.badgeClass || 'btn-edit'}" style="font-size:10px; padding:2px 6px;">${n.badge}</span>` : ''}
+              </div>
+              <p style="font-size:12.5px; color:#475569; margin-top:3px; line-height:1.4;">${n.desc}</p>
+              <small style="color:#94a3b8; font-size:11px; margin-top:4px; display:inline-block;">
+                ${new Date(n.time || Date.now()).toLocaleDateString('en-IN')} ${new Date(n.time || Date.now()).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} • 
+                <span style="color:var(--accent); font-weight:700;">खोलने के लिए टैप करें →</span>
+              </small>
             </div>
           </div>
         `).join('')}
@@ -851,12 +1047,17 @@ async function openNotificationsModal() {
   `;
 }
 
-function handleNotificationClick(targetView) {
-  $('modalContainer').classList.add('hidden');
-  $('notifBadge').classList.add('hidden');
+function handleNotificationClick(targetView, subTab) {
+  const modal = $('modalContainer');
+  if (modal) modal.classList.add('hidden');
+  const badge = $('notifBadge');
+  if (badge) badge.classList.add('hidden');
+
+  if (subTab && typeof switchEnquirySubTab === 'function') {
+    activeEnqTab = subTab;
+  }
   openView(targetView);
 }
-
 // ==========================================
 // LEGAL CONTRACT AGREEMENT (3 RATE OPTIONS ENGINE)
 // ==========================================
