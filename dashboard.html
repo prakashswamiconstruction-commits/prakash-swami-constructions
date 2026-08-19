@@ -3676,16 +3676,20 @@ function openAddWorkerModal() {
           <input id="awWage" type="number" required placeholder="उदा. 750 (मिस्त्री) या 450 (लेबर)">
         </div>
 
-        <!-- Worker Face Registration for Attendance -->
-        <div class="form-group" style="background:#f8fafc; padding:12px; border-radius:10px; border:1px dashed #cbd5e1;">
-          <label style="font-weight:700; color:#334155;">
-            <i class="fa-solid fa-face-smile" style="color:var(--accent);"></i> ५. फेस रजिस्ट्रेशन फोटो (Face Photo for Attendance)
+        <!-- Worker Face Registration (STRICTLY LIVE CAMERA ONLY - NO GALLERY UPLOAD) -->
+        <div class="form-group" style="background:#f8fafc; padding:14px; border-radius:12px; border:1.5px solid #cbd5e1;">
+          <label style="font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+            <i class="fa-solid fa-camera" style="color:var(--accent);"></i> ५. लाइव फेस रजिस्ट्रेशन (Live Camera Face Scan)
           </label>
-          <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
-            <input type="file" id="awPhotoFile" accept="image/*" onchange="previewAddWorkerPhoto(event)" style="display:none;">
-            <button type="button" class="btn-secondary" onclick="$('awPhotoFile').click()"><i class="fa-solid fa-camera"></i> चेहरे की फोटो चुनें</button>
-            <div id="awPhotoPreview">
-              <span style="font-size:12px; color:var(--muted);">फोटो नहीं चुनी</span>
+          <p style="font-size:12px; color:var(--muted); margin-bottom:10px;">
+            कारीगर का चेहरा कैमरे से लाइव कैप्चर करें (गैलरी से फ़ोटो अपलोड अनुमत नहीं है):
+          </p>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <button type="button" class="btn-primary" style="width:auto; padding:8px 16px; font-size:13px; background:var(--accent);" onclick="openLiveFaceRegisterModal('awPhotoBase64', 'awPhotoPreview', 'openAddWorkerModal')">
+              <i class="fa-solid fa-camera"></i> लाइव चेहरा कैप्चर करें (Open Camera)
+            </button>
+            <div id="awPhotoPreview" style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:12px; color:var(--danger); font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> फ़ोटो कैप्चर नहीं हुई</span>
             </div>
           </div>
           <input type="hidden" id="awPhotoBase64">
@@ -3705,15 +3709,202 @@ function openAddWorkerModal() {
   `;
 }
 
-function previewAddWorkerPhoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    $('awPhotoBase64').value = evt.target.result;
-    $('awPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:46px; height:46px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">`;
-  };
-  reader.readAsDataURL(file);
+function openEditWorkerModal(id) {
+  db.from('profiles').select('*').eq('id', id).single().then(({ data: w }) => {
+    if (!w) return;
+
+    const modal = $('modalContainer');
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:540px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          <h3 style="font-size:18px;"><i class="fa-solid fa-pen" style="color:var(--accent);"></i> कारीगर विवरण व फेस फोटो एडिट करें</h3>
+          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
+        </div>
+
+        <form onsubmit="updateWorkerRecord(event, '${id}')">
+          <div class="form-group"><label>नाम (Full Name)</label><input id="ewName" value="${escapeAttr(w.name || '')}" required></div>
+          <div class="form-group"><label>मोबाइल नंबर (Phone)</label><input id="ewPhone" value="${escapeAttr(w.phone || '')}" required></div>
+          <div class="form-group"><label><i class="fa-solid fa-bolt" style="color:#eab308;"></i> UPI ID (Payment)</label><input id="ewUpi" value="${escapeAttr(w.email || '')}" placeholder="उदा. 9876543210@axl"></div>
+          <div class="form-group"><label>दैनिक दिहाड़ी दर (₹/दिन)</label><input id="ewWage" type="number" value="${w.daily_wage || 0}" required></div>
+          
+          <!-- Live Camera Re-Scan Only -->
+          <div class="form-group" style="background:#f8fafc; padding:14px; border-radius:12px; border:1.5px solid #cbd5e1;">
+            <label style="font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+              <i class="fa-solid fa-camera"></i> लाइव फेस फोटो बदलें (Live Camera Only)
+            </label>
+            <div style="display:flex; align-items:center; gap:14px; margin-top:8px;">
+              <button type="button" class="btn-primary" style="width:auto; padding:8px 16px; font-size:13px; background:var(--accent);" onclick="openLiveFaceRegisterModal('ewPhotoBase64', 'ewPhotoPreview', 'openEditWorkerModal', '${id}')">
+                <i class="fa-solid fa-camera"></i> नया लाइव चेहरा स्कैन करें
+              </button>
+              <div id="ewPhotoPreview">
+                ${w.image_url ? `<img src="${w.image_url}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2.5px solid var(--success);">` : '<span style="font-size:12px; color:var(--muted);">फोटो नहीं है</span>'}
+              </div>
+            </div>
+            <input type="hidden" id="ewPhotoBase64" value="${w.image_url || ''}">
+          </div>
+
+          <div class="form-group"><label>पता / गाँव</label><input id="ewAddress" value="${escapeAttr(w.address || '')}"></div>
+
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+            <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
+            <button type="submit" class="btn-primary" style="width:auto;">अपडेट सेव करें</button>
+          </div>
+        </form>
+      </div>
+    `;
+  });
+}
+
+// DEDICATED LIVE CAMERA CAPTURE MODAL FOR WORKER REGISTRATION (NO GALLERY UPLOAD)
+let regCamStream = null;
+
+function openLiveFaceRegisterModal(targetInputId, previewDivId, parentModalFn, paramId = null) {
+  const currentVal = $(targetInputId)?.value || '';
+
+  const modal = $('modalContainer');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:480px; text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <h3 style="font-size:17px; color:var(--primary);"><i class="fa-solid fa-camera" style="color:var(--accent);"></i> लाइव फेस फोटो कैप्चर (Live Camera)</h3>
+        <button onclick="closeWorkerRegCameraModal('${parentModalFn}', '${paramId || ''}')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
+      </div>
+
+      <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">
+        कैमरे के सामने सीधा चेहरा रखें और कैप्चर करें (गैलरी से अपलोड अनुमत नहीं है):
+      </p>
+
+      <div style="position:relative; width:100%; max-width:320px; height:260px; margin:0 auto 14px; background:#000; border-radius:16px; overflow:hidden; border:2px solid #334155;">
+        <video id="wRegVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:none;"></video>
+        
+        <!-- Oval Face Target -->
+        <div id="wRegGuide" style="display:none; position:absolute; inset:20px 40px; border:2.5px dashed rgba(255,255,255,0.75); border-radius:50%; pointer-events:none; box-shadow:0 0 0 1000px rgba(0,0,0,0.35);">
+          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:rgba(255,255,255,0.85); font-size:11px; font-weight:700; text-align:center; text-shadow:0 1px 4px #000;">
+            चेहरा यहाँ रखें
+          </div>
+        </div>
+
+        <div id="wRegPlaceholder" style="width:100%; height:100%; display:grid; place-items:center; color:#94a3b8; background:#0f172a;">
+          <div>
+            <i class="fa-solid fa-camera fa-3x" style="margin-bottom:8px; opacity:0.6;"></i>
+            <p style="font-size:13px;">कैमरा शुरू करने के लिए नीचे बटन दबाएं</p>
+          </div>
+        </div>
+
+        <div id="wRegImgPreview" style="display:none; width:100%; height:100%;"></div>
+      </div>
+
+      <canvas id="wRegCanvas" style="display:none;"></canvas>
+      <input type="hidden" id="tempRegFaceBase64" value="${currentVal}">
+
+      <div style="display:flex; flex-direction:column; gap:10px; max-width:320px; margin:0 auto;">
+        <button id="btnStartWRegCam" type="button" class="btn-secondary" onclick="startWorkerRegCamera()">
+          <i class="fa-solid fa-camera"></i> कैमरा चालू करें (Start Camera)
+        </button>
+
+        <button id="btnCaptureWRegPhoto" type="button" class="btn-primary" style="display:none; background:var(--accent);" onclick="captureWorkerRegPhoto()">
+          <i class="fa-solid fa-camera-retro"></i> लाइव चेहरा कैप्चर करें (Capture)
+        </button>
+
+        <button id="btnConfirmWRegPhoto" type="button" class="btn-primary" style="display:none; background:var(--success);" onclick="confirmWorkerRegFace('${targetInputId}', '${previewDivId}', '${parentModalFn}', '${paramId || ''}')">
+          <i class="fa-solid fa-circle-check"></i> इस फोटो का उपयोग करें (Confirm)
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function startWorkerRegCamera() {
+  const video = $('wRegVideo');
+  const placeholder = $('wRegPlaceholder');
+  const guide = $('wRegGuide');
+
+  try {
+    regCamStream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 480 } }, 
+      audio: false 
+    });
+    video.srcObject = regCamStream;
+    video.style.display = 'block';
+    if (placeholder) placeholder.style.display = 'none';
+    if (guide) guide.style.display = 'block';
+
+    $('btnStartWRegCam').style.display = 'none';
+    $('btnCaptureWRegPhoto').style.display = 'inline-flex';
+  } catch(err) {
+    alert('कैमरा शुरू करने में समस्या: ' + err.message + '\nकृपया ब्राउज़र में कैमरा परमिशन Allow करें।');
+  }
+}
+
+function captureWorkerRegPhoto() {
+  const video = $('wRegVideo');
+  const canvas = $('wRegCanvas') || document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 400;
+  const ctx = canvas.getContext('2d');
+  
+  const minDim = Math.min(video.videoWidth || 480, video.videoHeight || 480);
+  const sx = ((video.videoWidth || 480) - minDim) / 2;
+  const sy = ((video.videoHeight || 480) - minDim) / 2;
+  ctx.drawImage(video, sx, sy, minDim, minDim, 0, 0, 400, 400);
+
+  const base64 = canvas.toDataURL('image/jpeg', 0.82);
+  $('tempRegFaceBase64').value = base64;
+
+  if (regCamStream) {
+    regCamStream.getTracks().forEach(t => t.stop());
+    regCamStream = null;
+  }
+
+  video.style.display = 'none';
+  if ($('wRegGuide')) $('wRegGuide').style.display = 'none';
+  const prev = $('wRegImgPreview');
+  prev.style.display = 'block';
+  prev.innerHTML = `<img src="${base64}" style="width:100%; height:100%; object-fit:cover;">`;
+
+  $('btnCaptureWRegPhoto').style.display = 'none';
+  $('btnConfirmWRegPhoto').style.display = 'inline-flex';
+}
+
+function confirmWorkerRegFace(targetInputId, previewDivId, parentModalFn, paramId) {
+  const base64 = $('tempRegFaceBase64')?.value || null;
+  if (!base64) return alert('कृपया पहले चेहरा कैप्चर करें!');
+
+  if (regCamStream) {
+    regCamStream.getTracks().forEach(t => t.stop());
+    regCamStream = null;
+  }
+
+  if (parentModalFn === 'openAddWorkerModal') {
+    openAddWorkerModal();
+    setTimeout(() => {
+      if ($(targetInputId)) $(targetInputId).value = base64;
+      if ($(previewDivId)) {
+        $(previewDivId).innerHTML = `<img src="${base64}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2.5px solid var(--success);"><span style="font-size:12px; color:var(--success); font-weight:700;">लाइव फोटो कैप्चर हो गई ✅</span>`;
+      }
+    }, 50);
+  } else if (parentModalFn === 'openEditWorkerModal' && paramId) {
+    openEditWorkerModal(paramId);
+    setTimeout(() => {
+      if ($(targetInputId)) $(targetInputId).value = base64;
+      if ($(previewDivId)) {
+        $(previewDivId).innerHTML = `<img src="${base64}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2.5px solid var(--success);"><span style="font-size:12px; color:var(--success); font-weight:700;">लाइव फोटो अपडेट हो गई ✅</span>`;
+      }
+    }, 50);
+  }
+}
+
+function closeWorkerRegCameraModal(parentModalFn, paramId) {
+  if (regCamStream) {
+    regCamStream.getTracks().forEach(t => t.stop());
+    regCamStream = null;
+  }
+  if (parentModalFn === 'openAddWorkerModal') {
+    openAddWorkerModal();
+  } else if (parentModalFn === 'openEditWorkerModal' && paramId) {
+    openEditWorkerModal(paramId);
+  }
 }
 
 async function saveWorkerRecord(e) {
@@ -3738,63 +3929,9 @@ async function saveWorkerRecord(e) {
     is_active: true
   });
 
-  alert('कारीगर, फेस फोटो और UPI ID सफलतापूर्वक जुड़ गए! ✅');
+  alert('कारीगर, लाइव फेस फोटो और UPI ID सफलतापूर्वक जुड़ गए! ✅');
   $('modalContainer').classList.add('hidden');
   openView('workers');
-}
-
-function openEditWorkerModal(id) {
-  db.from('profiles').select('*').eq('id', id).single().then(({ data: w }) => {
-    if (!w) return;
-
-    const modal = $('modalContainer');
-    modal.classList.remove('hidden');
-    modal.innerHTML = `
-      <div class="modal-card" style="max-width:540px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
-          <h3 style="font-size:18px;"><i class="fa-solid fa-pen" style="color:var(--accent);"></i> कारीगर विवरण व UPI एडिट करें</h3>
-          <button onclick="$('modalContainer').classList.add('hidden')" style="border:0; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">&times;</button>
-        </div>
-
-        <form onsubmit="updateWorkerRecord(event, '${id}')">
-          <div class="form-group"><label>नाम (Full Name)</label><input id="ewName" value="${escapeAttr(w.name || '')}" required></div>
-          <div class="form-group"><label>मोबाइल नंबर (Phone)</label><input id="ewPhone" value="${escapeAttr(w.phone || '')}" required></div>
-          <div class="form-group"><label><i class="fa-solid fa-bolt" style="color:#eab308;"></i> UPI ID (Payment)</label><input id="ewUpi" value="${escapeAttr(w.email || '')}" placeholder="उदा. 9876543210@axl"></div>
-          <div class="form-group"><label>दैनिक दिहाड़ी दर (₹/दिन)</label><input id="ewWage" type="number" value="${w.daily_wage || 0}" required></div>
-          
-          <div class="form-group" style="background:#f8fafc; padding:12px; border-radius:10px; border:1px dashed #cbd5e1;">
-            <label style="font-weight:700; color:#334155;"><i class="fa-solid fa-camera"></i> फेस फोटो बदलें (Face Photo)</label>
-            <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
-              <input type="file" id="ewPhotoFile" accept="image/*" onchange="previewEditWorkerPhoto(event)" style="display:none;">
-              <button type="button" class="btn-secondary" onclick="$('ewPhotoFile').click()"><i class="fa-solid fa-image"></i> नई फोटो चुनें</button>
-              <div id="ewPhotoPreview">
-                ${w.image_url ? `<img src="${w.image_url}" style="width:46px; height:46px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">` : '<span style="font-size:12px; color:var(--muted);">फोटो नहीं है</span>'}
-              </div>
-            </div>
-            <input type="hidden" id="ewPhotoBase64" value="${w.image_url || ''}">
-          </div>
-
-          <div class="form-group"><label>पता / गाँव</label><input id="ewAddress" value="${escapeAttr(w.address || '')}"></div>
-
-          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
-            <button type="button" class="btn-secondary" onclick="$('modalContainer').classList.add('hidden')">रद्द करें</button>
-            <button type="submit" class="btn-primary" style="width:auto;">अपडेट सेव करें</button>
-          </div>
-        </form>
-      </div>
-    `;
-  });
-}
-
-function previewEditWorkerPhoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    $('ewPhotoBase64').value = evt.target.result;
-    $('ewPhotoPreview').innerHTML = `<img src="${evt.target.result}" style="width:46px; height:46px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">`;
-  };
-  reader.readAsDataURL(file);
 }
 
 async function updateWorkerRecord(e, id) {
@@ -3815,15 +3952,16 @@ async function updateWorkerRecord(e, id) {
     image_url: photo
   }).eq('id', id);
 
+  alert('कारीगर विवरण और फेस फोटो सफलतापूर्वक अपडेट हो गए! ✅');
   $('modalContainer').classList.add('hidden');
   openView('workers');
 }
+
 async function deleteWorker(id) {
   if (!confirm('क्या आप इस कारीगर को हटाना चाहते हैं?')) return;
   await db.from('profiles').delete().eq('id', id);
   openView('workers');
 }
-
 // ==========================================
 // PAYMENTS & EXPENSES
 // ==========================================
