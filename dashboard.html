@@ -2464,7 +2464,7 @@ async function renderAdminProjects(container) {
         <thead>
           <tr>
             <th>Project Name</th>
-            <th>Contract</th>
+            <th>Contract (अनुबंध)</th>
             <th>Customer</th>
             <th>Progress (कार्य प्रगति)</th>
             <th>Total ₹</th>
@@ -2487,7 +2487,15 @@ async function renderAdminProjects(container) {
               <tr>
                 <td><b>${p.name}</b><br><small style="color:var(--muted);">${p.address || ''}</small></td>
                 <td>
-                  ${pContract ? `<button class="btn-sm btn-edit" onclick="openFullAgreementModal('${pContract.id}')"><i class="fa-solid fa-file-contract"></i> v${pContract.version}</button>` : '<span style="color:var(--muted); font-size:11px;">No Contract</span>'}
+                  ${pContract ? `
+                    <button class="btn-sm btn-edit" onclick="openFullAgreementModal('${pContract.id}')">
+                      <i class="fa-solid fa-file-contract"></i> v${pContract.version} अनुबंध देखें
+                    </button>
+                  ` : `
+                    <button class="btn-sm btn-gold" onclick="createOrOpenProjectContract('${p.id}', '${escapeAttr(p.name)}', ${total})">
+                      <i class="fa-solid fa-file-circle-plus"></i> + अनुबंध बनाएं
+                    </button>
+                  `}
                 </td>
                 <td>${p.customer?.name || '-'}<br><small style="color:var(--muted);">${p.customer?.phone || ''}</small></td>
                 
