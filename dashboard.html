@@ -23,16 +23,42 @@
       --gold: #d7a43b;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-    body { background: var(--bg); color: var(--text); min-height: 100vh; }
+body { background: #070d18; color: var(--text); min-height: 100vh; }
     
-    /* Login Page with 3 Prakash Swami Photos */
+    /* Global Background Video for Dashboard */
+    .global-video-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .global-video-bg video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: brightness(0.6) contrast(1.1);
+    }
+    .global-video-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(7, 13, 24, 0.82) 0%, rgba(11, 18, 32, 0.72) 50%, rgba(7, 13, 24, 0.9) 100%);
+      z-index: -1;
+      backdrop-filter: blur(1px);
+    }
+
+    /* Login Page */
     .login-wrapper {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 28px;
-      background: radial-gradient(circle at 50% 30%, #1e293b 0%, #070d18 100%);
+      background: transparent;
       padding: 24px 16px;
       position: relative;
     }
@@ -119,7 +145,7 @@
 
     /* Dashboard Layout */
     .app-container { display: flex; flex-direction: column; min-height: 100vh; }
-    .app-header { height: 64px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 40; }
+    .app-header { height: 64px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 40; }
     .header-left { display: flex; align-items: center; gap: 14px; }
     .header-title { font-size: 16px; font-weight: 800; color: var(--primary); }
     .role-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
@@ -143,14 +169,9 @@
 
     /* Stats Grid */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
-    .stat-card { background: #fff; padding: 18px; border-radius: 14px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .stat-card h4 { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
-    .stat-card .val { font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 4px; }
-    .stat-card .icon-box { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; }
-
-    /* Cards & Tables */
-    .card { background: #fff; border-radius: 16px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
-    .table-container { width: 100%; overflow-x: auto; background: #fff; border-radius: 14px; border: 1px solid var(--border); }
+.stat-card { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(6px); padding: 18px; border-radius: 14px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .card { background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); border-radius: 16px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+    .table-container { width: 100%; overflow-x: auto; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); border-radius: 14px; border: 1px solid var(--border); }
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
     th { background: #f8fafc; padding: 12px 16px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
     td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -300,6 +321,16 @@
   </style>
 </head>
 <body>
+
+<!-- Global Background Video Loop -->
+<div class="global-video-bg">
+  <video autoplay muted loop playsinline poster="project-house-3.jpg.jpeg">
+    <source src="construction-video.mp4" type="video/mp4">
+    <source src="site-video.mp4" type="video/mp4">
+    <source src="video.mp4" type="video/mp4">
+  </video>
+  <div class="global-video-overlay"></div>
+</div>
 
 <!-- 1. LOGIN SCREEN WITH 3 PRAKASH SWAMI PHOTOS -->
 <div id="loginSection" class="login-wrapper">
