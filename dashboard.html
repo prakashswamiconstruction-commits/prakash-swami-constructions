@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
+<style>
     :root {
       --primary: #0b1220;
       --accent: #e65100;
@@ -23,16 +23,16 @@
       --gold: #d7a43b;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-body { background: #070d18; color: var(--text); min-height: 100vh; }
+    body { background: #070d18; color: var(--text); min-height: 100vh; }
     
-    /* Global Background Video for Dashboard */
+    /* 1. Background Video Scoped Strictly to Red Box (Main Content Area Only) */
     .global-video-bg {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
+      top: 64px;          /* Top Header के नीचे से शुरू */
+      left: 240px;        /* Left Sidebar के दाएँ से शुरू */
+      right: 0;
+      bottom: 0;
+      z-index: 0;
       overflow: hidden;
       pointer-events: none;
     }
@@ -41,14 +41,12 @@ body { background: #070d18; color: var(--text); min-height: 100vh; }
       height: 100%;
       object-fit: cover;
       object-position: center;
-      filter: brightness(0.6) contrast(1.1);
+      filter: brightness(0.55) contrast(1.1);
     }
     .global-video-overlay {
-      position: fixed;
+      position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(7, 13, 24, 0.82) 0%, rgba(11, 18, 32, 0.72) 50%, rgba(7, 13, 24, 0.9) 100%);
-      z-index: -1;
-      backdrop-filter: blur(1px);
+      background: linear-gradient(135deg, rgba(7, 13, 24, 0.85) 0%, rgba(11, 18, 32, 0.72) 50%, rgba(7, 13, 24, 0.9) 100%);
     }
 
     /* Login Page */
@@ -61,6 +59,7 @@ body { background: #070d18; color: var(--text); min-height: 100vh; }
       background: transparent;
       padding: 24px 16px;
       position: relative;
+      z-index: 1;
     }
     .login-side-banner {
       width: 270px;
@@ -143,21 +142,34 @@ body { background: #070d18; color: var(--text); min-height: 100vh; }
     .alert-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
     .hidden { display: none !important; }
 
-/* Dashboard Layout - Perfect 2-Column Left Sidebar */
+    /* Dashboard Layout */
     .app-container { display: flex; flex-direction: column; min-height: 100vh; background: transparent; position: relative; z-index: 1; }
     
-    /* Top Header - Glassmorphic */
-    .app-header { height: 64px; background: rgba(7, 13, 24, 0.6); border-bottom: 1px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 40; }
+    /* Top Header - Solid Dark (No Video) */
+    .app-header {
+      height: 64px;
+      background: #070d18 !important;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
     .header-left { display: flex; align-items: center; gap: 14px; }
     .header-title { font-size: 16px; font-weight: 800; color: #fff; }
+    .role-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .role-badge.admin { background: #fee2e2; color: var(--danger); }
+    .role-badge.customer { background: #e0e7ff; color: #4338ca; }
+    .role-badge.worker { background: #fef3c7; color: var(--warning); }
     
     .header-right { display: flex; align-items: center; gap: 12px; }
-    .notif-btn { position: relative; width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); display: grid; place-items: center; cursor: pointer; color: #fff; backdrop-filter: blur(6px); }
-    
-    .btn-secondary { padding: 8px 14px; background: rgba(255, 255, 255, 0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; backdrop-filter: blur(6px); }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.28); }
-    
-    /* App Body - Left Sidebar & Right Content Row */
+    .notif-btn { position: relative; width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); display: grid; place-items: center; cursor: pointer; color: #fff; }
+    .notif-badge { position: absolute; top: -4px; right: -4px; background: var(--danger); color: #fff; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; }
+
+    /* App Body - Left Sidebar & Right Content in Row */
     .app-body {
       display: flex !important;
       flex-direction: row !important;
@@ -166,27 +178,26 @@ body { background: #070d18; color: var(--text); min-height: 100vh; }
       width: 100%;
     }
     
-    /* Left Sidebar (हमेशा बाएँ तरफ 240px में) */
+    /* Left Sidebar - Solid Dark 240px (No Video) */
     .app-sidebar {
       width: 240px !important;
       min-width: 240px !important;
       max-width: 240px !important;
-      background: rgba(7, 13, 24, 0.75) !important;
-      border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
-      backdrop-filter: blur(14px) !important;
-      -webkit-backdrop-filter: blur(14px) !important;
-      color: #fff !important;
-      padding: 16px 10px !important;
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 4px !important;
-      min-height: calc(100vh - 64px) !important;
+      background: #0b1220 !important;
+      border-right: 1px solid #1e293b;
+      color: #fff;
+      padding: 16px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: calc(100vh - 64px);
+      z-index: 40;
     }
     .sidebar-btn { width: 100%; padding: 11px 14px; border: 0; background: transparent; color: #cbd5e1; border-radius: 10px; text-align: left; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
     .sidebar-btn:hover, .sidebar-btn.active { background: rgba(215, 164, 59, 0.22) !important; color: #d7a43b !important; font-weight: 700; }
     .sidebar-btn i { width: 18px; font-size: 15px; }
 
-    /* Right Main Content (दाएँ तरफ सारे कार्ड्स और डिटेल्स) */
+    /* Right Main Content (Video Runs Behind This Red Box Area) */
     .app-main {
       flex: 1 !important;
       padding: 24px !important;
@@ -194,18 +205,26 @@ body { background: #070d18; color: var(--text); min-height: 100vh; }
       max-width: 1300px !important;
       margin: 0 !important;
       overflow-y: auto;
+      position: relative;
+      z-index: 1;
     }
     .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
     .page-head h1 { font-size: 22px; font-weight: 800; color: #ffffff !important; text-shadow: 0 2px 6px rgba(0,0,0,0.6); }
     .page-head p { color: #cbd5e1; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+
     /* Stats Grid */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
-.stat-card { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(6px); padding: 18px; border-radius: 14px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .card { background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); border-radius: 16px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
-    .table-container { width: 100%; overflow-x: auto; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); border-radius: 14px; border: 1px solid var(--border); }
+    .stat-card { background: #ffffff; padding: 18px; border-radius: 14px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .stat-card h4 { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+    .stat-card .val { font-size: 24px; font-weight: 900; color: var(--primary); margin-top: 4px; }
+    .stat-card .icon-box { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; }
+
+    /* Cards & Tables */
+    .card { background: #ffffff; border-radius: 16px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.18); }
+    .table-container { width: 100%; overflow-x: auto; background: #ffffff; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-    th { background: #f8fafc; padding: 12px 16px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
-    td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { background: #f8fafc; padding: 12px 16px; font-weight: 700; color: #475569; border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; color: #1e293b; }
     tr:last-child td { border-bottom: 0; }
     
     /* Progress Bar */
@@ -313,27 +332,32 @@ body { background: #070d18; color: var(--text); min-height: 100vh; }
     }
 
     @media(max-width: 840px) {
-      .mobile-menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
-      .sidebar-mobile-header { display: flex; }
-      .app-body { display: block; }
+      .global-video-bg {
+        left: 0 !important; /* मोबाइल पर पूरी चौड़ाई */
+      }
+      .mobile-menu-toggle { display: inline-flex !important; align-items: center; justify-content: center; }
+      .sidebar-mobile-header { display: flex !important; }
+      .app-body { display: block !important; }
       .app-sidebar {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        width: 280px;
-        height: 100vh;
-        z-index: 1000;
-        transform: translateX(-100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 6px 0 25px rgba(0,0,0,0.4);
-        display: flex;
-        flex-direction: column;
-        overflow-y: auto;
-        padding: 16px 12px;
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 280px !important;
+        min-width: 280px !important;
+        height: 100vh !important;
+        z-index: 1000 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 6px 0 25px rgba(0,0,0,0.5) !important;
+        background: #070d18 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow-y: auto !important;
+        padding: 16px 12px !important;
       }
       .app-sidebar.open {
-        transform: translateX(0);
+        transform: translateX(0) !important;
       }
       .sidebar-btn {
         flex-direction: row;
@@ -346,8 +370,11 @@ body { background: #070d18; color: var(--text); min-height: 100vh; }
       }
       .sidebar-btn i { width: 20px; font-size: 16px; }
       .sign-box-grid { grid-template-columns: 1fr; }
-      .app-main { padding: 16px; }
-      .app-header { padding: 0 14px; }
+      .app-main {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 16px !important;
+      }
     }
   </style>
 </head>
