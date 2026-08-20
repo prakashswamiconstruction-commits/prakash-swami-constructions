@@ -211,6 +211,120 @@
       .hero { padding: 60px 0 50px; }
       .video-sound-toggle { bottom: 10px; right: 10px; font-size: 11px; padding: 5px 12px; }
     }
+    /* Before-After Interactive Slider */
+    .ba-slider-container {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      height: 480px;
+      margin: 0 auto;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.25);
+      border: 3px solid var(--gold);
+      background: #0b1220;
+      user-select: none;
+    }
+    .ba-img-after {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .ba-before-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 2;
+    }
+    .ba-img-before {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 900px;
+      max-width: none;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .ba-slider-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 4px;
+      background: #fff;
+      z-index: 3;
+      transform: translateX(-50%);
+      pointer-events: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    .ba-handle-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px;
+      height: 44px;
+      background: var(--gold);
+      color: #0b1220;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      font-weight: 900;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    .ba-badge {
+      position: absolute;
+      top: 16px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      z-index: 4;
+      backdrop-filter: blur(6px);
+    }
+    .ba-badge-after {
+      right: 16px;
+      background: rgba(22, 163, 74, 0.85);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+    .ba-badge-before {
+      left: 16px;
+      background: rgba(220, 38, 38, 0.85);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+    .ba-range-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: ew-resize;
+      z-index: 5;
+      margin: 0;
+      padding: 0;
+    }
+    @media(max-width: 920px) {
+      .ba-slider-container { height: 360px; }
+      .ba-img-before { width: 100vw; }
+    }
+    @media(max-width: 600px) {
+      .ba-slider-container { height: 280px; }
+      .ba-handle-btn { width: 36px; height: 36px; font-size: 13px; }
+      .ba-badge { font-size: 10px; padding: 4px 8px; top: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -432,6 +546,40 @@
   </section>
 
   <!-- 6. 12 Real House Construction Projects Gallery (All 12 Uploaded House Images) -->
+  <!-- Before vs After Transformation Showcase -->
+  <section id="transformation" class="section-alt" style="padding: 75px 0;">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> कार्य की गुणवत्ता एवं फिनिशिंग
+        </div>
+        <h2>कच्ची नींव से सुंदर मकान तक (Before vs After)</h2>
+        <p>स्लाइडर को दाएँ-बाएँ (Left / Right) खींचकर देखें कि हम किस तरह आपके सपनों का घर मजबूती और फिनिशिंग से तैयार करते हैं।</p>
+      </div>
+
+      <div class="ba-slider-container">
+        <!-- After Image (तैयार मकान) -->
+        <img src="project-house-2.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-2.jpg';" alt="After Construction" class="ba-img-after">
+        <span class="ba-badge ba-badge-after">तैयार मकान (After)</span>
+
+        <!-- Before Image (कच्चा निर्माण) -->
+        <div class="ba-before-wrapper" id="baBeforeWrapper">
+          <img src="project-house-4.jpg.jpeg" onerror="this.onerror=null; this.src='project-house-4.jpg';" alt="Before Construction" class="ba-img-before">
+          <span class="ba-badge ba-badge-before">कच्चा निर्माण (Before)</span>
+        </div>
+
+        <!-- Slider Handle -->
+        <div class="ba-slider-handle" id="baHandle">
+          <div class="ba-handle-btn">
+            <i class="fa-solid fa-left-right"></i>
+          </div>
+        </div>
+
+        <!-- Range Input for Touch/Mouse Drag -->
+        <input type="range" min="0" max="100" value="50" class="ba-range-slider" id="baRangeSlider" oninput="updateBeforeAfterSlider(this.value)">
+      </div>
+    </div>
+  </section>
   <section id="projects">
     <div class="wrap">
       <div class="sec-head">
@@ -837,6 +985,22 @@ function handleContactSubmit(e) {
 
   const waText = encodeURIComponent(`नमस्ते प्रकाश स्वामी जी, मेरा नाम ${name} है (मो: ${phone}, पता: ${address})। मुझे '${type}' का कार्य करवाना है। विवरण: ${msg}`);
   window.open(`https://wa.me/919785438345?text=${waText}`, '_blank');
+}
+function updateBeforeAfterSlider(val) {
+  const wrapper = document.getElementById('baBeforeWrapper');
+  const handle = document.getElementById('baHandle');
+  if (wrapper) wrapper.style.width = val + '%';
+  if (handle) handle.style.left = val + '%';
+}
+
+window.addEventListener('resize', syncBeforeImgWidth);
+window.addEventListener('DOMContentLoaded', syncBeforeImgWidth);
+function syncBeforeImgWidth() {
+  const container = document.querySelector('.ba-slider-container');
+  const beforeImg = document.querySelector('.ba-img-before');
+  if (container && beforeImg) {
+    beforeImg.style.width = container.offsetWidth + 'px';
+  }
 }
 </script>
 </body>
