@@ -33,14 +33,14 @@
     
     .wrap { width: min(1180px, calc(100% - 36px)); margin: auto; }
     
-    /* Top Bar */
-    .top { background: #070d18; color: #cbd5e1; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    /* Top Bar - पारदर्शी ग्लास */
+    .top { background: rgba(7, 13, 24, 0.4); color: #cbd5e1; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
     .top .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
     .top a { color: #cbd5e1; transition: color 0.2s; }
     .top a:hover { color: var(--gold); }
     
-    /* Navbar */
-    .nav { position: sticky; top: 0; z-index: 90; background: rgba(11,18,32,0.96); color: #fff; border-bottom: 1px solid #2d394c; backdrop-filter: blur(10px); }
+    /* Navbar - पारदर्शी ग्लास */
+    .nav { position: sticky; top: 0; z-index: 90; background: rgba(7, 13, 24, 0.45); color: #fff; border-bottom: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
     .navin { min-height: 72px; display: flex; align-items: center; justify-content: space-between; }
     .logo { font-weight: 900; font-size: 20px; display: flex; gap: 10px; align-items: center; color: #fff; }
     .mark { background: var(--gold); color: #111827; padding: 6px 10px; border-radius: 8px; font-weight: 900; }
