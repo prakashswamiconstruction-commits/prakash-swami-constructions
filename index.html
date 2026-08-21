@@ -204,12 +204,15 @@
       .process-grid { grid-template-columns: 1fr 1fr; }
       .hero-stats { grid-template-columns: 1fr 1fr; }
     }
-    @media(max-width: 768px) {
-      .menu a:not([href="dashboard.html"]) { display: none; }
-      .process-grid { grid-template-columns: 1fr; }
-      .about-imgs { grid-template-columns: 1fr; }
-      .hero { padding: 60px 0 50px; }
-      .video-sound-toggle { bottom: 10px; right: 10px; font-size: 11px; padding: 5px 12px; }
+@media(max-width: 768px) {
+      .hero-video-bg video,
+      .global-video-bg video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: center center !important;
+        transform: scale(1.05) !important;
+      }
     }
 
     @media(max-width: 920px) {
