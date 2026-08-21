@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
   <meta name="description" content="Prakash Swami Constructions - Mandawara, Jhunjhunu, Rajasthan. 25+ वर्षों का अनुभव, संपूर्ण मकान निर्माण (With Material & Labour), RCC छत ढलाई, प्लास्टर, टाइल्स एवं चारदीवारी कार्य। संपर्क: 9785438345">
   <title>Prakash Swami Constructions — Mandawara, Jhunjhunu (भवन निर्माण विशेषज्ञ)</title>
@@ -31,30 +31,33 @@
     a { text-decoration: none; color: inherit; }
     button, input, textarea, select { font: inherit; }
     
-    .wrap { width: min(1180px, calc(100% - 36px)); margin: auto; }
+    .wrap { width: min(1180px, calc(100% - 32px)); margin: auto; }
     
-    /* Top Bar - पारदर्शी ग्लास */
-    .top { background: rgba(7, 13, 24, 0.4); color: #cbd5e1; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    /* Top Bar */
+    .top { background: rgba(7, 13, 24, 0.7); color: #cbd5e1; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
     .top .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
     .top a { color: #cbd5e1; transition: color 0.2s; }
     .top a:hover { color: var(--gold); }
     
-    /* Navbar - पारदर्शी ग्लास */
-    .nav { position: sticky; top: 0; z-index: 90; background: rgba(7, 13, 24, 0.45); color: #fff; border-bottom: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-    .navin { min-height: 72px; display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-weight: 900; font-size: 20px; display: flex; gap: 10px; align-items: center; color: #fff; }
-    .mark { background: var(--gold); color: #111827; padding: 6px 10px; border-radius: 8px; font-weight: 900; }
+    /* Navbar */
+    .nav { position: sticky; top: 0; z-index: 90; background: rgba(7, 13, 24, 0.85); color: #fff; border-bottom: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    .navin { min-height: 68px; display: flex; align-items: center; justify-content: space-between; position: relative; }
+    .logo { font-weight: 900; font-size: 19px; display: flex; gap: 10px; align-items: center; color: #fff; }
+    .mark { background: var(--gold); color: #111827; padding: 5px 9px; border-radius: 8px; font-weight: 900; font-size: 16px; }
     .logo small { display: block; color: #94a3b8; font-size: 9px; letter-spacing: 2px; }
     
-    .menu { display: flex; gap: 24px; font-size: 14px; align-items: center; }
+    .menu { display: flex; gap: 20px; font-size: 14px; align-items: center; }
     .menu a { transition: color 0.2s; font-weight: 600; color: #e2e8f0; }
     .menu a:hover { color: var(--gold); }
     
     .btn-login { background: var(--gold); color: #111827 !important; font-weight: 800; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
     .btn-login:hover { background: #fff; }
+
+    /* Mobile Hamburger Icon */
+    .menu-toggle { display: none; background: transparent; border: 0; color: #fff; font-size: 22px; cursor: pointer; padding: 6px 10px; }
     
     /* Buttons */
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 24px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; border: 0; text-decoration: none; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; border: 0; text-decoration: none; }
     .btn-gold { background: var(--gold); color: #111827; }
     .btn-gold:hover { background: var(--gold-hover); color: #fff; }
     .btn-dark { background: var(--dark); color: #fff; }
@@ -63,14 +66,14 @@
     .btn-outline:hover { background: rgba(255,255,255,0.15); border-color: #fff; }
     .btn-whatsapp { background: #25d366; color: #fff; }
     .btn-whatsapp:hover { background: #1eb954; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; font-weight: 800; border: 0; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; font-weight: 800; border: 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
     
-    /* Premium Corporate Hero Section with Background Video */
+    /* Hero Section */
     .hero {
       position: relative;
       color: #fff;
-      padding: 80px 0 70px;
-      min-height: 600px;
+      padding: 70px 0 60px;
+      min-height: 580px;
       display: flex;
       align-items: center;
       background: transparent;
@@ -90,13 +93,12 @@
       height: 100%;
       object-fit: cover;
       object-position: center;
-      filter: brightness(0.65) contrast(1.1);
+      filter: brightness(0.6) contrast(1.1);
     }
     .hero-overlay {
       position: fixed;
       inset: 0;
-      background: linear-gradient(135deg, rgba(7, 13, 24, 0.85) 0%, rgba(11, 18, 32, 0.7) 50%, rgba(7, 13, 24, 0.9) 100%);
-      backdrop-filter: blur(1px);
+      background: linear-gradient(135deg, rgba(7, 13, 24, 0.85) 0%, rgba(11, 18, 32, 0.75) 50%, rgba(7, 13, 24, 0.9) 100%);
       z-index: -1;
     }
     .video-sound-toggle {
@@ -104,10 +106,10 @@
       bottom: 20px;
       right: 20px;
       z-index: 99;
-      background: rgba(11, 18, 32, 0.85);
-      border: 1px solid rgba(215, 164, 59, 0.5);
+      background: rgba(11, 18, 32, 0.9);
+      border: 1px solid rgba(215, 164, 59, 0.6);
       color: var(--gold);
-      padding: 8px 18px;
+      padding: 8px 16px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: 700;
@@ -122,106 +124,121 @@
     .video-sound-toggle:hover {
       background: var(--gold);
       color: #0b1220;
-      transform: scale(1.04);
+      transform: scale(1.03);
     }
 
-    .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; }
+    .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 36px; align-items: center; }
     .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(215, 164, 59, 0.15); color: var(--gold); border: 1px solid rgba(215, 164, 59, 0.3); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 16px; backdrop-filter: blur(4px); }
-    .hero h1 { font-size: clamp(28px, 4.2vw, 46px); font-weight: 900; line-height: 1.25; margin-bottom: 18px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .hero h1 { font-size: clamp(26px, 3.8vw, 44px); font-weight: 900; line-height: 1.25; margin-bottom: 18px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
     .hero h1 em { color: var(--gold); font-style: normal; }
-    .hero p { font-size: 16px; color: #cbd5e1; margin-bottom: 26px; line-height: 1.7; max-width: 600px; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
-    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 34px; }
+    .hero p { font-size: 15px; color: #cbd5e1; margin-bottom: 24px; line-height: 1.7; max-width: 600px; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 30px; }
     
-    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 24px; }
-    .stat-item h3 { font-size: 24px; font-weight: 900; color: var(--gold); }
+    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 22px; }
+    .stat-item h3 { font-size: 22px; font-weight: 900; color: var(--gold); }
     .stat-item p { font-size: 12px; color: #cbd5e1; font-weight: 600; }
     
-    /* Hero Showcase Card - Prakash Swami Image 1 */
-    .hero-visual-card { background: rgba(11,18,32,0.7); border: 1px solid rgba(215, 164, 59, 0.35); border-radius: 18px; padding: 16px; backdrop-filter: blur(14px); box-shadow: 0 20px 45px rgba(0,0,0,0.5); }
+    /* Hero Visual Showcase Card */
+    .hero-visual-card { background: rgba(11,18,32,0.8); border: 1px solid rgba(215, 164, 59, 0.35); border-radius: 18px; padding: 16px; backdrop-filter: blur(14px); box-shadow: 0 20px 45px rgba(0,0,0,0.5); }
     .hero-visual-card img { border-radius: 12px; height: 320px; width: 100%; object-fit: cover; object-position: center top; margin-bottom: 14px; }
     
-  /* Sections */
-    section { padding: 75px 0; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px); }
-    .section-alt { background: rgba(248, 246, 240, 0.94); backdrop-filter: blur(8px); }
-    .sec-head { text-align: center; max-width: 720px; margin: 0 auto 46px; }
-    .sec-head h2 { font-size: 30px; font-weight: 900; color: var(--dark); margin-bottom: 10px; }
+    /* Sections */
+    section { padding: 65px 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); }
+    .section-alt { background: rgba(248, 246, 240, 0.96); backdrop-filter: blur(8px); }
+    .sec-head { text-align: center; max-width: 720px; margin: 0 auto 40px; }
+    .sec-head h2 { font-size: 28px; font-weight: 900; color: var(--dark); margin-bottom: 10px; }
     .sec-head p { font-size: 15px; color: var(--muted); }
     
     /* 8 Services Grid */
-    .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
-    .service-card { background: #fff; border-radius: 16px; border: 1px solid var(--line); padding: 24px 20px; box-shadow: var(--shadow); transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s; display: flex; flex-direction: column; justify-content: space-between; }
-    .service-card:hover { transform: translateY(-5px); box-shadow: 0 20px 35px rgba(0,0,0,0.1); border-color: var(--gold); }
-    .service-icon { width: 50px; height: 50px; background: rgba(215, 164, 59, 0.12); color: var(--gold); border-radius: 12px; display: grid; place-items: center; font-size: 22px; margin-bottom: 16px; }
-    .service-card h3 { font-size: 17.5px; font-weight: 800; color: var(--dark); margin-bottom: 8px; }
+    .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+    .service-card { background: #fff; border-radius: 16px; border: 1px solid var(--line); padding: 22px 18px; box-shadow: var(--shadow); transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s; display: flex; flex-direction: column; justify-content: space-between; }
+    .service-card:hover { transform: translateY(-4px); box-shadow: 0 16px 30px rgba(0,0,0,0.08); border-color: var(--gold); }
+    .service-icon { width: 48px; height: 48px; background: rgba(215, 164, 59, 0.12); color: var(--gold); border-radius: 12px; display: grid; place-items: center; font-size: 20px; margin-bottom: 14px; }
+    .service-card h3 { font-size: 16.5px; font-weight: 800; color: var(--dark); margin-bottom: 8px; }
     .service-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
     
     /* About & Founder */
-    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; align-items: center; }
-    .about-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .about-imgs img { border-radius: 14px; height: 260px; width: 100%; object-fit: cover; box-shadow: var(--shadow); }
-    .about-points { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
-    .about-pt { background: #fff; padding: 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 8px; }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+    .about-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .about-imgs img { border-radius: 14px; height: 250px; width: 100%; object-fit: cover; box-shadow: var(--shadow); }
+    .about-points { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+    .about-pt { background: #fff; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 8px; }
     
-    /* 12 Real House Construction Projects Gallery */
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
+    /* 12 Projects Gallery */
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
     .gallery-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); transition: transform 0.25s, box-shadow 0.25s; cursor: pointer; display: flex; flex-direction: column; }
-    .gallery-card:hover { transform: translateY(-5px); box-shadow: 0 18px 32px rgba(0,0,0,0.12); border-color: var(--gold); }
-    .gallery-thumb { height: 210px; width: 100%; position: relative; overflow: hidden; background: #0b1220; }
+    .gallery-card:hover { transform: translateY(-4px); box-shadow: 0 16px 28px rgba(0,0,0,0.1); border-color: var(--gold); }
+    .gallery-thumb { height: 200px; width: 100%; position: relative; overflow: hidden; background: #0b1220; }
     .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-    .gallery-card:hover .gallery-thumb img { transform: scale(1.06); }
-    .gallery-badge { position: absolute; top: 12px; right: 12px; background: rgba(11, 18, 32, 0.88); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; backdrop-filter: blur(4px); border: 1px solid rgba(215, 164, 59, 0.4); }
-    .gallery-info { padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .gallery-info h3 { font-size: 16px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+    .gallery-card:hover .gallery-thumb img { transform: scale(1.05); }
+    .gallery-badge { position: absolute; top: 10px; right: 10px; background: rgba(11, 18, 32, 0.88); color: var(--gold); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; backdrop-filter: blur(4px); border: 1px solid rgba(215, 164, 59, 0.4); }
+    .gallery-info { padding: 14px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .gallery-info h3 { font-size: 15.5px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
     .gallery-info p { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
     
     /* Work Process */
-    .process-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-    .process-card { background: #fff; padding: 24px 20px; border-radius: 14px; border: 1px solid var(--line); position: relative; }
-    .process-num { width: 36px; height: 36px; background: var(--gold); color: #111827; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 15px; margin-bottom: 14px; }
+    .process-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .process-card { background: #fff; padding: 22px 18px; border-radius: 14px; border: 1px solid var(--line); position: relative; }
+    .process-num { width: 34px; height: 34px; background: var(--gold); color: #111827; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 14px; margin-bottom: 12px; }
     
     /* Contact & Form */
-    .contact-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; }
-    .contact-box { background: #fff; padding: 30px; border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow); }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
-    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; }
-    .form-group input:focus, .form-group textarea:focus { border-color: var(--gold); }
+    .contact-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 36px; }
+    .contact-box { background: #fff; padding: 26px; border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 5px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; background: #fff; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
     
     /* Footer */
-    footer { background: #070d18; color: #94a3b8; padding: 50px 0 24px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13px; }
-    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 36px; margin-bottom: 36px; }
-    .footer-col h4 { color: #fff; font-size: 15px; font-weight: 800; margin-bottom: 16px; }
-    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    footer { background: #070d18; color: #94a3b8; padding: 45px 0 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 30px; margin-bottom: 30px; }
+    .footer-col h4 { color: #fff; font-size: 15px; font-weight: 800; margin-bottom: 14px; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
     .footer-col a { color: #94a3b8; transition: 0.2s; }
     .footer-col a:hover { color: var(--gold); }
     
     /* Lightbox Modal */
     .lightbox-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(5px); }
-    .lightbox-card { background: #fff; width: 100%; max-width: 750px; border-radius: 18px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.6); }
+    .lightbox-card { background: #fff; width: 100%; max-width: 720px; border-radius: 18px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.6); }
 
-    @media(max-width: 900px) {
+    /* Responsive Media Queries */
+    @media (max-width: 900px) {
       .hero-grid, .about-grid, .contact-grid, .footer-grid { grid-template-columns: 1fr; }
       .process-grid { grid-template-columns: 1fr 1fr; }
-      .hero-stats { grid-template-columns: 1fr 1fr; }
-    }
-@media(max-width: 768px) {
-      .hero-video-bg video,
-      .global-video-bg video {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: contain !important; /* पूरी वीडियो बिना कटे दिखेगी */
-        object-position: center top !important;
-      }
+      .hero-stats { grid-template-columns: repeat(2, 1fr); }
+      .hero-visual-card img { height: 280px; }
     }
 
-    @media(max-width: 920px) {
-      .ba-slider-container { height: 360px; }
-      .ba-img-before { width: 100vw; }
+    @media (max-width: 768px) {
+      .menu-toggle { display: block; }
+      .menu {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #0b1220;
+        padding: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        gap: 16px;
+        text-align: center;
+      }
+      .menu.active { display: flex; }
+      .top .wrap { justify-content: center; text-align: center; }
+      .hero { padding: 50px 0 40px; }
+      .about-imgs { grid-template-columns: 1fr; }
+      .about-imgs img { height: 220px; }
+      .about-points { grid-template-columns: 1fr; }
+      .video-sound-toggle { bottom: 15px; right: 15px; font-size: 11px; padding: 6px 12px; }
     }
-    @media(max-width: 600px) {
-      .ba-slider-container { height: 280px; }
-      .ba-handle-btn { width: 36px; height: 36px; font-size: 13px; }
-      .ba-badge { font-size: 10px; padding: 4px 8px; top: 10px; }
+
+    @media (max-width: 480px) {
+      .hero-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .process-grid { grid-template-columns: 1fr; }
+      .hero-cta { flex-direction: column; }
+      .hero-cta .btn { width: 100%; }
+      .contact-box { padding: 18px; }
     }
   </style>
 </head>
@@ -231,7 +248,7 @@
 <div class="top">
   <div class="wrap">
     <div><i class="fa-solid fa-location-dot" style="color:var(--gold);"></i> <b>कार्यालय:</b> मंडावरा, तहसील: उदयपुरवाटी, जिला: झुंझुनूं (राजि.)</div>
-    <div style="display:flex; gap:16px;">
+    <div style="display:flex; gap:16px; align-items:center;">
       <a href="tel:9785438345"><i class="fa-solid fa-phone" style="color:var(--gold);"></i> 9785438345</a>
       <a href="https://wa.me/919785438345" target="_blank"><i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> WhatsApp Help</a>
     </div>
@@ -245,15 +262,21 @@
       <span class="mark">PS</span>
       <span>Prakash Swami<small>CONSTRUCTIONS</small></span>
     </a>
-    <nav class="menu">
-      <a href="#home">होम</a>
-      <a href="#services">सेवाएँ</a>
-      <a href="#about">हमारे बारे में</a>
-      <a href="#projects">प्रोजेक्ट गैलरी</a>
-      <a href="#contact">संपर्क</a>
+
+    <!-- Mobile Hamburger Button -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" onclick="toggleMenu()">
+      <i class="fa-solid fa-bars" id="menuIcon"></i>
+    </button>
+
+    <nav class="menu" id="navMenu">
+      <a href="#home" onclick="closeMenu()">होम</a>
+      <a href="#services" onclick="closeMenu()">सेवाएँ</a>
+      <a href="#about" onclick="closeMenu()">हमारे बारे में</a>
+      <a href="#projects" onclick="closeMenu()">प्रोजेक्ट गैलरी</a>
+      <a href="#contact" onclick="closeMenu()">संपर्क</a>
       
       <!-- Direct Portal Login -->
-      <a href="dashboard.html" class="btn-login" title="Admin, Customer & Worker Portal Login">
+      <a href="dashboard.html" class="btn-login" title="Admin, Customer & Worker Portal Login" onclick="closeMenu()">
         <i class="fa-solid fa-right-to-bracket"></i> Login
       </a>
     </nav>
@@ -265,7 +288,6 @@
   <!-- 3. Premium Corporate Hero Section with Background Video -->
   <section class="hero">
     
-    <!-- Autoplaying Looping 40-Second Background Video -->
     <div class="hero-video-bg">
       <video id="heroVideo" autoplay muted loop playsinline poster="project-house-3.jpg.jpeg">
         <source src="construction-video.mp4" type="video/mp4">
@@ -275,7 +297,7 @@
       <div class="hero-overlay"></div>
     </div>
 
-    <!-- Sound Control Button (Unmute / Mute Toggle) -->
+    <!-- Sound Control Button -->
     <button id="videoSoundBtn" class="video-sound-toggle" onclick="toggleHeroVideoSound()" title="Sound On / Off">
       <i class="fa-solid fa-volume-xmark" id="soundIcon"></i> <span id="soundText">आवाज़ चालू करें</span>
     </button>
@@ -303,15 +325,15 @@
           </div>
         </div>
 
-        <!-- Hero Visual Showcase: Prakash Swami Photo on Site (Image 1) -->
+        <!-- Hero Visual Showcase -->
         <div class="hero-visual-card">
           <img src="prakash-chand-swami-1.jpg.png" onerror="this.onerror=null; this.src='prakash-chand-swami-1.jpg';" alt="Prakash Chand Swami - Lead Contractor">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div>
               <h4 style="font-size:16px; font-weight:800; color:#fff;">प्रकाश चन्द स्वामी</h4>
               <p style="font-size:12px; color:var(--gold);">संचालक एवं मुख्य ठेकेदार (25+ वर्ष अनुभव)</p>
             </div>
-            <a href="#contact" class="btn-sm btn-gold" style="padding:6px 12px; font-size:12px; font-weight:800; border-radius:6px;">Enquiry करें</a>
+            <a href="#contact" class="btn-sm btn-gold">Enquiry करें</a>
           </div>
         </div>
       </div>
@@ -411,14 +433,12 @@
     </div>
   </section>
 
-  <!-- 5. About Founder (Prakash Chand Swami Images 2 & 3) -->
+  <!-- 5. About Founder -->
   <section id="about" class="section-alt">
     <div class="wrap">
       <div class="about-grid">
         <div class="about-imgs">
-          <!-- Image 2 of Prakash Swami -->
           <img src="prakash-chand-swami-2.jpg.jpg" onerror="this.onerror=null; this.src='prakash-chand-swami-2.jpg';" alt="Prakash Chand Swami - Site Supervision">
-          <!-- Image 3 of Prakash Swami -->
           <img src="prakash-chand-swami-3.jpg.jpg" onerror="this.onerror=null; this.src='prakash-chand-swami-3.jpg';" alt="Prakash Chand Swami - Project Planning">
         </div>
 
@@ -443,8 +463,7 @@
     </div>
   </section>
 
-  <!-- 6. 12 Real House Construction Projects Gallery (All 12 Uploaded House Images) -->
-
+  <!-- 6. 12 Real House Construction Projects Gallery -->
   <section id="projects">
     <div class="wrap">
       <div class="sec-head">
@@ -652,7 +671,7 @@
     </div>
   </section>
 
-  <!-- 8. Contact & Free Consultation Section (Prakash Swami Image 4) -->
+  <!-- 8. Contact & Free Consultation Section -->
   <section id="contact">
     <div class="wrap">
       <div class="sec-head">
@@ -663,35 +682,35 @@
 
       <div class="contact-grid">
         <div class="contact-box">
-          <h3 style="font-size:20px; font-weight:800; color:var(--dark); margin-bottom:18px;">मुफ्त परामर्श फॉर्म (Free Enquiry)</h3>
+          <h3 style="font-size:19px; font-weight:800; color:var(--dark); margin-bottom:18px;">मुफ्त परामर्श फॉर्म (Free Enquiry)</h3>
           <form onsubmit="handleContactSubmit(event)">
             <div class="form-group">
-              <label>आपका नाम (Full Name)</label>
+              <label for="cfName">आपका नाम (Full Name)</label>
               <input id="cfName" required placeholder="अपना पूरा नाम लिखें">
             </div>
             <div class="form-group">
-              <label>मोबाइल नंबर</label>
-              <input id="cfPhone" type="tel" required placeholder="१० अंकों का मोबाइल नंबर">
+              <label for="cfPhone">मोबाइल नंबर</label>
+              <input id="cfPhone" type="tel" pattern="[0-9]{10}" required placeholder="१० अंकों का मोबाइल नंबर">
             </div>
             <div class="form-group">
-              <label>साइट का पता / गाँव</label>
+              <label for="cfAddress">साइट का पता / गाँव</label>
               <input id="cfAddress" required placeholder="गाँव, तहसील, जिला">
             </div>
             <div class="form-group">
-              <label>कार्य का प्रकार</label>
+              <label for="cfType">कार्य का प्रकार</label>
               <select id="cfType">
-                <option value="New House">१. नया मकान निर्माण (Complete Home Construction)</option>
-                <option value="RCC Slab">२. RCC छत ढलाई एवं शटरिंग</option>
-                <option value="Brick Masonry">३. दीवार चिनाई व प्लिंथ बीम</option>
-                <option value="Plaster">४. अंदरूनी व बाहरी प्लास्टर कार्य</option>
-                <option value="Tiles Flooring">५. टाइल्स, मार्बल व फ्लोरिंग फिटिंग</option>
-                <option value="House Map 2D 3D">६. 2D नक्शा व 3D डिजाइन</option>
-                <option value="Boundary Wall">७. बाउंड्री वॉल व चारदीवारी निर्माण</option>
-                <option value="Renovation">८. रेनोवेशन, मरम्मत व वॉटरप्रूफिंग</option>
+                <option value="नया मकान निर्माण (Complete Home Construction)">१. नया मकान निर्माण (Complete Home Construction)</option>
+                <option value="RCC छत ढलाई एवं शटरिंग">२. RCC छत ढलाई एवं शटरिंग</option>
+                <option value="दीवार चिनाई व प्लिंथ बीम">३. दीवार चिनाई व प्लिंथ बीम</option>
+                <option value="अंदरूनी व बाहरी प्लास्टर कार्य">४. अंदरूनी व बाहरी प्लास्टर कार्य</option>
+                <option value="टाइल्स, मार्बल व फ्लोरिंग फिटिंग">५. टाइल्स, मार्बल व फ्लोरिंग फिटिंग</option>
+                <option value="2D नक्शा व 3D डिजाइन">६. 2D नक्शा व 3D डिजाइन</option>
+                <option value="बाउंड्री वॉल व चारदीवारी निर्माण">७. बाउंड्री वॉल व चारदीवारी निर्माण</option>
+                <option value="रेनोवेशन, मरम्मत व वॉटरप्रूफिंग">८. रेनोवेशन, मरम्मत व वॉटरप्रूफिंग</option>
               </select>
             </div>
             <div class="form-group">
-              <label>संदेश / विवरण (वैकल्पिक)</label>
+              <label for="cfMsg">संदेश / विवरण (वैकल्पिक)</label>
               <textarea id="cfMsg" rows="3" placeholder="प्लॉट साइज या कोई विशेष बात..."></textarea>
             </div>
             <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fa-solid fa-paper-plane"></i> इन्क्वायरी भेजें (WhatsApp)</button>
@@ -699,23 +718,22 @@
         </div>
 
         <div style="display:flex; flex-direction:column; justify-content:space-between; gap:20px;">
-          <!-- Image 4 of Prakash Swami in Contact Card -->
-          <div style="background:#fff; padding:30px; border-radius:16px; border:1px solid var(--line); box-shadow:var(--shadow);">
+          <div style="background:#fff; padding:26px; border-radius:16px; border:1px solid var(--line); box-shadow:var(--shadow);">
             <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
-              <img src="prakash-chand-swami-4.jpg.jpg" onerror="this.onerror=null; this.src='prakash-chand-swami-4.jpg';" style="width:68px; height:68px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);" alt="Prakash Chand Swami">
+              <img src="prakash-chand-swami-4.jpg.jpg" onerror="this.onerror=null; this.src='prakash-chand-swami-4.jpg';" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);" alt="Prakash Chand Swami">
               <div>
                 <h3 style="font-size:18px; font-weight:800; color:var(--dark);">प्रकाश चन्द स्वामी</h3>
                 <p style="font-size:12px; color:var(--gold); font-weight:700;">PRAKASH SWAMI CONSTRUCTIONS</p>
               </div>
             </div>
 
-            <p style="margin-bottom:12px; font-size:14px;"><b><i class="fa-solid fa-phone" style="color:var(--gold);"></i> फोन / हेल्पलाइन:</b> <a href="tel:9785438345" style="color:var(--dark); font-weight:700;">9785438345</a></p>
-            <p style="margin-bottom:12px; font-size:14px;"><b><i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> WhatsApp:</b> <a href="https://wa.me/919785438345" target="_blank" style="color:#15803d; font-weight:700;">9785438345</a></p>
-            <p style="margin-bottom:12px; font-size:14px;"><b><i class="fa-solid fa-qrcode" style="color:var(--gold);"></i> UPI ID:</b> 9785438345@axl</p>
+            <p style="margin-bottom:10px; font-size:14px;"><b><i class="fa-solid fa-phone" style="color:var(--gold);"></i> फोन / हेल्पलाइन:</b> <a href="tel:9785438345" style="color:var(--dark); font-weight:700;">9785438345</a></p>
+            <p style="margin-bottom:10px; font-size:14px;"><b><i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> WhatsApp:</b> <a href="https://wa.me/919785438345" target="_blank" style="color:#15803d; font-weight:700;">9785438345</a></p>
+            <p style="margin-bottom:10px; font-size:14px;"><b><i class="fa-solid fa-qrcode" style="color:var(--gold);"></i> UPI ID:</b> 9785438345@axl</p>
             <p style="font-size:14px;"><b><i class="fa-solid fa-location-dot" style="color:var(--gold);"></i> पता:</b> ग्राम व पोस्ट: मंडावरा, तहसील: उदयपुरवाटी, जिला: झुंझुनूं (राजि.)</p>
           </div>
 
-          <div style="background:#0b1220; color:#fff; padding:24px; border-radius:16px; text-align:center; border:2px solid var(--gold);">
+          <div style="background:#0b1220; color:#fff; padding:22px; border-radius:16px; text-align:center; border:2px solid var(--gold);">
             <h4 style="color:var(--gold); font-size:16px; margin-bottom:8px;">पोर्टल लॉगिन (Admin / Customer / Worker)</h4>
             <p style="font-size:13px; color:#94a3b8; margin-bottom:14px;">अपने प्रोजेक्ट्स, डिजिटल अनुबंध, हाजिरी और भुगतान देखने के लिए डैशबोर्ड में लॉगिन करें।</p>
             <a href="dashboard.html" class="btn btn-gold" style="width:100%;"><i class="fa-solid fa-right-to-bracket"></i> Dashboard Login</a>
@@ -787,7 +805,7 @@
       <button onclick="closeLightbox()" style="background:transparent; border:0; color:#fff; font-size:26px; cursor:pointer; padding:2px 6px;">&times;</button>
     </div>
     <div style="padding:16px; overflow-y:auto; flex:1;">
-      <img id="lbImg" src="" style="width:100%; max-height:420px; object-fit:cover; border-radius:12px; margin-bottom:14px;" alt="Project Detail">
+      <img id="lbImg" src="" style="width:100%; max-height:400px; object-fit:cover; border-radius:12px; margin-bottom:14px;" alt="Project Detail">
       <p id="lbDesc" style="font-size:14px; color:#334155; line-height:1.6; margin-bottom:16px;"></p>
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid var(--line); padding-top:12px;">
         <a id="lbWaBtn" href="#" target="_blank" class="btn btn-whatsapp" style="padding:10px 18px; font-size:13px;">
@@ -800,6 +818,32 @@
 </div>
 
 <script>
+// Mobile Navigation Toggle
+function toggleMenu() {
+  const menu = document.getElementById('navMenu');
+  const icon = document.getElementById('menuIcon');
+  if (!menu) return;
+
+  menu.classList.toggle('active');
+  if (icon) {
+    if (menu.classList.contains('active')) {
+      icon.className = 'fa-solid fa-xmark';
+    } else {
+      icon.className = 'fa-solid fa-bars';
+    }
+  }
+}
+
+function closeMenu() {
+  const menu = document.getElementById('navMenu');
+  const icon = document.getElementById('menuIcon');
+  if (menu && menu.classList.contains('active')) {
+    menu.classList.remove('active');
+    if (icon) icon.className = 'fa-solid fa-bars';
+  }
+}
+
+// Background Video Sound Toggle
 function toggleHeroVideoSound() {
   const vid = document.getElementById('heroVideo');
   const icon = document.getElementById('soundIcon');
@@ -817,6 +861,7 @@ function toggleHeroVideoSound() {
   }
 }
 
+// Lightbox Modal Functions
 function openLightbox(imgSrc, title, desc) {
   const modal = document.getElementById('lightboxModal');
   const img = document.getElementById('lbImg');
@@ -832,14 +877,28 @@ function openLightbox(imgSrc, title, desc) {
     btn.href = `https://wa.me/919785438345?text=${waText}`;
   }
 
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 function closeLightbox() {
   const modal = document.getElementById('lightboxModal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
 }
 
+// Close Lightbox on ESC Key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeLightbox();
+  }
+});
+
+// Contact / WhatsApp Form Handler
 function handleContactSubmit(e) {
   e.preventDefault();
   const name = document.getElementById('cfName').value.trim();
@@ -848,10 +907,8 @@ function handleContactSubmit(e) {
   const type = document.getElementById('cfType').value;
   const msg = document.getElementById('cfMsg').value.trim();
 
-  const waText = encodeURIComponent(`नमस्ते प्रकाश स्वामी जी, मेरा नाम ${name} है (मो: ${phone}, पता: ${address})। मुझे '${type}' का कार्य करवाना है। विवरण: ${msg}`);
+  const waText = encodeURIComponent(`नमस्ते प्रकाश स्वामी जी,\nमेरा नाम: ${name}\nमोबाइल: ${phone}\nस्थान: ${address}\nकार्य का प्रकार: ${type}\nविवरण: ${msg ? msg : 'कोई अतिरिक्त विवरण नहीं'}`);
   window.open(`https://wa.me/919785438345?text=${waText}`, '_blank');
-}
-
 }
 </script>
 </body>
