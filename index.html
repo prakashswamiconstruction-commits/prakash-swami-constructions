@@ -15,43 +15,42 @@
       --dark: #0b1220;
       --dark2: #162032;
       --gold: #d7a43b;
-      --gold-hover: #b88628;
-      --cream: #f8f6f0;
+      --gold-hover: #c4922f;
+      --cream: #f8f9fa;
       --muted: #64748b;
       --line: #e2e8f0;
       --white: #ffffff;
-      --accent: #e65100;
       --success: #16a34a;
-      --shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
+      --shadow: 0 10px 25px -5px rgba(0,0,0,0.06), 0 8px 10px -6px rgba(0,0,0,0.03);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { font-family: Arial, "Noto Sans Devanagari", system-ui, -apple-system, sans-serif; color: #1e293b; line-height: 1.6; background: #070d18; }
+    body { font-family: "Segoe UI", Arial, "Noto Sans Devanagari", system-ui, -apple-system, sans-serif; color: #1e293b; line-height: 1.6; background: #ffffff; }
     img { display: block; max-width: 100%; }
     a { text-decoration: none; color: inherit; }
     button, input, textarea, select { font: inherit; }
     
-    .wrap { width: min(1180px, calc(100% - 32px)); margin: auto; }
+    .wrap { width: min(1200px, calc(100% - 40px)); margin: auto; }
     
     /* Top Bar */
-    .top { background: rgba(7, 13, 24, 0.7); color: #cbd5e1; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-    .top .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .top { background: #070d18; color: #cbd5e1; font-size: 13px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .top .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .top a { color: #cbd5e1; transition: color 0.2s; }
     .top a:hover { color: var(--gold); }
     
     /* Navbar */
-    .nav { position: sticky; top: 0; z-index: 90; background: rgba(7, 13, 24, 0.85); color: #fff; border-bottom: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-    .navin { min-height: 68px; display: flex; align-items: center; justify-content: space-between; position: relative; }
-    .logo { font-weight: 900; font-size: 19px; display: flex; gap: 10px; align-items: center; color: #fff; }
-    .mark { background: var(--gold); color: #111827; padding: 5px 9px; border-radius: 8px; font-weight: 900; font-size: 16px; }
+    .nav { position: sticky; top: 0; z-index: 90; background: #0b1220; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+    .navin { min-height: 70px; display: flex; align-items: center; justify-content: space-between; position: relative; }
+    .logo { font-weight: 900; font-size: 20px; display: flex; gap: 10px; align-items: center; color: #fff; }
+    .mark { background: var(--gold); color: #111827; padding: 6px 10px; border-radius: 8px; font-weight: 900; font-size: 16px; }
     .logo small { display: block; color: #94a3b8; font-size: 9px; letter-spacing: 2px; }
     
-    .menu { display: flex; gap: 20px; font-size: 14px; align-items: center; }
+    .menu { display: flex; gap: 24px; font-size: 14.5px; align-items: center; }
     .menu a { transition: color 0.2s; font-weight: 600; color: #e2e8f0; }
     .menu a:hover { color: var(--gold); }
     
-    .btn-login { background: var(--gold); color: #111827 !important; font-weight: 800; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
-    .btn-login:hover { background: #fff; }
+    .btn-login { background: var(--gold); color: #111827 !important; font-weight: 800; padding: 9px 18px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+    .btn-login:hover { background: #ffffff; color: #0b1220 !important; }
 
     /* Mobile Hamburger Icon */
     .menu-toggle { display: none; background: transparent; border: 0; color: #fff; font-size: 22px; cursor: pointer; padding: 6px 10px; }
@@ -59,141 +58,145 @@
     /* Buttons */
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; border: 0; text-decoration: none; }
     .btn-gold { background: var(--gold); color: #111827; }
-    .btn-gold:hover { background: var(--gold-hover); color: #fff; }
-    .btn-dark { background: var(--dark); color: #fff; }
-    .btn-dark:hover { background: var(--dark2); }
+    .btn-gold:hover { background: var(--gold-hover); }
+    .btn-dark { background: #0b1220; color: #fff; }
+    .btn-dark:hover { background: #162032; color: #fff; }
     .btn-outline { background: rgba(11,18,32,0.6); border: 1.5px solid #cbd5e1; color: #fff; backdrop-filter: blur(4px); }
     .btn-outline:hover { background: rgba(255,255,255,0.15); border-color: #fff; }
     .btn-whatsapp { background: #25d366; color: #fff; }
-    .btn-whatsapp:hover { background: #1eb954; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; font-weight: 800; border: 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+    .btn-whatsapp:hover { background: #1eb954; color: #fff; }
+    .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 8px; font-weight: 800; border: 0; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
     
     /* Hero Section */
     .hero {
       position: relative;
       color: #fff;
-      padding: 70px 0 60px;
-      min-height: 580px;
+      padding: 85px 0 75px;
+      min-height: 600px;
       display: flex;
       align-items: center;
-      background: transparent;
+      background: #070d18;
+      overflow: hidden;
     }
     .hero-video-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
-      z-index: -1;
+      z-index: 1;
       overflow: hidden;
-      pointer-events: none;
     }
     .hero-video-bg video {
       width: 100%;
       height: 100%;
       object-fit: cover;
       object-position: center;
-      filter: brightness(0.6) contrast(1.1);
+      filter: brightness(0.5) contrast(1.1);
     }
     .hero-overlay {
-      position: fixed;
+      position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(7, 13, 24, 0.85) 0%, rgba(11, 18, 32, 0.75) 50%, rgba(7, 13, 24, 0.9) 100%);
-      z-index: -1;
+      background: linear-gradient(135deg, rgba(7, 13, 24, 0.88) 0%, rgba(11, 18, 32, 0.75) 50%, rgba(7, 13, 24, 0.92) 100%);
+      z-index: 2;
     }
     .video-sound-toggle {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 24px;
+      right: 24px;
       z-index: 99;
-      background: rgba(11, 18, 32, 0.9);
-      border: 1px solid rgba(215, 164, 59, 0.6);
+      background: rgba(11, 18, 32, 0.92);
+      border: 1px solid rgba(215, 164, 59, 0.7);
       color: var(--gold);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 12px;
+      padding: 9px 18px;
+      border-radius: 25px;
+      font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 8px;
       backdrop-filter: blur(8px);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       transition: all 0.2s ease;
     }
     .video-sound-toggle:hover {
       background: var(--gold);
       color: #0b1220;
-      transform: scale(1.03);
+      transform: scale(1.04);
     }
 
-    .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 36px; align-items: center; }
-    .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(215, 164, 59, 0.15); color: var(--gold); border: 1px solid rgba(215, 164, 59, 0.3); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 16px; backdrop-filter: blur(4px); }
-    .hero h1 { font-size: clamp(26px, 3.8vw, 44px); font-weight: 900; line-height: 1.25; margin-bottom: 18px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 40px; align-items: center; position: relative; z-index: 3; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 25px; font-size: 12.5px; font-weight: 700; margin-bottom: 18px; width: fit-content; }
+    .eyebrow-gold { background: rgba(215, 164, 59, 0.15); color: var(--gold); border: 1px solid rgba(215, 164, 59, 0.35); }
+    .eyebrow-blue { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+    .eyebrow-orange { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
+    .eyebrow-yellow { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+
+    .hero h1 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.25; margin-bottom: 18px; text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
     .hero h1 em { color: var(--gold); font-style: normal; }
-    .hero p { font-size: 15px; color: #cbd5e1; margin-bottom: 24px; line-height: 1.7; max-width: 600px; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
-    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 30px; }
+    .hero p { font-size: 15.5px; color: #cbd5e1; margin-bottom: 26px; line-height: 1.7; max-width: 600px; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
     
-    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 22px; }
-    .stat-item h3 { font-size: 22px; font-weight: 900; color: var(--gold); }
+    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 24px; }
+    .stat-item h3 { font-size: 24px; font-weight: 900; color: var(--gold); }
     .stat-item p { font-size: 12px; color: #cbd5e1; font-weight: 600; }
     
-    /* Hero Visual Showcase Card */
-    .hero-visual-card { background: rgba(11,18,32,0.8); border: 1px solid rgba(215, 164, 59, 0.35); border-radius: 18px; padding: 16px; backdrop-filter: blur(14px); box-shadow: 0 20px 45px rgba(0,0,0,0.5); }
+    /* Hero Showcase Card */
+    .hero-visual-card { background: rgba(11,18,32,0.85); border: 1px solid rgba(215, 164, 59, 0.4); border-radius: 18px; padding: 18px; backdrop-filter: blur(14px); box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
     .hero-visual-card img { border-radius: 12px; height: 320px; width: 100%; object-fit: cover; object-position: center top; margin-bottom: 14px; }
     
     /* Sections */
-    section { padding: 65px 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); }
-    .section-alt { background: rgba(248, 246, 240, 0.96); backdrop-filter: blur(8px); }
-    .sec-head { text-align: center; max-width: 720px; margin: 0 auto 40px; }
-    .sec-head h2 { font-size: 28px; font-weight: 900; color: var(--dark); margin-bottom: 10px; }
+    section { padding: 75px 0; background: #ffffff; }
+    .section-alt { background: #f8f9fa; }
+    .sec-head { text-align: center; max-width: 760px; margin: 0 auto 45px; display: flex; flex-direction: column; align-items: center; }
+    .sec-head h2 { font-size: 30px; font-weight: 900; color: var(--dark); margin-bottom: 10px; }
     .sec-head p { font-size: 15px; color: var(--muted); }
     
-    /* 8 Services Grid */
-    .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-    .service-card { background: #fff; border-radius: 16px; border: 1px solid var(--line); padding: 22px 18px; box-shadow: var(--shadow); transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s; display: flex; flex-direction: column; justify-content: space-between; }
-    .service-card:hover { transform: translateY(-4px); box-shadow: 0 16px 30px rgba(0,0,0,0.08); border-color: var(--gold); }
-    .service-icon { width: 48px; height: 48px; background: rgba(215, 164, 59, 0.12); color: var(--gold); border-radius: 12px; display: grid; place-items: center; font-size: 20px; margin-bottom: 14px; }
-    .service-card h3 { font-size: 16.5px; font-weight: 800; color: var(--dark); margin-bottom: 8px; }
-    .service-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+    /* 3 Columns Services Grid (As shown in screenshot) */
+    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .service-card { background: #fff; border-radius: 16px; border: 1px solid var(--line); padding: 26px 22px; box-shadow: var(--shadow); transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s; display: flex; flex-direction: column; justify-content: space-between; }
+    .service-card:hover { transform: translateY(-5px); box-shadow: 0 18px 35px rgba(0,0,0,0.08); border-color: var(--gold); }
+    .service-icon { width: 50px; height: 50px; background: #fef3c7; color: #d97706; border-radius: 12px; display: grid; place-items: center; font-size: 22px; margin-bottom: 16px; }
+    .service-card h3 { font-size: 17px; font-weight: 800; color: var(--dark); margin-bottom: 8px; }
+    .service-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
     
-    /* About & Founder */
-    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
-    .about-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .about-imgs img { border-radius: 14px; height: 250px; width: 100%; object-fit: cover; box-shadow: var(--shadow); }
-    .about-points { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-    .about-pt { background: #fff; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 8px; }
+    /* About Section */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 45px; align-items: center; }
+    .about-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .about-imgs img { border-radius: 14px; height: 270px; width: 100%; object-fit: cover; box-shadow: var(--shadow); border: 1px solid var(--line); }
+    .about-points { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+    .about-pt { background: #fff; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); font-size: 13.5px; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
     
-    /* 12 Projects Gallery */
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+    /* 3 Columns Projects Gallery (As shown in screenshot) */
+    .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
     .gallery-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); transition: transform 0.25s, box-shadow 0.25s; cursor: pointer; display: flex; flex-direction: column; }
-    .gallery-card:hover { transform: translateY(-4px); box-shadow: 0 16px 28px rgba(0,0,0,0.1); border-color: var(--gold); }
-    .gallery-thumb { height: 200px; width: 100%; position: relative; overflow: hidden; background: #0b1220; }
+    .gallery-card:hover { transform: translateY(-5px); box-shadow: 0 18px 32px rgba(0,0,0,0.1); border-color: var(--gold); }
+    .gallery-thumb { height: 215px; width: 100%; position: relative; overflow: hidden; background: #0b1220; }
     .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
     .gallery-card:hover .gallery-thumb img { transform: scale(1.05); }
-    .gallery-badge { position: absolute; top: 10px; right: 10px; background: rgba(11, 18, 32, 0.88); color: var(--gold); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; backdrop-filter: blur(4px); border: 1px solid rgba(215, 164, 59, 0.4); }
-    .gallery-info { padding: 14px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .gallery-info h3 { font-size: 15.5px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
-    .gallery-info p { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+    .gallery-badge { position: absolute; top: 10px; right: 10px; background: rgba(11, 18, 32, 0.88); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; backdrop-filter: blur(4px); border: 1px solid rgba(215, 164, 59, 0.4); }
+    .gallery-info { padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .gallery-info h3 { font-size: 16px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+    .gallery-info p { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
     
-    /* Work Process */
-    .process-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
-    .process-card { background: #fff; padding: 22px 18px; border-radius: 14px; border: 1px solid var(--line); position: relative; }
-    .process-num { width: 34px; height: 34px; background: var(--gold); color: #111827; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 14px; margin-bottom: 12px; }
+    /* 4 Columns Work Process (As shown in screenshot) */
+    .process-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .process-card { background: #fff; padding: 24px 20px; border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow); position: relative; }
+    .process-num { width: 34px; height: 34px; background: var(--gold); color: #111827; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 14px; margin-bottom: 14px; }
     
     /* Contact & Form */
     .contact-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 36px; }
-    .contact-box { background: #fff; padding: 26px; border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow); }
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 5px; }
-    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; background: #fff; }
+    .contact-box { background: #fff; padding: 30px; border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; background: #fff; transition: border-color 0.2s; }
     .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
     
     /* Footer */
-    footer { background: #070d18; color: #94a3b8; padding: 45px 0 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13px; }
-    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 30px; margin-bottom: 30px; }
-    .footer-col h4 { color: #fff; font-size: 15px; font-weight: 800; margin-bottom: 14px; }
-    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    footer { background: #070d18; color: #94a3b8; padding: 50px 0 24px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 13.5px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 36px; margin-bottom: 36px; }
+    .footer-col h4 { color: #fff; font-size: 15px; font-weight: 800; margin-bottom: 16px; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
     .footer-col a { color: #94a3b8; transition: 0.2s; }
     .footer-col a:hover { color: var(--gold); }
     
@@ -201,10 +204,11 @@
     .lightbox-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(5px); }
     .lightbox-card { background: #fff; width: 100%; max-width: 720px; border-radius: 18px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.6); }
 
-    /* Responsive Media Queries */
-    @media (max-width: 900px) {
+    /* Responsive Queries */
+    @media (max-width: 992px) {
+      .services-grid, .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+      .process-grid { grid-template-columns: repeat(2, 1fr); }
       .hero-grid, .about-grid, .contact-grid, .footer-grid { grid-template-columns: 1fr; }
-      .process-grid { grid-template-columns: 1fr 1fr; }
       .hero-stats { grid-template-columns: repeat(2, 1fr); }
       .hero-visual-card img { height: 280px; }
     }
@@ -219,26 +223,26 @@
         left: 0;
         right: 0;
         background: #0b1220;
-        padding: 20px;
+        padding: 24px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         gap: 16px;
         text-align: center;
       }
       .menu.active { display: flex; }
       .top .wrap { justify-content: center; text-align: center; }
-      .hero { padding: 50px 0 40px; }
+      .hero { padding: 60px 0 50px; min-height: auto; }
+      .services-grid, .gallery-grid, .process-grid { grid-template-columns: 1fr; }
       .about-imgs { grid-template-columns: 1fr; }
-      .about-imgs img { height: 220px; }
+      .about-imgs img { height: 230px; }
       .about-points { grid-template-columns: 1fr; }
-      .video-sound-toggle { bottom: 15px; right: 15px; font-size: 11px; padding: 6px 12px; }
+      .video-sound-toggle { bottom: 16px; right: 16px; font-size: 11px; padding: 7px 14px; }
     }
 
     @media (max-width: 480px) {
-      .hero-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
-      .process-grid { grid-template-columns: 1fr; }
+      .hero-stats { grid-template-columns: 1fr 1fr; gap: 12px; }
       .hero-cta { flex-direction: column; }
       .hero-cta .btn { width: 100%; }
-      .contact-box { padding: 18px; }
+      .contact-box { padding: 20px; }
     }
   </style>
 </head>
@@ -302,10 +306,10 @@
       <i class="fa-solid fa-volume-xmark" id="soundIcon"></i> <span id="soundText">आवाज़ चालू करें</span>
     </button>
 
-    <div class="wrap" style="position:relative; z-index:2;">
+    <div class="wrap">
       <div class="hero-grid">
         <div>
-          <div class="eyebrow"><i class="fa-solid fa-shield-halved"></i> 25+ वर्षों का अटूट भरोसा • Mandawara, Jhunjhunu</div>
+          <div class="eyebrow eyebrow-gold"><i class="fa-solid fa-shield-halved"></i> 25+ वर्षों का अटूट भरोसा • Mandawara, Jhunjhunu</div>
           <h1>मजबूत नींव, बेहतरीन कारीगरी एवं <em>आधुनिक भवन निर्माण</em>।</h1>
           <p>गांव व कस्बों के लिए टिकाऊ, सुंदर और 100% वास्तु सम्मत मकानों का निर्माण। नींव खुदाई से लेकर RCC छत ढलाई, चिनाई, प्लास्टर, टाइल्स और चाबी सौंपने तक का पूरा काम लिखित अनुबंध के साथ।</p>
           
@@ -340,11 +344,11 @@
     </div>
   </section>
 
-  <!-- 4. 8 Types of Construction Services -->
-  <section id="services">
+  <!-- 4. 8 Types of Construction Services (3 Columns Grid) -->
+  <section id="services" class="section-alt">
     <div class="wrap">
       <div class="sec-head">
-        <div class="eyebrow" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;"><i class="fa-solid fa-trowel-bricks"></i> हमारी प्रमुख सेवाएँ (Services)</div>
+        <div class="eyebrow eyebrow-blue"><i class="fa-solid fa-trowel-bricks"></i> हमारी प्रमुख सेवाएँ (Services)</div>
         <h2>निर्माण का हर काम, पूरी मजबूती और सही तरीके से।</h2>
         <p>नींव की खुदाई से लेकर फिनिशिंग तक हर काम अनुभवी कारीगरों, आधुनिक टूल्स और उच्च गुणवत्ता वाले मटेरियल से किया जाता है।</p>
       </div>
@@ -357,7 +361,7 @@
             <h3>१. नया मकान निर्माण (Complete Home Construction)</h3>
             <p>नींव खुदाई से लेकर चाबी सौंपने तक का पूरा काम। विद मटेरियल (With Material) या सिर्फ लेबर रेट दोनों में उपलब्ध।</p>
           </div>
-          <a href="#contact" class="btn btn-dark" style="padding:9px; font-size:13px;"><i class="fa-solid fa-paper-plane"></i> कोटेशन मंगाएं</a>
+          <a href="#contact" class="btn btn-dark" style="width:100%; padding:10px; font-size:13px;"><i class="fa-solid fa-paper-plane"></i> कोटेशन मंगाएं</a>
         </div>
 
         <!-- 2. RCC छत ढलाई -->
@@ -367,7 +371,7 @@
             <h3>२. RCC छत ढलाई एवं शटरिंग (RCC Slab)</h3>
             <p>सरिया बांधना, मजबूत प्लेट शटरिंग, लेवलिंग, वाइब्रेटर का उपयोग और 100% लीकेज-प्रूफ कंक्रीट छत ढलाई।</p>
           </div>
-          <a href="tel:9785438345" class="btn btn-dark" style="padding:9px; font-size:13px;"><i class="fa-solid fa-phone"></i> सीधे बात करें</a>
+          <a href="tel:9785438345" class="btn btn-dark" style="width:100%; padding:10px; font-size:13px;"><i class="fa-solid fa-phone"></i> सीधे बात करें</a>
         </div>
 
         <!-- 3. दीवार चिनाई व प्लिंथ बीम -->
@@ -377,7 +381,7 @@
             <h3>३. दीवार चिनाई व प्लिंथ बीम (Brick Masonry)</h3>
             <p>ईंट व पत्थर की साहुल-सूत में सीधी चिनाई, डीपीसी (DPC), प्लिंथ प्रोटेक्शन और मजबूत कॉलम बीम निर्माण।</p>
           </div>
-          <a href="#contact" class="btn btn-dark" style="padding:9px; font-size:13px;"><i class="fa-solid fa-arrow-right"></i> पूछताछ करें</a>
+          <a href="#contact" class="btn btn-dark" style="width:100%; padding:10px; font-size:13px;"><i class="fa-solid fa-arrow-right"></i> पूछताछ करें</a>
         </div>
 
         <!-- 4. प्लास्टर कार्य -->
@@ -387,7 +391,7 @@
             <h3>४. अंदरूनी व बाहरी प्लास्टर (Cement Plaster)</h3>
             <p>दीवारों और छत का बिल्कुल समतल, चिकना और वाटरप्रूफ सिंगल/डबल कोट सीमेंट प्लास्टर फिनिशिंग कार्य।</p>
           </div>
-          <a href="tel:9785438345" class="btn btn-dark" style="padding:9px; font-size:13px;"><i class="fa-solid fa-phone"></i> कॉल करें</a>
+          <a href="tel:9785438345" class="btn btn-dark" style="width:100%; padding:10px; font-size:13px;"><i class="fa-solid fa-phone"></i> कॉल करें</a>
         </div>
 
         <!-- 5. टाइल्स व फ्लोरिंग -->
@@ -397,7 +401,7 @@
             <h3>५. टाइल्स, मार्बल व फ्लोरिंग (Tiles & Marble)</h3>
             <p>कमरों, हॉल, सीढ़ियों, किचन और बाथरूम में विट्रीफाइड टाइल्स, मार्बल व ग्रेनाइट की सही ढलान के साथ फिटिंग।</p>
           </div>
-          <a href="#contact" class="btn btn-dark" style="padding:9px; font-size:13px;"><i class="fa-solid fa-paper-plane"></i> कोटेशन मंगाएं</a>
+          <a href="#contact" class="btn btn-dark" style="width:100%; padding:10px; font-size:13px;"><i class="fa-solid fa-paper-plane"></i> कोटेशन मंगाएं</a>
         </div>
 
         <!-- 6. 2D नक्शा व 3D डिजाइन -->
@@ -407,7 +411,7 @@
             <h3>६. 2D नक्शा व 3D फ्रंट एलिवेशन (House Design)</h3>
             <p>100% वास्तु सम्मत 2D फ्लोर प्लान, कमरों का सटीक नाप (Feet & Inches), खुला आँगन व सुंदर 3D फ्रंट लुक।</p>
           </div>
-          <a href="https://wa.me/919785438345?text=मुझे%20मकान%20का%20नक्शा%20चाहिए" target="_blank" class="btn btn-gold" style="padding:9px; font-size:13px;"><i class="fa-brands fa-whatsapp"></i> नक्शा मंगाएं</a>
+          <a href="https://wa.me/919785438345?text=मुझे%20मकान%20का%20नक्शा%20चाहिए" target="_blank" class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;"><i class="fa-brands fa-whatsapp"></i> नक्शा मंगाएं</a>
         </div>
 
         <!-- 7. बाउंड्री वॉल व चारदीवारी -->
@@ -417,7 +421,7 @@
             <h3>७. बाउंड्री वॉल व चारदीवारी (Boundary Wall)</h3>
             <p>प्लॉट, खेत, फार्महाउस और मकान की मजबूत बाउंड्री वॉल, पिलर, तारबंदी व मेन गेट का निर्माण कार्य।</p>
           </div>
-          <a href="tel:9785438345" class="btn btn-dark" style="padding:9px; font-size:13px;"><i class="fa-solid fa-phone"></i> बात करें</a>
+          <a href="tel:9785438345" class="btn btn-dark" style="width:100%; padding:10px; font-size:13px;"><i class="fa-solid fa-phone"></i> बात करें</a>
         </div>
 
         <!-- 8. रेनोवेशन व मरम्मत -->
@@ -427,14 +431,14 @@
             <h3>८. रेनोवेशन, मरम्मत व वॉटरप्रूफिंग (Renovation)</h3>
             <p>पुराने मकान का नवीनीकरण, ऊपर नई मंजिल का निर्माण, छत की वॉटरप्रूफिंग व सीलन की स्थायी रोकथाम।</p>
           </div>
-          <a href="#contact" class="btn btn-dark" style="padding:9px; font-size:13px;"><i class="fa-solid fa-arrow-right"></i> पूछताछ करें</a>
+          <a href="#contact" class="btn btn-dark" style="width:100%; padding:10px; font-size:13px;"><i class="fa-solid fa-arrow-right"></i> पूछताछ करें</a>
         </div>
       </div>
     </div>
   </section>
 
   <!-- 5. About Founder -->
-  <section id="about" class="section-alt">
+  <section id="about">
     <div class="wrap">
       <div class="about-grid">
         <div class="about-imgs">
@@ -443,7 +447,7 @@
         </div>
 
         <div>
-          <div class="eyebrow"><i class="fa-solid fa-user-check"></i> हमारे संस्थापक व टीम</div>
+          <div class="eyebrow eyebrow-orange"><i class="fa-solid fa-user-check"></i> हमारे संस्थापक व टीम</div>
           <h2 style="font-size:28px; font-weight:900; color:var(--dark); margin-bottom:14px;">भरोसा ही हमारी सबसे बड़ी पहचान है।</h2>
           <p style="font-size:15px; color:var(--muted); margin-bottom:12px; line-height:1.7;">
             <b>प्रकाश चन्द स्वामी (PRAKASH SWAMI CONSTRUCTIONS)</b> ने पिछले 25 वर्षों में मंडावरा, झुंझुनूं, उदयपुरवाटी और शेखावाटी में सैकड़ों परिवारों के सपनों के आशियाने बनाए हैं।
@@ -463,11 +467,11 @@
     </div>
   </section>
 
-  <!-- 6. 12 Real House Construction Projects Gallery -->
-  <section id="projects">
+  <!-- 6. 12 Real House Construction Projects Gallery (3 Columns Grid) -->
+  <section id="projects" class="section-alt">
     <div class="wrap">
       <div class="sec-head">
-        <div class="eyebrow" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;"><i class="fa-solid fa-images"></i> वास्तविक कार्य गैलरी (Real Work Gallery)</div>
+        <div class="eyebrow eyebrow-blue"><i class="fa-solid fa-images"></i> वास्तविक कार्य गैलरी (Real Work Gallery)</div>
         <h2>हमारे द्वारा बनाए गए वास्तविक मकान व कार्य</h2>
         <p>मंडावरा, झुंझुनूं व शेखावाटी में पूर्ण किए गए और वर्तमान में चल रहे 12 प्रमुख निर्माण कार्य। किसी भी फोटो पर क्लिक करके पूरा विवरण देखें।</p>
       </div>
@@ -483,7 +487,7 @@
           <div class="gallery-info">
             <h3>१. 3 BHK स्वतंत्र विलेज रेजिडेंस</h3>
             <p>मंडावरा साइट • 3 कमरे, बड़ा आँगन व हॉल</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -496,7 +500,7 @@
           <div class="gallery-info">
             <h3>२. 2-मंज़िला आधुनिक डुप्लेक्स कोठी</h3>
             <p>झुंझुनूं शहर • 4 बेडरूम, बालकनी व पोर्च</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -509,7 +513,7 @@
           <div class="gallery-info">
             <h3>३. RCC छत ढलाई व शटरिंग</h3>
             <p>उदयपुरवाटी साइट • 1200 Sq.Ft छत ढलाई</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -522,7 +526,7 @@
           <div class="gallery-info">
             <h3>४. दीवार चिनाई व लेंटेल लेवल</h3>
             <p>मंडावरा • सुपरस्ट्रक्चर चिनाई कार्य</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -535,7 +539,7 @@
           <div class="gallery-info">
             <h3>५. प्लिंथ बीम व नींव निर्माण</h3>
             <p>शेखावाटी क्षेत्र • मजबूत डीपीसी बेस</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -548,7 +552,7 @@
           <div class="gallery-info">
             <h3>६. सीमेंट प्लास्टर व फिनिशिंग</h3>
             <p>गुढ़ा साइट • चिकना व वाटरप्रूफ प्लास्टर</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -561,7 +565,7 @@
           <div class="gallery-info">
             <h3>७. टाइल्स व मार्बल फ्लोरिंग</h3>
             <p>झुंझुनूं • विट्रीफाइड टाइल्स फिटिंग</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -574,7 +578,7 @@
           <div class="gallery-info">
             <h3>८. बाउंड्री वॉल व चारदीवारी</h3>
             <p>मंडावरा • प्लॉट बाउंड्री व मेन गेट</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -587,7 +591,7 @@
           <div class="gallery-info">
             <h3>९. रेनोवेशन व नई मंजिल</h3>
             <p>उदयपुरवाटी • पुराना मकान नवीनीकरण</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -600,7 +604,7 @@
           <div class="gallery-info">
             <h3>१०. विलेज हाउस व बरामदा</h3>
             <p>मंडावरा • खुला आँगन व बैठक</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -613,7 +617,7 @@
           <div class="gallery-info">
             <h3>११. सीढ़ी टावर व पैरापेट वॉल</h3>
             <p>झुंझुनूं • छत की मुंडेर व मचान</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -626,7 +630,7 @@
           <div class="gallery-info">
             <h3>१२. मॉडर्न फ्रंट एलिवेशन</h3>
             <p>नवलगढ़ साइट • आकर्षक फ्रंट डिजाइन</p>
-            <button class="btn-sm btn-gold" style="width:100%; justify-content:center;">फ़ोटो व विवरण देखें</button>
+            <button class="btn btn-gold" style="width:100%; padding:10px; font-size:13px;">फ़ोटो व विवरण देखें</button>
           </div>
         </div>
 
@@ -634,11 +638,11 @@
     </div>
   </section>
 
-  <!-- 7. Work Process (4 Steps) -->
-  <section id="process" class="section-alt">
+  <!-- 7. Work Process (4 Columns Grid as in screenshot) -->
+  <section id="process">
     <div class="wrap">
       <div class="sec-head">
-        <div class="eyebrow"><i class="fa-solid fa-list-check"></i> पारदर्शी कार्य प्रक्रिया</div>
+        <div class="eyebrow eyebrow-yellow"><i class="fa-solid fa-list-check"></i> पारदर्शी कार्य प्रक्रिया</div>
         <h2>बात से काम तक, 4 आसान कदम।</h2>
         <p>हम हर प्रोजेक्ट को एक सुव्यवस्थित, पारदर्शी और लिखित नियमों के साथ पूरा करते हैं।</p>
       </div>
@@ -672,10 +676,10 @@
   </section>
 
   <!-- 8. Contact & Free Consultation Section -->
-  <section id="contact">
+  <section id="contact" class="section-alt">
     <div class="wrap">
       <div class="sec-head">
-        <div class="eyebrow"><i class="fa-solid fa-envelope-open-text"></i> संपर्क करें</div>
+        <div class="eyebrow eyebrow-yellow"><i class="fa-solid fa-envelope-open-text"></i> संपर्क करें</div>
         <h2>अपने प्रोजेक्ट की बात आज ही करें।</h2>
         <p>हमसे फोन या व्हाट्सएप पर बात करें या नीचे दिए गए फॉर्म में अपनी जानकारी भेजें।</p>
       </div>
@@ -733,9 +737,9 @@
             <p style="font-size:14px;"><b><i class="fa-solid fa-location-dot" style="color:var(--gold);"></i> पता:</b> ग्राम व पोस्ट: मंडावरा, तहसील: उदयपुरवाटी, जिला: झुंझुनूं (राजि.)</p>
           </div>
 
-          <div style="background:#0b1220; color:#fff; padding:22px; border-radius:16px; text-align:center; border:2px solid var(--gold);">
+          <div style="background:#0b1220; color:#fff; padding:24px; border-radius:16px; text-align:center; border:2px solid var(--gold);">
             <h4 style="color:var(--gold); font-size:16px; margin-bottom:8px;">पोर्टल लॉगिन (Admin / Customer / Worker)</h4>
-            <p style="font-size:13px; color:#94a3b8; margin-bottom:14px;">अपने प्रोजेक्ट्स, डिजिटल अनुबंध, हाजिरी और भुगतान देखने के लिए डैशबोर्ड में लॉगिन करें।</p>
+            <p style="font-size:13px; color:#94a3b8; margin-bottom:16px;">अपने प्रोजेक्ट्स, डिजिटल अनुबंध, हाजिरी और भुगतान देखने के लिए डैशबोर्ड में लॉगिन करें।</p>
             <a href="dashboard.html" class="btn btn-gold" style="width:100%;"><i class="fa-solid fa-right-to-bracket"></i> Dashboard Login</a>
           </div>
         </div>
@@ -745,7 +749,7 @@
 
 </main>
 
-<!-- 9. Footer -->
+<!-- 9. Footer (4 Columns as in screenshot) -->
 <footer>
   <div class="wrap">
     <div class="footer-grid">
@@ -785,7 +789,7 @@
         <p style="margin-bottom:8px;">📍 मंडावरा, झुंझुनूं (राजि.)</p>
         <p style="margin-bottom:8px;">📞 9785438345</p>
         <p style="margin-bottom:14px;">✉️ satpalswami22742@gmail.com</p>
-        <a href="https://wa.me/919785438345" target="_blank" class="btn-sm btn-whatsapp" style="padding:6px 12px; font-size:12px; font-weight:700;">
+        <a href="https://wa.me/919785438345" target="_blank" class="btn-sm btn-whatsapp" style="padding:7px 14px; font-size:12px; font-weight:700;">
           <i class="fa-brands fa-whatsapp"></i> Chat on WhatsApp
         </a>
       </div>
