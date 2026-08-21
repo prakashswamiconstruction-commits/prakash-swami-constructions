@@ -209,9 +209,8 @@
       .global-video-bg video {
         width: 100% !important;
         height: 100% !important;
-        object-fit: cover !important;
-        object-position: center center !important;
-        transform: scale(1.05) !important;
+        object-fit: contain !important; /* पूरी वीडियो बिना कटे दिखेगी */
+        object-position: center top !important;
       }
     }
 
